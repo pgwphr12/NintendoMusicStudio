@@ -29,6 +29,7 @@ class Player {
     uint64_t base_ = 0;
     std::atomic<bool> atEnd_{false};
     std::atomic<bool> repeat_{false};
+    std::atomic<bool> continueAfterLength_{false};
     void haltWorker();
     void startWorker();
     void prefill();
@@ -39,9 +40,11 @@ class Player {
     Player() : output_(audio_) {}
     ~Player();
     void open(const std::filesystem::path &path);
+    void openPrepared(std::unique_ptr<IMusicBackend> backend,Format format);
     void select(int track);
     void play();
     void pause();
+    void releaseDevice(){pause();output_.releaseDevice();}
     void stop();
     void seek(int milliseconds);
     float outputGain() const {
@@ -65,6 +68,7 @@ class Player {
         return double(base_ + output_.consumed()) / InternalRate;
     }
     bool ended() const;
+    void continueAfterLength(bool value) { continueAfterLength_ = value; }
     void repeat(bool b) {
         repeat_ = b;
     }

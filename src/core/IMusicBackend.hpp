@@ -1,5 +1,6 @@
 #pragma once
 #include "Models.hpp"
+#include "GbaInspection.hpp"
 #include <filesystem>
 #include <memory>
 namespace ngmv {
@@ -12,6 +13,23 @@ class IMusicBackend {
     virtual void seek(int milliseconds) = 0;
     virtual void muteMask(uint32_t mask) = 0;
     virtual void render(size_t frames, AudioBlock &out) = 0;
+    // Optional read-only base NES APU state, not a reconstructed tracker project.
+    virtual bool nesState(std::vector<int>&) const { return false; }
+    virtual bool prepareNesInspection(){return false;}
+    // Offline standard-m4a PCM voice metadata only. This is not a complete
+    // score importer and does not include PSG notes. Inspection and sample
+    // access must be called on the decoder owner thread, between render calls.
+    virtual bool prepareGbaInspection(){return false;}
+    virtual bool prepareGbaMixerInspection(){return false;}
+    virtual bool drainGbaEvents(std::vector<GbaVoiceEvent>&,std::string&) {return false;}
+    virtual bool drainGbaMixFrames(std::vector<GbaMixFrame>&,std::string&) {return false;}
+    virtual bool gbaPsgActivity(uint32_t&) const {return false;}
+    // Actual emulated execution boundary; prefetch can lead audible playback.
+    virtual bool gbaEmulatedCycles(uint64_t&) const {return false;}
+    // Explicit offline, owned ROM-only PCM8 copy; RAM samples are unsupported.
+    // Unsupported backends leave both caller outputs unchanged.
+    virtual bool copyGbaSample(const GbaSampleInfo&,GbaSampleData&,std::string&) const {return false;}
+    virtual void continuousEnd(bool) {}
 };
 Format identify(const std::vector<uint8_t> &bytes);
 std::vector<uint8_t> readMusicFile(const std::filesystem::path &path);

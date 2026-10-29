@@ -38,6 +38,10 @@ void Player::open(const std::filesystem::path &path) {
     auto bytes = readMusicFile(path);
     auto format = identify(bytes);
     auto candidate = makeBackend(bytes, path);
+    openPrepared(std::move(candidate),format);
+}
+void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format) {
+    if(!candidate)throw std::runtime_error("No prepared music");
     output_.pause(true);
     haltWorker();
     backend_ = std::move(candidate);
@@ -122,7 +126,7 @@ void Player::seek(int ms) {
     if (!backend_)
         return;
     int length = tracks()[track_].lengthMs;
-    if (length > 0)
+    if (length > 0 && !continueAfterLength_)
         ms = std::min(ms, length - 1);
     restart(track_, std::max(0, ms), playing_);
 }
@@ -149,25 +153,27 @@ void Player::produce() {
         AudioBlock block;
         uint64_t produced = base_;
         int length = tracks()[track_].lengthMs;
+        backend_->continuousEnd(continueAfterLength_.load());
         while (!quit_) {
             if (audio_.available() > 8192 - 512) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
                 continue;
             }
-            if (length > 0 && produced >= uint64_t(length) * InternalRate / 1000) {
+            if (!continueAfterLength_ && length > 0 && produced >= uint64_t(length) * InternalRate / 1000) {
                 atEnd_ = true;
                 break;
             }
             size_t frames = 512;
-            if (length > 0)
+            if (!continueAfterLength_ && length > 0)
                 frames = size_t(
                     std::min(uint64_t(frames), uint64_t(length) * InternalRate / 1000 - produced));
             auto state = states();
             uint32_t mask = 0;
             bool unity = true;
             for (size_t i = 0; i < state.size(); i++) {
-                if (state[i].mute)
+                if (state[i].mute && i < 32)
                     mask |= uint32_t(1) << i;
+                if (state[i].mute && i >= 32) unity = false;
                 if (state[i].volume != 1)
                     unity = false;
             }

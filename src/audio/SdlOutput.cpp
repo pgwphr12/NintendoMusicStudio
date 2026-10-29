@@ -41,10 +41,12 @@ void SdlOutput::callback(void *self, Uint8 *out, int bytes) {
     a.underruns_.store(a.resampler_.underruns);
 }
 void SdlOutput::pause(bool value) {
+    if(!value&&!device_)device_=create(rate_);
     if (device_)
         SDL_PauseAudioDevice(device_, value ? 1 : 0);
     paused_ = value;
 }
+void SdlOutput::releaseDevice(){pause(true);if(device_){SDL_CloseAudioDevice(device_);device_=0;}}
 void SdlOutput::changeRate(int rate) {
     if (rate != 16000 && rate != 22050 && rate != 32000 && rate != 44100 && rate != 48000 &&
         rate != 96000)

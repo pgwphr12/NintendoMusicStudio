@@ -14,6 +14,7 @@ int wmain(int argc, wchar_t **argv) {
                 backend->selectTrack(int(track));
                 ngmv::AudioBlock block;
                 double mixEnergy = 0;
+                double dryEnergy=0,covariance=0;
                 std::vector<double> voiceEnergy(backend->channels().size());
                 for (int i = 0; i < 563; ++i) { // six seconds at the fixed internal 48k rate
                     backend->render(512, block);
@@ -25,11 +26,13 @@ int wmain(int argc, wchar_t **argv) {
                     for (size_t c = 0; c < block.voices.size(); ++c)
                         for (auto sample : block.voices[c])
                             voiceEnergy[c] += sample.l * sample.l + sample.r * sample.r;
+                    if(backend->channels().back().name=="EFFECTS / OTHER")for(size_t n=0;n<block.mix.size();n++){ngmv::Stereo dry{};for(size_t c=0;c+1<block.voices.size();c++){dry.l+=block.voices[c][n].l;dry.r+=block.voices[c][n].r;}dryEnergy+=dry.l*dry.l+dry.r*dry.r;covariance+=dry.l*block.mix[n].l+dry.r*block.mix[n].r;}
                 }
                 std::cout << "Track " << track + 1 << " mix_energy=" << mixEnergy;
                 for (size_t c = 0; c < voiceEnergy.size(); ++c)
                     std::cout << " | " << backend->channels()[c].name << '=' << voiceEnergy[c];
                 std::cout << '\n';
+                if(dryEnergy>0)std::cout<<"dry_energy="<<dryEnergy<<" covariance="<<covariance<<" normalized="<<covariance/std::sqrt(dryEnergy*mixEnergy)<<'\n';
             }
             // Replay/seek and actual mute at the same sample position.
             backend->selectTrack(0);

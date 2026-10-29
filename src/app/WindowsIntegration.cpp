@@ -178,7 +178,7 @@ InstanceGate::~InstanceGate() {
     if (mutex_) CloseHandle(mutex_);
 }
 bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
-    std::wstring name = L"Local\\NintendoGameMusicViewer.V1." + userIdentity();
+    std::wstring name = L"Local\\NintendoGameMusicViewer.Studio149." + userIdentity();
     mutex_ = CreateMutexW(nullptr, TRUE, name.c_str());
     DWORD error = GetLastError();
     if (!mutex_) throw std::runtime_error("Cannot initialize the single-instance player.");
@@ -206,3 +206,4 @@ bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
     throw std::runtime_error("The existing viewer is not responding. Close it and try opening the file again.");
 }
 }
+

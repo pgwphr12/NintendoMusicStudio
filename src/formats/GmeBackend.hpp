@@ -32,6 +32,8 @@ class GmeBackend : public IMusicBackend {
         gme_mute_voices(full_.get(), int(mask));
     }
     void render(size_t frames, AudioBlock &out) override;
+    bool nesState(std::vector<int>&out) const override;
+    bool prepareNesInspection() override;
 };
 class NSFBackend final : public GmeBackend {
   public:

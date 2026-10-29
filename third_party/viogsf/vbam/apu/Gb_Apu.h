@@ -92,8 +92,16 @@ public:
 
 public:
 	Gb_Apu();
+	// Viewer-only observation. No synthesis state, registers or saved-state
+	// layout are changed. Default off; tracks positive-time enabled/routed
+	// oscillators with nonzero envelope/wave level, excluding DAC DC bias.
+	void viewer_inspection( bool enabled ) { viewer_inspection_ = enabled; viewer_psg_mask_ = 0; }
+	unsigned viewer_psg_mask() const { return viewer_psg_mask_; }
 
 private:
+	bool viewer_inspection_ = false;
+	unsigned viewer_psg_mask_ = 0;
+	unsigned viewer_active_mask() const;
 	// noncopyable
 	Gb_Apu( const Gb_Apu& );
 	Gb_Apu& operator = ( const Gb_Apu& );

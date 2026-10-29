@@ -105,6 +105,12 @@ struct GBASoundOut
 
 struct GBASystem
 {
+    // NGMV: optional music-core-only RAM write observer/filter. Null in general emulation.
+    void* viewerMixerContext = nullptr;
+    u32 (*viewerMixerWrite)(void*,GBASystem*,u32,u32,int) = nullptr;
+    // Optional offline inspector clock. Not enabled for normal playback.
+    bool viewerEventClock = false;
+    unsigned long long viewerEventCycles = 0;
     reg_pair reg[45];
     memoryMap map[256];
     bool ioReadable[0x400];

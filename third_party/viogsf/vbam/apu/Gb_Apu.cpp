@@ -196,6 +196,22 @@ Gb_Apu::Gb_Apu()
 	reset();
 }
 
+unsigned Gb_Apu::viewer_active_mask() const
+{
+	if ( !(regs [status_reg - start_addr] & power_mask) ) return 0;
+	unsigned mask = 0;
+	bool levels [4] = {
+		square1.volume > 0 && (square1.regs [2] & 0xF8),
+		square2.volume > 0 && (square2.regs [2] & 0xF8),
+		(wave.regs [0] & 0x80) && ((wave.regs [2] >> 5) & (wave.agb_mask | 3)),
+		noise.volume > 0 && (noise.regs [2] & 0xF8)
+	};
+	for ( int i = 0; i < 4; ++i )
+		if ( oscs [i]->enabled && levels [i] &&
+			(regs [stereo_reg - start_addr] & ((1 << i) | (1 << (i + 4)))) ) mask |= 1u << i;
+	return mask;
+}
+
 void Gb_Apu::run_until_( blip_time_t end_time )
 {
 	while ( true )
@@ -204,6 +220,7 @@ void Gb_Apu::run_until_( blip_time_t end_time )
 		blip_time_t time = end_time;
 		if ( time > frame_time )
 			time = frame_time;
+		if ( viewer_inspection_ && time > last_time ) viewer_psg_mask_ |= viewer_active_mask();
 
 		square1.run( last_time, time );
 		square2.run( last_time, time );

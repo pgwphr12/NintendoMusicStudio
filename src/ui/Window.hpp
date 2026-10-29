@@ -51,6 +51,7 @@ class Window {
     void click(int, int);
     void mouseMove(int, int);
     void openDialog();
+    void openEditor(bool analyze=false);
     bool open(const std::filesystem::path &);
     void tracksMenu();
     void rateMenu();

@@ -3,6 +3,13 @@
 #include <climits>
 #include <stdexcept>
 namespace ngmv {
+extern "C" __declspec(dllimport) int ngmv_nsf_inspect(Music_Emu*,int*,int);
+extern "C" __declspec(dllimport) int ngmv_nsf_inspection_mode(Music_Emu*);
+bool GmeBackend::prepareNesInspection(){if(!ngmv_nsf_inspection_mode(full_.get()))return false;for(auto&c:isolated_)if(!ngmv_nsf_inspection_mode(c.get()))return false;selectTrack(track_);return true;}
+bool GmeBackend::nesState(std::vector<int>&out) const {
+    std::vector<int> state(40);if(!ngmv_nsf_inspect(full_.get(),state.data(),int(state.size())))return false;
+    out=std::move(state);return true;
+}
 static void check(gme_err_t e) {
     if (e)
         throw std::runtime_error(e);

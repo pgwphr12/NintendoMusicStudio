@@ -291,6 +291,8 @@ unreadable:
 
 static inline void CPUWriteMemory(GBASystem *gba, u32 address, u32 value)
 {
+  if(gba->viewerMixerWrite && ((address>>24)==2 || (address>>24)==3))
+    value=gba->viewerMixerWrite(gba->viewerMixerContext,gba,address&~3u,value,4);
   switch(address >> 24) {
   case 0x02:
       WRITE32LE(((u32 *)&gba->workRAM[address & 0x3FFFC]), value);
@@ -335,6 +337,8 @@ unwritable:
 
 static inline void CPUWriteHalfWord(GBASystem *gba, u32 address, u16 value)
 {
+  if(gba->viewerMixerWrite && ((address>>24)==2 || (address>>24)==3))
+    value=(u16)gba->viewerMixerWrite(gba->viewerMixerContext,gba,address&~1u,value,2);
   switch(address >> 24) {
   case 2:
       WRITE16LE(((u16 *)&gba->workRAM[address & 0x3FFFE]),value);
@@ -384,6 +388,8 @@ unwritable:
 
 static inline void CPUWriteByte(GBASystem *gba, u32 address, u8 b)
 {
+  if(gba->viewerMixerWrite && ((address>>24)==2 || (address>>24)==3))
+    b=(u8)gba->viewerMixerWrite(gba->viewerMixerContext,gba,address,b,1);
   switch(address >> 24) {
   case 2:
       gba->workRAM[address & 0x3FFFF] = b;

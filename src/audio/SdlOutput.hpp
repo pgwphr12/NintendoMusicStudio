@@ -19,6 +19,7 @@ class SdlOutput {
     explicit SdlOutput(StereoRing<> &ring);
     ~SdlOutput();
     void pause(bool pause);
+    void releaseDevice();
     void changeRate(int rate);
     void reset();
     int rate() const {

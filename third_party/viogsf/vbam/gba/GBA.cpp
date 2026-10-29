@@ -2104,6 +2104,7 @@ void CPUReset(GBASystem *gba)
   gba->fxOn = false;
   gba->windowOn = false;
   gba->frameCount = 0;
+  gba->viewerEventCycles = 0;
   gba->saveType = 0;
   gba->layerEnable = gba->DISPCNT & gba->layerSettings;
 
@@ -2221,6 +2222,7 @@ void CPULoop(GBASystem *gba, int ticks)
       gba->cpuDmaHack = false;
 
     updateLoop:
+      if(gba->viewerEventClock)gba->viewerEventCycles += clockTicks;
 
       if (gba->IRQTicks)
       {

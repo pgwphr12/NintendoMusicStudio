@@ -1,11 +1,17 @@
 #include "ui/Window.hpp"
 #include "WindowsIntegration.hpp"
+#include "editor/Editor.hpp"
 #include <shellapi.h>
 #include <shobjidl.h>
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
+    struct ComScope {HRESULT hr=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);~ComScope(){if(SUCCEEDED(hr))CoUninitialize();}} com;
     try {
         int count = 0;
         LPWSTR *raw = CommandLineToArgvW(GetCommandLineW(), &count);
+        if(count>2&&(std::wstring(raw[1])==L"--editor-selftest"||std::wstring(raw[1])==L"--editor-snapshot")){
+            bool snapshot=std::wstring(raw[1])==L"--editor-snapshot";auto output=std::filesystem::path(raw[2]);LocalFree(raw);
+            return ngmv::editor::runMusicEditor(instance,nullptr,output,snapshot);
+        }
         std::filesystem::path input, screenshot;
         int width = 1280, height = 720;
         bool recording = false, playInitial = false;

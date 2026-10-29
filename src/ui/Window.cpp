@@ -1,6 +1,9 @@
 #include "Window.hpp"
 #include "app/WindowsIntegration.hpp"
 #include "ChannelLayout.hpp"
+#include "editor/Editor.hpp"
+#include "editor/SampleBackend.hpp"
+#include "editor/SourceWindow.hpp"
 #include "visualizer/Envelope.hpp"
 #include <algorithm>
 #include <chrono>
@@ -8,6 +11,7 @@
 #include <commdlg.h>
 #include <cstdio>
 #include <fstream>
+#include <future>
 #include <map>
 #include <shellapi.h>
 #include <windowsx.h>
@@ -78,6 +82,8 @@ static void line(HDC dc, int x1, int y1, int x2, int y2, COLORREF color, int wid
     SelectObject(dc, old);
 }
 static std::wstring channelLabel(const std::string &name, bool recording) {
+    if(name.rfind("PCM VOICE ",0)==0)return recording?wide(name):L"PCM 음성 "+wide(name.substr(10));
+    if(!recording&&(name=="PCM A"||name=="PCM B"))return wide(name)+L" · 혼합";
     if (name == "FDS WAVE")
         return L"FDS";
     if (name.rfind("CHANNEL ", 0) == 0)
@@ -126,6 +132,12 @@ void Window::report(const std::exception &e) {
     message_ = wide(e.what());
     MessageBoxW(hwnd_, message_.c_str(), L"Nintendo Game Music Viewer", MB_OK | MB_ICONERROR);
 }
+void Window::openEditor(bool analyze) {
+    player_.releaseDevice();
+    editor::runMusicEditor(reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(hwnd_,GWLP_HINSTANCE)),hwnd_,{},false,
+                           [this](const std::filesystem::path&p){if(open(p))player_.play();},analyze&&!file_.empty(),analyze?file_:std::filesystem::path{},
+                           [this](const editor::Song&s){player_.openPrepared(editor::makeSampleBackend(s),Format::SampledSong);file_.clear();playlist_={};SetWindowTextW(hwnd_,L"Nintendo Music Studio · 1.4.9 — 편집한 샘플 곡");message_=L"편집한 샘플 곡 · 프로젝트는 공통 편집 화면에 유지됩니다.";player_.play();InvalidateRect(hwnd_,nullptr,FALSE);});
+}
 struct ChangingScope {
     bool &value;
     explicit ChangingScope(bool &flag) : value(flag) {
@@ -135,6 +147,21 @@ struct ChangingScope {
         value = false;
     }
 };
+// Only a separate, unpublished decoder is touched by this worker. The active
+// player and all HWND operations remain on the UI thread.
+static std::unique_ptr<IMusicBackend> prepareMusic(HWND window,const std::filesystem::path&path) {
+    auto task=std::async(std::launch::async,[path]{return makeBackend(readMusicFile(path),path);});
+    bool quit=false;int exitCode=0;
+    while(task.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready){
+        MSG msg{};while(PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){
+            if(msg.message==WM_QUIT){quit=true;exitCode=int(msg.wParam);continue;}
+            TranslateMessage(&msg);DispatchMessageW(&msg);
+        }
+        MsgWaitForMultipleObjects(0,nullptr,FALSE,15,QS_ALLINPUT);
+    }
+    try{auto result=task.get();if(quit)PostQuitMessage(exitCode);return IsWindow(window)?std::move(result):nullptr;}
+    catch(...){if(quit)PostQuitMessage(exitCode);if(!IsWindow(window))return nullptr;throw;}
+}
 bool Window::open(const std::filesystem::path &p) {
     if (changing_)
         return false;
@@ -142,11 +169,13 @@ bool Window::open(const std::filesystem::path &p) {
         ChangingScope guard(changing_);
         auto playlist = FolderPlaylist::scan(p, identify(readMusicFile(p)));
         rememberChannels();
-        player_.open(p);
+        message_=L"음악을 불러오는 중…";drag_=-1;InvalidateRect(hwnd_,nullptr,FALSE);
+        auto prepared=prepareMusic(hwnd_,p);if(!prepared)return false;
+        player_.openPrepared(std::move(prepared),identify(readMusicFile(p)));
         restoreChannels();
         file_ = p;
         SetWindowTextW(
-            hwnd_, (L"Nintendo Game Music Viewer · V1.3.2 — " + file_.filename().wstring()).c_str());
+            hwnd_, (L"Nintendo Music Studio · 1.4.9 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
 
         drag_ = -1;
@@ -165,12 +194,14 @@ void Window::selectFolder(size_t index, bool play) {
     ChangingScope guard(changing_);
     const auto path = playlist_.files[index];
     rememberChannels();
-    player_.open(path);
+    message_=L"다음 음악을 불러오는 중…";drag_=-1;InvalidateRect(hwnd_,nullptr,FALSE);
+    auto prepared=prepareMusic(hwnd_,path);if(!prepared)return;
+    player_.openPrepared(std::move(prepared),identify(readMusicFile(path)));
     restoreChannels();
     playlist_.current = index;
     file_ = path;
     SetWindowTextW(hwnd_,
-                   (L"Nintendo Game Music Viewer · V1.3.2 — " + file_.filename().wstring()).c_str());
+                   (L"Nintendo Music Studio · 1.4.9 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -305,7 +336,10 @@ void Window::paint(HDC dc, int width, int height) {
         player_.loaded() ? (info.title.empty() ? L"Track " + std::to_wstring(player_.track() + 1)
                                                : wide(info.title))
                          : (recording_ ? L"Open a music file" : L"음악 파일을 열어 주세요");
-    text(dc, title, 42, 22, 1810, 62, 46, RGB(235, 240, 249), true);
+    text(dc, title, 42, 22, recording_ ? 1810 : 1400, 62, 46, RGB(235, 240, 249), true);
+    if (!recording_) button(dc,L"음악 편집 (F3)",1495,22,195);
+    if (!recording_)
+        button(dc, L"작곡 (F2)", 1710, 22, 160);
     std::wstring game =
         info.game.empty()
             ? (file_.empty()
@@ -491,6 +525,11 @@ void Window::click(int x, int y) {
         return;
     int lx = int((x - offsetX_) / scale_), ly = int((y - offsetY_) / scale_);
     try {
+        if (!recording_ && ly >= 22 && ly < 72 && lx >= 1710 && lx < 1870) {
+            openEditor();
+            return;
+        }
+        if (!recording_ && ly >= 22 && ly < 72 && lx >= 1495 && lx < 1690) {openEditor(true);return;}
         if (ly >= 163 && ly < 193 && lx >= 1550 && lx < 1842) {
             if (lx < 1582)
                 player_.master((std::lround(player_.master() * 100) - 5) / 100.f);
@@ -871,7 +910,10 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             return 0;
         }
         try {
-            if (!changing_ && player_.playing() && player_.ended()) {
+            bool scheduledEnd = player_.loaded() && player_.tracks()[player_.track()].lengthMs > 0 &&
+                player_.seconds()*1000 >= player_.tracks()[player_.track()].lengthMs;
+            bool advance = player_.repeat() || (autoplay_ && playlist_.active() && playlist_.current+1<playlist_.files.size());
+            if (!changing_ && player_.playing() && (player_.ended() || (scheduledEnd && advance))) {
                 bool repeat = player_.repeat();
                 player_.pause();
                 if (repeat) {
@@ -922,7 +964,10 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         if (changing_)
             return 0;
         try {
-            if (a == 'O' && (GetKeyState(VK_CONTROL) & 0x8000))
+            if (a == VK_F2)
+                openEditor();
+            else if(a==VK_F3)openEditor(true);
+            else if (a == 'O' && (GetKeyState(VK_CONTROL) & 0x8000))
                 openDialog();
             else if (a == VK_SPACE) {
                 if (player_.playing())
@@ -962,6 +1007,9 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         p->ptMaxTrackSize = {8192, 8192};
         return 0;
     }
+    case WM_CLOSE:
+        if(editor::confirmMusicEditorExit(hwnd_))DestroyWindow(hwnd_);
+        return 0;
     case WM_DESTROY:
         savePreferences();
         RemovePropW(hwnd_, desktop::InstanceProperty);
@@ -973,6 +1021,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
 int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                 const std::filesystem::path &screenshot, int width, int height, bool recording, bool playInitial) {
     SetProcessDPIAware();
+    player_.continueAfterLength(true);
     recording_ = recording;
     preferencesEnabled_ = screenshot.empty() && (!desktop::automatedSession() ||
         GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
@@ -1005,7 +1054,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Game Music Viewer · V1.3.2",
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.4.9",
                           WS_OVERLAPPEDWINDOW, screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

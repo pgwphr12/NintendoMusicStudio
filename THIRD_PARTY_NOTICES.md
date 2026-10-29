@@ -43,3 +43,8 @@ V1.2 modifications (2026-10-10): viogsf GBA.h/Sound.cpp use a 16-kernel source-r
 ## V1.3 Sega changes · 2026-10-10
 
 VGM is enabled with the LGPL-2.1-or-later GENS YM2612 implementation, copyright Stéphane Dallongeville and Shay Green. The alternative GPL MAME and Nuked implementations are not compiled. YM2413 uses the bundled MIT emu2413 by Mitsutaka Okazaki; licenses/emu2413-MIT.txt preserves its notice. Local LGPL interface modifications replace the empty YM2413 stub and separate SMS FM/rhythm/PSG and Genesis FM/DAC/PSG voices. Complete modified Vgm_Emu.cpp, Ym2413_Emu.cpp and Ym2413_Emu.h are in third_party/gme-sega-patch; third_party/apply_gme_sega.cmake verifies original/patched hashes. Vgm_Emu.cpp retains original notices. The original libgme archive is unchanged. The application validates VGM command/PCM bounds and decompresses VGZ using zlib. Distribute the matching source ZIP alongside the runtime ZIP; see SOURCE.md.
+
+
+## V1.4.8 GBA source-state inspection · 2026-10-30
+
+Local Gb_Apu.h/.cpp modifications add default-off read-only sticky PSG enabled/DAC/envelope/routing observation for explicit offline import. Oscillator stepping, samples and serialized register state are unchanged. Original LGPL notices remain; complete corresponding modified source is included. GbaMixCapture separately observes standard-m4a CGB START writes, including muted notes, to reject unsupported PSG imports rather than silently dropping them.
