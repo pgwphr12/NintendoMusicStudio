@@ -1,9 +1,6 @@
 #include "Window.hpp"
-#include "app/WindowsIntegration.hpp"
 #include "ChannelLayout.hpp"
-#include "editor/Editor.hpp"
-#include "editor/SampleBackend.hpp"
-#include "editor/SourceWindow.hpp"
+#include "app/WindowsIntegration.hpp"
 #include "visualizer/Envelope.hpp"
 #include <algorithm>
 #include <chrono>
@@ -81,37 +78,7 @@ static void line(HDC dc, int x1, int y1, int x2, int y2, COLORREF color, int wid
     LineTo(dc, x2, y2);
     SelectObject(dc, old);
 }
-static std::wstring channelLabel(const std::string &name, bool recording) {
-    if(name.rfind("PCM VOICE ",0)==0)return recording?wide(name):L"PCM 음성 "+wide(name.substr(10));
-    if(!recording&&(name=="PCM A"||name=="PCM B"))return wide(name)+L" · 혼합";
-    if (name == "FDS WAVE")
-        return L"FDS";
-    if (name.rfind("CHANNEL ", 0) == 0)
-        return (recording ? L"CHANNEL " : L"채널 ") + wide(name.substr(8));
-    if (name.rfind("VOICE ", 0) == 0)
-        return (recording ? L"CHANNEL " : L"채널 ") + wide(name.substr(6));
-    if (recording)
-        return wide(name);
-    if (name == "LEFT")
-        return L"왼쪽 출력";
-    if (name == "RIGHT")
-        return L"오른쪽 출력";
-    if (name == "MONO")
-        return L"모노 출력";
-    if (name == "EFFECTS / OTHER")
-        return L"게임 잔향 / 기타";
-    if (name.rfind("STREAM ", 0) == 0)
-        return L"스트림 " + wide(name.substr(7));
-    if (name == "TRIANGLE")
-        return L"삼각파";
-    if (name == "NOISE")
-        return L"노이즈";
-    if (name == "WAVE")
-        return L"웨이브";
-    if (name.rfind("PULSE ", 0) == 0)
-        return L"펄스 " + wide(name.substr(6));
-    if (name.rfind("SQUARE ", 0) == 0)
-        return L"사각파 " + wide(name.substr(7));
+static std::wstring channelLabel(const std::string &name, bool) {
     return wide(name);
 }
 static std::wstring time(double s) {
@@ -130,13 +97,80 @@ static void volumeButton(HDC dc, const wchar_t *label, int x, int y, int size = 
 }
 void Window::report(const std::exception &e) {
     message_ = wide(e.what());
-    MessageBoxW(hwnd_, message_.c_str(), L"Nintendo Game Music Viewer", MB_OK | MB_ICONERROR);
+    MessageBoxW(hwnd_, message_.c_str(), L"Nintendo Music Studio", MB_OK | MB_ICONERROR);
 }
-void Window::openEditor(bool analyze) {
-    player_.releaseDevice();
-    editor::runMusicEditor(reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(hwnd_,GWLP_HINSTANCE)),hwnd_,{},false,
-                           [this](const std::filesystem::path&p){if(open(p))player_.play();},analyze&&!file_.empty(),analyze?file_:std::filesystem::path{},
-                           [this](const editor::Song&s){player_.openPrepared(editor::makeSampleBackend(s),Format::SampledSong);file_.clear();playlist_={};SetWindowTextW(hwnd_,L"Nintendo Music Studio · 1.4.9 — 편집한 샘플 곡");message_=L"편집한 샘플 곡 · 프로젝트는 공통 편집 화면에 유지됩니다.";player_.play();InvalidateRect(hwnd_,nullptr,FALSE);});
+void Window::showAbout() {
+    if (aboutWindow_ && IsWindow(aboutWindow_)) {
+        ShowWindow(aboutWindow_, screenshot_.empty() ? SW_SHOWNORMAL : SW_SHOWNOACTIVATE);
+        if (screenshot_.empty())
+            SetForegroundWindow(aboutWindow_);
+        return;
+    }
+    auto instance = reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(hwnd_, GWLP_HINSTANCE));
+    WNDCLASSW wc{};
+    wc.hInstance = instance;
+    wc.lpszClassName = L"NintendoMusicStudioInfo";
+    wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+    wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+    wc.lpfnWndProc = [](HWND h, UINT message, WPARAM a, LPARAM b) -> LRESULT {
+        auto self = reinterpret_cast<Window *>(GetWindowLongPtrW(h, GWLP_USERDATA));
+        if (message == WM_NCCREATE) {
+            self = static_cast<Window *>(reinterpret_cast<CREATESTRUCTW *>(b)->lpCreateParams);
+            SetWindowLongPtrW(h, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+        }
+        if (message == WM_CREATE) {
+            auto font = GetStockObject(DEFAULT_GUI_FONT);
+            HWND body = CreateWindowExW(
+                WS_EX_CLIENTEDGE, L"EDIT",
+                L"Nintendo Music Studio 1.5\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
+                L"재생\r\n\r\n"
+                L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
+                L"추가 VGM: YM2612 · YM3812 · MSM6295 · K051649 · ES5506\r\n"
+                L"ES5506은 칩 전체 MIX 버스입니다. 모든 칩/조합의 지원 완료를 뜻하지 "
+                L"않습니다.\r\n\r\n"
+                L"프로그램 라이선스와 구성별 조건: LICENSE-REVIEW.md / licenses 폴더.\r\n"
+                L"음악 파일의 권리는 프로그램 코드와 별개입니다.\r\n\r\n"
+                L"이 창을 열어 둔 상태에서도 본창의 재생·음량·채널 조작을 계속할 수 있습니다.",
+                WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 12,
+                12, 610, 260, h, reinterpret_cast<HMENU>(1), nullptr, nullptr);
+            SendMessageW(body, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+            HWND close =
+                CreateWindowW(L"BUTTON", L"닫기", WS_CHILD | WS_VISIBLE | WS_TABSTOP, 522, 285, 100,
+                              32, h, reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
+            SendMessageW(close, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+            return 0;
+        }
+        if (message == WM_SIZE) {
+            int width = LOWORD(b), height = HIWORD(b);
+            MoveWindow(GetDlgItem(h, 1), 12, 12, std::max(40, width - 24),
+                       std::max(40, height - 68), TRUE);
+            MoveWindow(GetDlgItem(h, IDCANCEL), std::max(12, width - 112),
+                       std::max(52, height - 44), 100, 32, TRUE);
+            return 0;
+        }
+        if (message == WM_CLOSE || (message == WM_COMMAND && LOWORD(a) == IDCANCEL)) {
+            DestroyWindow(h);
+            return 0;
+        }
+        if (message == WM_DESTROY && self) {
+            self->aboutWindow_ = nullptr;
+            return 0;
+        }
+        return DefWindowProcW(h, message, a, b);
+    };
+    if (!RegisterClassW(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
+        throw std::runtime_error("Cannot register player information window.");
+    RECT owner{};
+    GetWindowRect(hwnd_, &owner);
+    aboutWindow_ =
+        CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_CONTROLPARENT, wc.lpszClassName,
+                        L"플레이어 정보 · 지원 범위", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+                        owner.left + 24, owner.top + 48, 660, 370, hwnd_, nullptr, instance, this);
+    if (!aboutWindow_)
+        throw std::runtime_error("Cannot open player information.");
+    ShowWindow(aboutWindow_, screenshot_.empty() ? SW_SHOWNORMAL : SW_SHOWNOACTIVATE);
+    if (screenshot_.empty())
+        SetFocus(GetDlgItem(aboutWindow_, IDCANCEL));
 }
 struct ChangingScope {
     bool &value;
@@ -149,18 +183,36 @@ struct ChangingScope {
 };
 // Only a separate, unpublished decoder is touched by this worker. The active
 // player and all HWND operations remain on the UI thread.
-static std::unique_ptr<IMusicBackend> prepareMusic(HWND window,const std::filesystem::path&path) {
-    auto task=std::async(std::launch::async,[path]{return makeBackend(readMusicFile(path),path);});
-    bool quit=false;int exitCode=0;
-    while(task.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready){
-        MSG msg{};while(PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){
-            if(msg.message==WM_QUIT){quit=true;exitCode=int(msg.wParam);continue;}
-            TranslateMessage(&msg);DispatchMessageW(&msg);
+static std::unique_ptr<IMusicBackend> prepareMusic(HWND window, const std::filesystem::path &path) {
+    auto task =
+        std::async(std::launch::async, [path] { return makeBackend(readMusicFile(path), path); });
+    bool quit = false;
+    int exitCode = 0;
+    while (task.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) {
+        MSG msg{};
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                quit = true;
+                exitCode = int(msg.wParam);
+                continue;
+            }
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
         }
-        MsgWaitForMultipleObjects(0,nullptr,FALSE,15,QS_ALLINPUT);
+        MsgWaitForMultipleObjects(0, nullptr, FALSE, 15, QS_ALLINPUT);
     }
-    try{auto result=task.get();if(quit)PostQuitMessage(exitCode);return IsWindow(window)?std::move(result):nullptr;}
-    catch(...){if(quit)PostQuitMessage(exitCode);if(!IsWindow(window))return nullptr;throw;}
+    try {
+        auto result = task.get();
+        if (quit)
+            PostQuitMessage(exitCode);
+        return IsWindow(window) ? std::move(result) : nullptr;
+    } catch (...) {
+        if (quit)
+            PostQuitMessage(exitCode);
+        if (!IsWindow(window))
+            return nullptr;
+        throw;
+    }
 }
 bool Window::open(const std::filesystem::path &p) {
     if (changing_)
@@ -169,13 +221,17 @@ bool Window::open(const std::filesystem::path &p) {
         ChangingScope guard(changing_);
         auto playlist = FolderPlaylist::scan(p, identify(readMusicFile(p)));
         rememberChannels();
-        message_=L"음악을 불러오는 중…";drag_=-1;InvalidateRect(hwnd_,nullptr,FALSE);
-        auto prepared=prepareMusic(hwnd_,p);if(!prepared)return false;
-        player_.openPrepared(std::move(prepared),identify(readMusicFile(p)));
+        message_ = L"음악을 불러오는 중…";
+        drag_ = -1;
+        InvalidateRect(hwnd_, nullptr, FALSE);
+        auto prepared = prepareMusic(hwnd_, p);
+        if (!prepared)
+            return false;
+        player_.openPrepared(std::move(prepared), identify(readMusicFile(p)));
         restoreChannels();
         file_ = p;
-        SetWindowTextW(
-            hwnd_, (L"Nintendo Music Studio · 1.4.9 — " + file_.filename().wstring()).c_str());
+        SetWindowTextW(hwnd_,
+                       (L"Nintendo Music Studio · 1.5 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
 
         drag_ = -1;
@@ -194,14 +250,17 @@ void Window::selectFolder(size_t index, bool play) {
     ChangingScope guard(changing_);
     const auto path = playlist_.files[index];
     rememberChannels();
-    message_=L"다음 음악을 불러오는 중…";drag_=-1;InvalidateRect(hwnd_,nullptr,FALSE);
-    auto prepared=prepareMusic(hwnd_,path);if(!prepared)return;
-    player_.openPrepared(std::move(prepared),identify(readMusicFile(path)));
+    message_ = L"다음 음악을 불러오는 중…";
+    drag_ = -1;
+    InvalidateRect(hwnd_, nullptr, FALSE);
+    auto prepared = prepareMusic(hwnd_, path);
+    if (!prepared)
+        return;
+    player_.openPrepared(std::move(prepared), identify(readMusicFile(path)));
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_,
-                   (L"Nintendo Music Studio · 1.4.9 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -306,7 +365,7 @@ std::vector<size_t> Window::visibleChannels() const {
     const auto &channels = player_.channels();
     const bool dmcUsed = player_.dmcUsed();
     for (size_t i = 0; i < channels.size(); ++i)
-        if (channels[i].name != "DMC" || dmcUsed)
+        if ((channels[i].name != "DMC" || dmcUsed) && player_.channelVisible(i))
             indices.push_back(i);
     return indices;
 }
@@ -337,9 +396,8 @@ void Window::paint(HDC dc, int width, int height) {
                                                : wide(info.title))
                          : (recording_ ? L"Open a music file" : L"음악 파일을 열어 주세요");
     text(dc, title, 42, 22, recording_ ? 1810 : 1400, 62, 46, RGB(235, 240, 249), true);
-    if (!recording_) button(dc,L"음악 편집 (F3)",1495,22,195);
     if (!recording_)
-        button(dc, L"작곡 (F2)", 1710, 22, 160);
+        button(dc, L"플레이어 정보 (F1)", 1495, 22, 375);
     std::wstring game =
         info.game.empty()
             ? (file_.empty()
@@ -353,7 +411,8 @@ void Window::paint(HDC dc, int width, int height) {
     text(dc,
          time(player_.seconds()) + L" / " +
              (info.lengthMs > 0 ? time(info.lengthMs / 1000.) : L"--:--"),
-         1625, 91, 260, 30, 24, RGB(232, 206, 122));
+         recording_ ? 44 : 1625, recording_ ? 125 : 91, recording_ ? 1800 : 260,
+         recording_ ? 72 : 30, recording_ ? 60 : 24, RGB(232, 206, 122), recording_);
     if (!recording_) {
         button(dc, L"파일 열기", 42, 141, 155);
         button(dc, L"Tracks", 212, 141, 155);
@@ -366,21 +425,29 @@ void Window::paint(HDC dc, int width, int height) {
         button(dc, autoplay_ ? L"자동재생 켜짐" : L"자동재생 꺼짐", 1197, 141, 160, autoplay_);
         button(dc, (std::to_wstring(player_.rate()) + L" Hz").c_str(), 1372, 141, 147);
     }
-    text(dc, recording_ ? L"Volume" : L"전체 음량", 1550, 131, 140, 28, 18, RGB(154, 168, 190));
-    volumeButton(dc, L"−", 1550, 163);
-    line(dc, 1594, 178, 1798, 178, RGB(48, 59, 77), 5);
-    line(dc, 1594, 178, 1594 + int(204 * player_.master()), 178, RGB(80, 203, 180), 5);
-    volumeButton(dc, L"+", 1810, 163);
-    text(dc, std::to_wstring(int(std::round(player_.master() * 100))) + L"%", 1850, 159, 65, 35, 18,
-         RGB(196, 208, 225));
+    if (!recording_) {
+        text(dc, recording_ ? L"Volume" : L"전체 음량", 1550, 131, 140, 28, 18, RGB(154, 168, 190));
+        volumeButton(dc, L"−", 1550, 163);
+        line(dc, 1594, 178, 1798, 178, RGB(48, 59, 77), 5);
+        line(dc, 1594, 178, 1594 + int(204 * player_.master()), 178, RGB(80, 203, 180), 5);
+        volumeButton(dc, L"+", 1810, 163);
+        text(dc, std::to_wstring(int(std::round(player_.master() * 100))) + L"%", 1850, 159, 65, 35,
+             18, RGB(196, 208, 225));
+    }
     if (!recording_) {
         wchar_t speed[64];
-        swprintf_s(speed, L"피치/속도  %.2f×", player_.speed());
-        text(dc, speed, 42, 205, 265, 50, 22, RGB(196, 208, 225));
-        button(dc, speedStep_ == 1 ? L"−0.01" : L"−0.10", 322, 205, 110);
-        button(dc, speedStep_ == 1 ? L"+0.01" : L"+0.10", 447, 205, 110);
-        button(dc, L"초기화", 572, 205, 135);
-        button(dc, player_.reverb() ? L"반향 켜짐" : L"반향 꺼짐", 722, 205, 180, player_.reverb());
+        swprintf_s(speed, L"피치 %.2f×", player_.pitch());
+        text(dc, speed, 42, 205, 165, 50, 22, RGB(196, 208, 225));
+        button(dc, L"−", 212, 205, 70);
+        button(dc, L"+", 292, 205, 70);
+        button(dc, L"1.00", 372, 205, 80);
+        swprintf_s(speed, L"속도 %.2f×", player_.speed());
+        text(dc, speed, 472, 205, 165, 50, 22, RGB(196, 208, 225));
+        button(dc, L"−", 642, 205, 70);
+        button(dc, L"+", 722, 205, 70);
+        button(dc, L"1.00", 802, 205, 80);
+        button(dc, player_.reverb() ? L"반향 켜짐" : L"반향 꺼짐", 1240, 1028, 180,
+               player_.reverb());
         button(dc, speedStep_ == 1 ? L"단위 0.01" : L"단위 0.10", 917, 205, 200);
         text(dc, L"반향 강도", 1140, 205, 130, 50, 20, RGB(154, 168, 190));
         volumeButton(dc, L"−", 1276, 215);
@@ -419,11 +486,11 @@ void Window::paint(HDC dc, int width, int height) {
         COLORREF color = states[c].mute ? RGB(96, 103, 119) : colors[c % 8];
         std::wstring label = channelLabel(channels[c].name, recording_);
         if (cell.compact && channels[c].name == "EFFECTS / OTHER")
-            label = recording_ ? L"FX / OTHER" : L"잔향 / 기타";
+            label = L"FX / OTHER";
         if (cell.compact && !recording_)
             label += L" " + std::to_wstring(int(std::round(states[c].volume * 100))) + L"%";
         if (cell.compact && states[c].mute)
-            label += recording_ ? L" MUTED" : L" 음소거";
+            label += L" MUTED";
         text(dc, label, cell.labelX(),
              y + (cell.compact ? 2
                   : lane < 100 ? 5
@@ -486,11 +553,20 @@ void Window::paint(HDC dc, int width, int height) {
         line(dc, 42, 1016, 1882, 1016, RGB(42, 52, 69), 5);
         line(dc, 42, 1016, x, 1016, RGB(74, 196, 173), 5);
     }
-    if (!recording_ && player_.error().empty())
-        text(dc,
-             L"Ctrl+O 열기  ·  Space 재생/일시정지  ·  ←/→ Track 전환  ·  F9 녹화 화면  ·  "
-             L"F10 기본 앱  ·  F11 전체 화면  ·  Esc 복원  ·  +/- 시간축  ·  A 자동재생",
-             42, 1040, 1840, 30, 18, RGB(112, 130, 153));
+    if (!recording_) {
+        float group = states.empty() ? 1.f : states.front().volume;
+        bool mixed = std::any_of(states.begin(), states.end(),
+                                 [&](const auto &v) { return std::abs(v.volume - group) > .001f; });
+        text(dc, L"모든 채널 음량", 42, 1034, 175, 40, 20, RGB(154, 168, 190));
+        volumeButton(dc, L"−", 222, 1038);
+        line(dc, 264, 1054, 468, 1054, RGB(48, 59, 77), 5);
+        line(dc, 264, 1054, 264 + int(102 * group), 1054, RGB(80, 203, 180), 5);
+        volumeButton(dc, L"+", 480, 1038);
+        text(dc, mixed ? L"혼합" : std::to_wstring(int(std::lround(group * 100))) + L"%", 530, 1034,
+             95, 40, 20, RGB(196, 208, 225));
+        text(dc, L"F1 정보 · F9 녹화뷰 · F11 전체 화면", 660, 1034, 565, 40, 18,
+             RGB(112, 130, 153));
+    }
     if (!player_.error().empty())
         text(dc, (recording_ ? L"Error: " : L"오류: ") + wide(player_.error()), 42, 1048, 1800, 28,
              18, RGB(245, 131, 131));
@@ -500,7 +576,11 @@ void Window::mouseMove(int x, int y) {
     if (drag_ < 0)
         return;
     int lx = int((x - offsetX_) / scale_);
-    if (drag_ == 100)
+    if (recording_)
+        return;
+    if (drag_ == 102)
+        player_.channelVolumes(std::clamp(2.f * (lx - 264) / 204.f, 0.f, 2.f));
+    else if (drag_ == 100)
         player_.master(std::clamp((lx - 1594) / 204.f, 0.f, 1.f));
     else if (drag_ == 101)
         player_.reverbAmount(std::clamp((lx - 1320) / 130.f, 0.f, 1.f));
@@ -525,12 +605,11 @@ void Window::click(int x, int y) {
         return;
     int lx = int((x - offsetX_) / scale_), ly = int((y - offsetY_) / scale_);
     try {
-        if (!recording_ && ly >= 22 && ly < 72 && lx >= 1710 && lx < 1870) {
-            openEditor();
+        if (!recording_ && ly >= 22 && ly < 72 && lx >= 1495 && lx < 1870) {
+            showAbout();
             return;
         }
-        if (!recording_ && ly >= 22 && ly < 72 && lx >= 1495 && lx < 1690) {openEditor(true);return;}
-        if (ly >= 163 && ly < 193 && lx >= 1550 && lx < 1842) {
+        if (!recording_ && ly >= 163 && ly < 193 && lx >= 1550 && lx < 1842) {
             if (lx < 1582)
                 player_.master((std::lround(player_.master() * 100) - 5) / 100.f);
             else if (lx >= 1810)
@@ -543,15 +622,35 @@ void Window::click(int x, int y) {
             InvalidateRect(hwnd_, nullptr, FALSE);
             return;
         }
-        if (!recording_ && ly >= 205 && ly < 255) {
-            if (lx >= 322 && lx < 432)
-                player_.speed((std::lround(player_.speed() * 100) - speedStep_) / 100.f);
-            else if (lx >= 447 && lx < 557)
-                player_.speed((std::lround(player_.speed() * 100) + speedStep_) / 100.f);
-            else if (lx >= 572 && lx < 707)
-                player_.speed(1);
-            else if (lx >= 722 && lx < 902)
+        if (!recording_ && ly >= 1028 && ly < 1078) {
+            auto states = player_.states();
+            float value = states.empty() ? 1.f : states.front().volume;
+            if (lx >= 222 && lx < 254)
+                player_.channelVolumes((std::lround(value * 100) - 5) / 100.f);
+            else if (lx >= 480 && lx < 512)
+                player_.channelVolumes((std::lround(value * 100) + 5) / 100.f);
+            else if (lx >= 264 && lx <= 468) {
+                drag_ = 102;
+                SetCapture(hwnd_);
+                mouseMove(x, y);
+            } else if (lx >= 1240 && lx < 1420)
                 player_.reverb(!player_.reverb());
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            return;
+        }
+        if (!recording_ && ly >= 205 && ly < 255) {
+            if (lx >= 212 && lx < 282)
+                player_.pitch((std::lround(player_.pitch() * 100) - speedStep_) / 100.f);
+            else if (lx >= 292 && lx < 362)
+                player_.pitch((std::lround(player_.pitch() * 100) + speedStep_) / 100.f);
+            else if (lx >= 372 && lx < 452)
+                player_.pitch(1);
+            else if (lx >= 642 && lx < 712)
+                player_.speed((std::lround(player_.speed() * 100) - speedStep_) / 100.f);
+            else if (lx >= 722 && lx < 792)
+                player_.speed((std::lround(player_.speed() * 100) + speedStep_) / 100.f);
+            else if (lx >= 802 && lx < 882)
+                player_.speed(1);
             else if (lx >= 917 && lx < 1117)
                 speedStep_ = speedStep_ == 1 ? 10 : 1;
             else if (ly >= 215 && ly < 245) {
@@ -641,10 +740,12 @@ void Window::click(int x, int y) {
     }
 }
 Window::~Window() {
+    framePacer_.stop();
     releaseBuffer();
 }
 void Window::rememberChannels() {
-    if (!preferencesEnabled_ || !player_.loaded()) return;
+    if (!preferencesEnabled_ || !player_.loaded())
+        return;
     const auto states = player_.states();
     const auto &channels = player_.channels();
     const std::string system = player_.tracks().empty() ? "" : player_.tracks()[0].system;
@@ -655,7 +756,8 @@ void Window::rememberChannels() {
     }
 }
 void Window::restoreChannels() {
-    if (!preferencesEnabled_ || !player_.loaded()) return;
+    if (!preferencesEnabled_ || !player_.loaded())
+        return;
     const auto &channels = player_.channels();
     const std::string system = player_.tracks().empty() ? "" : player_.tracks()[0].system;
     for (size_t i = 0; i < channels.size(); ++i) {
@@ -667,22 +769,31 @@ void Window::restoreChannels() {
     }
 }
 void Window::savePreferences() {
-    if (!preferencesEnabled_ || changing_) return;
+    if (!preferencesEnabled_ || changing_)
+        return;
     rememberChannels();
     auto &v = preferences_.values;
+    v["controlsRevision"] = 1415;
     v["master"] = int(std::lround(player_.master() * 100));
     v["speed"] = int(std::lround(player_.speed() * 100));
-    v["speedStep"] = speedStep_; v["rate"] = player_.rate();
+    v["pitch"] = int(std::lround(player_.pitch() * 100));
+    v["speedStep"] = speedStep_;
+    v["rate"] = player_.rate();
     v["reverb"] = player_.reverb();
     v["reverbAmount"] = int(std::lround(player_.reverbAmount() * 100));
     v["reverbDecay"] = int(std::lround(player_.reverbDecay() * 10));
-    v["repeat"] = player_.repeat(); v["autoplay"] = autoplay_;
-    v["recording"] = recording_; v["windowSamples"] = windowSamples_;
+    v["repeat"] = player_.repeat();
+    v["autoplay"] = autoplay_;
+    v["recording"] = recording_;
+    v["windowSamples"] = windowSamples_;
     if (!fullscreen_ && !IsIconic(hwnd_) && !IsZoomed(hwnd_)) {
-        RECT rect{}; GetClientRect(hwnd_, &rect);
-        v["width"] = rect.right; v["height"] = rect.bottom;
+        RECT rect{};
+        GetClientRect(hwnd_, &rect);
+        v["width"] = rect.right;
+        v["height"] = rect.bottom;
     }
-    if (!fullscreen_ && !IsIconic(hwnd_)) v["maximized"] = IsZoomed(hwnd_) != FALSE;
+    if (!fullscreen_ && !IsIconic(hwnd_))
+        v["maximized"] = IsZoomed(hwnd_) != FALSE;
     auto text = preferences_.text();
     if (text != savedPreferences_ && preferences_.save(desktop::Settings::path()))
         savedPreferences_ = std::move(text);
@@ -846,9 +957,59 @@ LRESULT CALLBACK Window::procedure(HWND w, UINT m, WPARAM a, LPARAM b) {
 }
 LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
     switch (m) {
+    case WM_APP + 74:
+        // Read-only scalar observations for our isolated offscreen regression.
+        // No pointers, audio data or user settings are exposed by this hook.
+        if (!screenshot_.empty() && desktop::automatedSession()) {
+            switch (a) {
+            case 0:
+                return player_.loaded();
+            case 1:
+                return player_.playing();
+            case 2:
+                return LRESULT(player_.seconds() * 1000);
+            case 3:
+                return LRESULT(std::lround(player_.master() * 100));
+            case 5:
+                return LRESULT(std::lround(player_.speed() * 100));
+            case 6:
+                return LRESULT(std::lround(player_.pitch() * 100));
+            case 7:
+                return LRESULT(std::lround(player_.reverbAmount() * 100));
+            case 8:
+                return LRESULT(std::lround(player_.reverbDecay() * 10));
+            case 9:
+                return speedStep_;
+            case 12:
+                return LRESULT(player_.underruns());
+            case 13:
+                return !player_.error().empty();
+            case 10: {
+                auto states = player_.states();
+                return states.empty() ? 0 : LRESULT(std::lround(states[0].volume * 100));
+            }
+            case 11: {
+                auto states = player_.states();
+                return std::all_of(states.begin(), states.end(), [&](const auto &v) {
+                    return states.empty() || v.volume == states[0].volume;
+                });
+            }
+            case 4: {
+                auto states = player_.states();
+                return !states.empty() && states[0].mute;
+            }
+            }
+        }
+        return 0;
+    case DisplayPacer::Message:
+        framePacer_.acknowledge();
+        if (!IsIconic(hwnd_) && (player_.playing() || changing_))
+            InvalidateRect(hwnd_, nullptr, FALSE);
+        return 0;
     case WM_COPYDATA: {
         std::wstring path;
-        if (pendingFiles_.size() >= 32 || !desktop::decodeRequest(reinterpret_cast<COPYDATASTRUCT *>(b), path))
+        if (pendingFiles_.size() >= 32 ||
+            !desktop::decodeRequest(reinterpret_cast<COPYDATASTRUCT *>(b), path))
             return FALSE;
         pendingFiles_.push_back(std::move(path));
         PostMessageW(hwnd_, desktop::OpenQueuedFile, 0, 0);
@@ -868,19 +1029,29 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
                 FlashWindowEx(&flash);
             }
             try {
-                if (!path.empty() && open(path)) player_.play();
-            } catch (const std::exception &e) { report(e); }
-            if (!pendingFiles_.empty()) PostMessageW(hwnd_, desktop::OpenQueuedFile, 0, 0);
+                if (!path.empty() && open(path))
+                    player_.play();
+            } catch (const std::exception &e) {
+                report(e);
+            }
+            if (!pendingFiles_.empty())
+                PostMessageW(hwnd_, desktop::OpenQueuedFile, 0, 0);
         }
         return 0;
     case desktop::AskDefaultApps:
-        try { desktop::defaultAppsPrompt(hwnd_, false, recording_); }
-        catch (const std::exception &e) { report(e); }
+        try {
+            desktop::defaultAppsPrompt(hwnd_, false, recording_);
+        } catch (const std::exception &e) {
+            report(e);
+        }
         return 0;
     case WM_SYSCOMMAND:
         if ((a & 0xfff0) == desktop::DefaultAppsCommand) {
-            try { desktop::defaultAppsPrompt(hwnd_, true, recording_); }
-            catch (const std::exception &e) { report(e); }
+            try {
+                desktop::defaultAppsPrompt(hwnd_, true, recording_);
+            } catch (const std::exception &e) {
+                report(e);
+            }
             return 0;
         }
         break;
@@ -903,16 +1074,21 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         return 0;
     }
     case WM_TIMER:
-        if (a == 4) { savePreferences(); return 0; }
+        if (a == 4) {
+            savePreferences();
+            return 0;
+        }
         if (a == 3) {
             KillTimer(hwnd_, 3);
             PostMessageW(hwnd_, desktop::OpenQueuedFile, 0, 0);
             return 0;
         }
         try {
-            bool scheduledEnd = player_.loaded() && player_.tracks()[player_.track()].lengthMs > 0 &&
-                player_.seconds()*1000 >= player_.tracks()[player_.track()].lengthMs;
-            bool advance = player_.repeat() || (autoplay_ && playlist_.active() && playlist_.current+1<playlist_.files.size());
+            bool scheduledEnd =
+                player_.loaded() && player_.tracks()[player_.track()].lengthMs > 0 &&
+                player_.seconds() * 1000 >= player_.tracks()[player_.track()].lengthMs;
+            bool advance = player_.repeat() || (autoplay_ && playlist_.active() &&
+                                                playlist_.current + 1 < playlist_.files.size());
             if (!changing_ && player_.playing() && (player_.ended() || (scheduledEnd && advance))) {
                 bool repeat = player_.repeat();
                 player_.pause();
@@ -934,7 +1110,8 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         } catch (const std::exception &e) {
             report(e);
         }
-        InvalidateRect(hwnd_, nullptr, FALSE);
+        if (a != 1)
+            InvalidateRect(hwnd_, nullptr, FALSE);
         return 0;
     case WM_SIZE:
         InvalidateRect(hwnd_, nullptr, FALSE);
@@ -964,9 +1141,8 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         if (changing_)
             return 0;
         try {
-            if (a == VK_F2)
-                openEditor();
-            else if(a==VK_F3)openEditor(true);
+            if (a == VK_F1)
+                showAbout();
             else if (a == 'O' && (GetKeyState(VK_CONTROL) & 0x8000))
                 openDialog();
             else if (a == VK_SPACE) {
@@ -978,11 +1154,12 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
                 autoplay_ = !autoplay_;
             else if (a == VK_F9) {
                 recording_ = !recording_;
+                drag_ = -1;
+                ReleaseCapture();
                 ModifyMenuW(GetSystemMenu(hwnd_, FALSE), desktop::DefaultAppsCommand,
-                    MF_BYCOMMAND | MF_STRING, desktop::DefaultAppsCommand,
-                    recording_ ? L"Default apps... (F10)" : L"기본 앱 설정... (F10)");
-            }
-            else if (a == VK_F10)
+                            MF_BYCOMMAND | MF_STRING, desktop::DefaultAppsCommand,
+                            recording_ ? L"Default apps... (F10)" : L"기본 앱 설정... (F10)");
+            } else if (a == VK_F10)
                 desktop::defaultAppsPrompt(hwnd_, true, recording_);
             else if (a == VK_F11)
                 toggleFullscreen();
@@ -1008,9 +1185,12 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         return 0;
     }
     case WM_CLOSE:
-        if(editor::confirmMusicEditorExit(hwnd_))DestroyWindow(hwnd_);
+        DestroyWindow(hwnd_);
         return 0;
     case WM_DESTROY:
+        if (aboutWindow_ && IsWindow(aboutWindow_))
+            DestroyWindow(aboutWindow_);
+        framePacer_.stop();
         savePreferences();
         RemovePropW(hwnd_, desktop::InstanceProperty);
         PostQuitMessage(0);
@@ -1019,30 +1199,40 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
     return DefWindowProcW(hwnd_, m, a, b);
 }
 int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
-                const std::filesystem::path &screenshot, int width, int height, bool recording, bool playInitial) {
+                const std::filesystem::path &screenshot, int width, int height, bool recording,
+                bool playInitial) {
     SetProcessDPIAware();
     player_.continueAfterLength(true);
     recording_ = recording;
-    preferencesEnabled_ = screenshot.empty() && (!desktop::automatedSession() ||
-        GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
+    preferencesEnabled_ = (screenshot.empty() ||
+                           GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0) &&
+                          (!desktop::automatedSession() ||
+                           GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
     if (preferencesEnabled_) {
         preferences_.load(desktop::Settings::path());
         player_.master(preferences_.get("master", 100, 0, 100) / 100.f);
         player_.speed(preferences_.get("speed", 100, 50, 200) / 100.f);
-        speedStep_ = preferences_.get("speedStep", 10, 1, 10) == 1 ? 1 : 10;
+        player_.pitch(preferences_.get("pitch", 100, 50, 200) / 100.f);
+        const bool currentDefaults = preferences_.get("controlsRevision", 0, 0, 9999) >= 1415;
+        speedStep_ = currentDefaults && preferences_.get("speedStep", 1, 1, 10)==10 ? 10 : 1;
         player_.reverb(preferences_.get("reverb", 0, 0, 1) != 0);
-        player_.reverbAmount(preferences_.get("reverbAmount", 45, 0, 100) / 100.f);
-        player_.reverbDecay(preferences_.get("reverbDecay", 12, 1, 30) / 10.f);
+        player_.reverbAmount((currentDefaults ? preferences_.get("reverbAmount", 76, 0, 100) : 76) /
+                             100.f);
+        player_.reverbDecay((currentDefaults ? preferences_.get("reverbDecay", 30, 1, 30) : 30) /
+                            10.f);
         player_.repeat(preferences_.get("repeat", 0, 0, 1) != 0);
         autoplay_ = preferences_.get("autoplay", 1, 0, 1) != 0;
         recording_ = recording || preferences_.get("recording", 0, 0, 1) != 0;
         int samples = preferences_.get("windowSamples", 2048, 256, 4096);
-        if ((samples & (samples - 1)) == 0) windowSamples_ = samples;
+        if ((samples & (samples - 1)) == 0)
+            windowSamples_ = samples;
         width = preferences_.get("width", width, 800, 8192);
         height = preferences_.get("height", height, 490, 8192);
         // A previously available output rate may fail on a different device.
-        try { player_.rate(preferences_.get("rate", 96000, 16000, 96000)); }
-        catch (const std::exception &) { /* Keep the output's existing default. */ }
+        try {
+            player_.rate(preferences_.get("rate", 96000, 16000, 96000));
+        } catch (const std::exception &) { /* Keep the output's existing default. */
+        }
     }
     WNDCLASSW wc{};
     wc.hInstance = instance;
@@ -1050,22 +1240,25 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     wc.lpfnWndProc = procedure;
     wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wc.hIcon = static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(101), IMAGE_ICON,
-                                            GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED));
+                                             GetSystemMetrics(SM_CXICON),
+                                             GetSystemMetrics(SM_CYICON), LR_SHARED));
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.4.9",
-                          WS_OVERLAPPEDWINDOW, screenshot.empty() ? CW_USEDEFAULT : -20000,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5", WS_OVERLAPPEDWINDOW,
+                          screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);
     if (!hwnd_)
         throw std::runtime_error("Cannot create window.");
     SendMessageW(hwnd_, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(wc.hIcon));
-    auto smallIcon = LoadImageW(instance, MAKEINTRESOURCEW(101), IMAGE_ICON,
-                              GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
+    auto smallIcon =
+        LoadImageW(instance, MAKEINTRESOURCEW(101), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON),
+                   GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     SendMessageW(hwnd_, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(smallIcon));
     if (screenshot.empty()) {
-        if (!SetPropW(hwnd_, desktop::InstanceProperty, reinterpret_cast<HANDLE>(desktop::instanceToken())))
+        if (!SetPropW(hwnd_, desktop::InstanceProperty,
+                      reinterpret_cast<HANDLE>(desktop::instanceToken())))
             throw std::runtime_error("Cannot initialize file handoff.");
         auto menu = GetSystemMenu(hwnd_, FALSE);
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -1073,24 +1266,44 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                     recording_ ? L"Default apps... (F10)" : L"기본 앱 설정... (F10)");
     }
     DragAcceptFiles(hwnd_, TRUE);
-    ShowWindow(hwnd_, preferencesEnabled_ && preferences_.get("maximized", 0, 0, 1) ? SW_SHOWMAXIMIZED : SW_SHOW);
+    ShowWindow(hwnd_, preferencesEnabled_ && preferences_.get("maximized", 0, 0, 1)
+                          ? SW_SHOWMAXIMIZED
+                          : SW_SHOW);
     if (!screenshot.empty()) {
         SetWindowPos(hwnd_, nullptr, 0, 0, r.right - r.left, r.bottom - r.top,
                      SWP_NOZORDER | SWP_NOMOVE);
     }
     SetTimer(hwnd_, 1, 16, nullptr);
-    if (preferencesEnabled_) SetTimer(hwnd_, 4, 1000, nullptr);
+    framePacer_.start(hwnd_);
+    if (preferencesEnabled_)
+        SetTimer(hwnd_, 4, 1000, nullptr);
     if (!initial.empty() && open(initial) && playInitial)
         player_.play();
-    if (screenshot.empty()) PostMessageW(hwnd_, desktop::AskDefaultApps, 0, 0);
+    if (screenshot.empty())
+        PostMessageW(hwnd_, desktop::AskDefaultApps, 0, 0);
     if (!screenshot.empty()) {
         if (player_.loaded())
             player_.play();
         screenshot_ = screenshot.wstring();
-        SetTimer(hwnd_, 2, 1200, nullptr);
+        unsigned delay = 1200;
+        if (desktop::automatedSession()) {
+            wchar_t value[16]{};
+            DWORD size = GetEnvironmentVariableW(L"NGMV_TEST_SNAPSHOT_MS", value, 16);
+            if (size && size < 16)
+                delay = unsigned(std::clamp(_wtoi(value), 1200, 20000));
+        }
+        SetTimer(hwnd_, 2, delay, nullptr);
     }
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
+        if (aboutWindow_ && (msg.hwnd == aboutWindow_ || IsChild(aboutWindow_, msg.hwnd))) {
+            if (msg.message == WM_KEYDOWN && msg.wParam == VK_F1) {
+                showAbout();
+                continue;
+            }
+            if (IsDialogMessageW(aboutWindow_, &msg))
+                continue;
+        }
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }

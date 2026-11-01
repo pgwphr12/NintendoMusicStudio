@@ -1,6 +1,6 @@
 # Third-party notices
 
-## Game_Music_Emu 0.6.5
+# # Game_Music_Emu 0.6.5
 
 Upstream: https://github.com/libgme/game-music-emu/tree/0.6.5
 
@@ -8,17 +8,17 @@ Used for NSF/NSFE/SPC/GBS/VGM music playback, metadata and actual voice mute/iso
 
 The upstream archive also contains GPL-only components (such as the alternative MAME YM2612 core); those and non-target systems are not built. The archive's GPL text is included to preserve upstream notices, the new application now separately uses GPL-2.0-or-later. Consult per-file notices when changing the supported core selection. Do not replace gme.dll with a different architecture or incompatible API. Users may rebuild and replace the LGPL library for their own modified library use.
 
-## SDL2 2.30.11
+# # SDL2 2.30.11
 
 Upstream: https://github.com/libsdl-org/SDL/tree/release-2.30.11
 
 Used for device audio callbacks and output device management; native Win32/GDI handles the UI. SDL2 is statically linked; zlib license, copyright Sam Lantinga and contributors. Full unmodified source: third_party/SDL-2.30.11.zip; SHA256 175eff804dface261f0ea239244da6c2f851b2b296d1ba70c42b6b710a90d6f5. LICENSE.txt is also copied to licenses/SDL2.txt.
 
-## Application and fixtures
+# # Application and fixtures
 
 No Mesen/MesenCE source, UI or ROM is included. Reference video is used only for visual study and is not distributed. Own test music drivers are original generated diagnostic music, explicitly labeled as such; they are not Zelda music. The newly authored application and fixtures are licensed GPL-2.0-or-later; see LICENSE.
 
-## GBA and DS music cores
+# # GBA and DS music cores
 
 GBA: viogsf/VBA-M from https://github.com/xbmc/audiodecoder.gsf at b0c965cfa5c1e6242925f23acdba391aaf4517c7. Original archive audiodecoder.gsf-b0c965cfa5c1e6242925f23acdba391aaf4517c7.zip, SHA256 6fc66b01855bde6286ad991efefea28e391abb4b7711c101ab52434659c8037b. Full compiled core source in third_party/viogsf; original notices and per-file GPL/LGPL terms retained. Application builds the core only, without Kodi APIs.
 
@@ -28,9 +28,9 @@ zlib 1.3.1: https://github.com/madler/zlib/tree/v1.3.1, zlib license. Full sourc
 
 The user selected GPL-2.0-or-later for the combined application on 2026-10-10. See LICENSE. Complete corresponding application and core sources, patches, build files and notices are included in the separate corresponding source ZIP. The original first V1 package predates this licensing choice.
 
-## Nintendo 64 and 3DS
+# # Nintendo 64 and 3DS
 
-LazyUSF from https://github.com/xbmc/audiodecoder.usf at 0df2a0a09fd8f68e3275c20e6fec3d5cab14f621. Archive audiodecoder.usf-0df2a0a09fd8f68e3275c20e6fec3d5cab14f621.zip SHA256 6b7a041f17d8c26b1512864b9ed8c51c584be538c0d536651ca632409b67bd62. Full compiled source third_party/lazyusf; CC0 core and GPL-2.0-or-later RSP HLE portions retain per-file notices. Local CMake removes GCC-only optional compiler probes. The application's own PSF parser validates reserved upload bounds before passing them to LazyUSF.
+lazyusf2 from the official Cog distribution, https://github.com/losnoco/Cog commit0ac68cc947a66fc88c130324a593f9bfca698d1a, Frameworks/lazyusf2/lazyusf2. The component-specific Acknowledgements/Acknowledgements.json entry explicitly declares GPL-2.0-or-later. This is also published at https://cog.losno.co/acknowledgements/. Original authors include Hacktarux, Richard Goedeken, Bobby Smiles, Ari64 and zilmar; USF integration maintained by Christopher Snowhill. Full source is third_party/lazyusf, with pinned LICENSE-EVIDENCE.json and hashed acknowledgement excerpt. Per-file CC0 RSP LLE and X-Scale BSD-2-Clause CIC exceptions remain; see licenses/lazyusf-CC0.txt and lazyusf2-CIC-BSD-2-Clause.txt. GPL2 full text is licenses/lazyusf2-Cog-GPL-2.txt. Complete source permits rebuilding/relinking. Local changes: Windows x64 rounding API, own read-only HLE voice/DMA observer callbacks, cached-interpreter CMake. No old Project64-restricted CPU source or archive is included.
 
 vgmstream from https://github.com/vgmstream/vgmstream at 7dc938fa2f210943b37c7b6511852b516ef432ab. Archive vgmstream-7dc938fa2f210943b37c7b6511852b516ef432ab.zip SHA256 7618962679274a1d3b7da886d82365628ad15af55be8937db2f6df322643606f. Full compiled source third_party/vgmstream and COPYING are included. ISC-style license plus per-file notices. External codec libraries and player plugins are disabled; only native BCSTM/BCWAV header dispatch is exposed by the application. Build-generated version_auto.h is included with the source tree.
 
@@ -38,13 +38,49 @@ The application CMake configuration enables UTF-8 compilation for libvgmstream a
 
 V1.1 modifications dated 2026-10-10: SPU_Mix in vio2sf SPU.cpp now skips the terminal one-shot fetch position before waveform capture or mixing; see docs/DS-STABILITY.md. Original upstream notices and pinned archives are retained.
 
-V1.2 modifications (2026-10-10): viogsf GBA.h/Sound.cpp use a 16-kernel source-rate PCM reconstruction bank. LazyUSF usf.h/usf.c, audio.c and rsp_hle/{hle_internal.h,alist.c,alist_audio.c,alist_naudio.c} add read-only dry envelope-slot taps and buffer/DMA observers. Original archives and licenses remain unchanged; full modified sources are included.
+V1.2 modifications (2026-10-10): viogsf GBA.h/Sound.cpp use a 16-kernel source-rate PCM reconstruction bank. LazyUSF usf.h/usf.c, audio.c and rsp_hle/{hle_internal.h,alist.c,alist_audio.c,alist_naudio.c} add read-only dry envelope-slot taps and buffer/DMA observers. Historical1.2 archives are preserved in prior releases;1.4.17 uses the new N64 source described above. Full current modified sources and notices are included.
 
-## V1.3 Sega changes · 2026-10-10
+# # V1.3 Sega changes · 2026-10-10
 
 VGM is enabled with the LGPL-2.1-or-later GENS YM2612 implementation, copyright Stéphane Dallongeville and Shay Green. The alternative GPL MAME and Nuked implementations are not compiled. YM2413 uses the bundled MIT emu2413 by Mitsutaka Okazaki; licenses/emu2413-MIT.txt preserves its notice. Local LGPL interface modifications replace the empty YM2413 stub and separate SMS FM/rhythm/PSG and Genesis FM/DAC/PSG voices. Complete modified Vgm_Emu.cpp, Ym2413_Emu.cpp and Ym2413_Emu.h are in third_party/gme-sega-patch; third_party/apply_gme_sega.cmake verifies original/patched hashes. Vgm_Emu.cpp retains original notices. The original libgme archive is unchanged. The application validates VGM command/PCM bounds and decompresses VGZ using zlib. Distribute the matching source ZIP alongside the runtime ZIP; see SOURCE.md.
 
 
-## V1.4.8 GBA source-state inspection · 2026-10-30
+# # V1.4.8 GBA source-state inspection · 2026-10-30
 
 Local Gb_Apu.h/.cpp modifications add default-off read-only sticky PSG enabled/DAC/envelope/routing observation for explicit offline import. Oscillator stepping, samples and serialized register state are unchanged. Original LGPL notices remain; complete corresponding modified source is included. GbaMixCapture separately observes standard-m4a CGB START writes, including muted notes, to reject unsupported PSG imports rather than silently dropping them.
+
+
+V1.4.10 local modifications (2026-10-31): viogsf GBA.h/Sound.cpp add null-default read-only APU register/volume/frame observer callbacks; original synthesis remains unchanged. Full corresponding modified sources and original GPL/LGPL notices retained; GbaPsgMirror is new application GPL code.
+
+
+# # 1.4.17 VGM license replacements
+
+The old unassigned libvgm player/utils/SoundEmu/Resampler code, its selected undeclared Gens YM2612 copy and the old noncommercial-MAME ES5506 adaptation are absent from this source tree and runtime build. Their historical releases remain separate; they are not relicensed by this change.
+
+The new bounded VGM scheduler/metadata reader/DAC-stream handling and causal resampling adapters are independent application GPL-2.0-or-later code in src/formats/ExtendedVgmBackend.cpp and LicensedChips.cpp/.hpp. Minimal functional C ABI declarations under third_party/licensed-chips are independently authored; no old libvgm framework/header implementations are carried over.
+
+Selected cores retain explicit original notices, with receipts in third_party/licensed-chips/UPSTREAM.json:
+
+- fmopl.c: GPL-2.0-or-later, Jarek Burczynski/Tatsuyuki Satoh. Only OPL2 is compiled; local change guards the unused Y8950 header include. Full GPL2 text is supplied.
+- k051649.c: BSD-3-Clause, Bryan McPhail.
+- okim6295.c: BSD-3-Clause, Mirko Buffoni/Aaron Giles; okiadpcm.c/.h: BSD-3-Clause, Andrew Gardner/Aaron Giles. Full BSD notice is licenses/selected-chips-BSD-3-Clause.txt.
+- ym3438.c and ym3438_int.h: LGPL-2.1-or-later, Alexey Khokholov (Nuke.YKT), Nuked OPN2. Original license retained. licenses/Nuked-OPN2-LGPL-2.1.txt is supplied. The complete corresponding library/application source and CMake relinking build are supplied to meet LGPL2.1 section6a; no unsupported conversion of its source notices is asserted.
+- vgsound_emu ES5506: zlib, cam900 and contributors. Pinned Furnace mirror592e7fd387e7bb5f0c908452c60632c8d37cdc39, subtree extern/vgsound_emu-modified/vgsound_emu. Upstream used core files are unmodified; own integration uses a direct20-bit voice-bus tap rather than pretending to observe physical serial pins. Original LICENSE and per-file zlib headers retained, also licenses/vgsound-ES5506-zlib.txt.
+
+The necessary replacement changes synthesis/resampling implementations and output calibration. It preserves the supported command subset and tested channels/replay/seek/mute, not bit-identical PCM or universal hardware accuracy. ES5505 is rejected explicitly rather than synthesized as ES5506.
+
+# # N64 replacement —1.4.17
+
+The previous root-CC0 interpretation was too broad; the old Project64 noncommercial/personal-use source has been removed, not relabeled. N64 remains enabled using the official Cog-specific GPL lazyusf2 distribution described above. The separate GitLab repository's missing root grant was not filled in by assumption. The pinned Cog component-specific declaration and actual distributed source are the evidence. No question/contact was posted, following the user's instruction. Original exceptions/attributions remain, and the own voice observer is ported only onto GPL HLE code. This does not grant rights to game music or ROM data.
+
+# # Independent pitch/tempo (1.4.15)
+
+Signalsmith Stretch by Geraint Luff / Signalsmith Audio Ltd. and Signalsmith Linear by Signalsmith Audio: MIT. Pinned unmodified headers, source metadata and MIT notices are included in third_party/signalsmith/; license texts are also in licenses/Signalsmith-{Stretch,Linear}-MIT.txt. The own integration is src/audio/PitchTempo.cpp. No optional external FFT backend is enabled. MIT notices remain unchanged. The VGM/N64 replacements above remove the identified earlier licensing blockers. The current internal candidate is not a public release or legal certification.
+
+## 1.4.18 sound correction
+
+Own GPL adapter/scheduler changes restore SCC native-rate handling and remove chip-count attenuation. Native sample-cell overlap integration is independently authored. Licensed cores and original notices remain unchanged; no old libvgm resampler or restricted core is restored.
+
+# # Public1.5 package
+
+Nintendo Music Studio1.5 retains the licensed replacement cores and18sound fixes. Display branding/version and Windows application identity changed; audio core source is unchanged from18. Full matching source/build inputs and all original component notices are distributed together. Old internal-version findings above are historical; current source/notice mapping is in LICENSE-INVENTORY.json.

@@ -1,4 +1,5 @@
 #include "audio/Resampler.hpp"
+#include "audio/Resampler.hpp"
 #include "formats/UsfVoiceTap.hpp"
 extern "C" {
 #include <rsp_hle/alist.h>
@@ -545,7 +546,8 @@ static void effectsTests() {
     }
     require(early > 1e-5 && late < early * .01, "Reverb tail missing or failed to decay");
     effect.enabled(false);
-    for (int i = 0; i < 1000; ++i)
+    // 76% wet now needs up to1520 samples at the existing0.0005/sample fade.
+    for (int i = 0; i < 2000; ++i)
         effect.process({0, 0});
     dry = effect.process({.4f, -.2f});
     require(dry.l == .4f && dry.r == -.2f, "Reverb bypass retained an effect");

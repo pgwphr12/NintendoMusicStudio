@@ -2,12 +2,14 @@
 #include "app/Settings.hpp"
 #include "player/FolderPlaylist.hpp"
 #include "player/Player.hpp"
+#include "DisplayPacer.hpp"
 #include <filesystem>
 #include <deque>
 #include <windows.h>
 namespace ngmv {
 class Window {
     HWND hwnd_ = nullptr;
+    HWND aboutWindow_ = nullptr;
     HDC bufferDC_ = nullptr;
     HBITMAP bufferBitmap_ = nullptr;
     HGDIOBJ bufferOld_ = nullptr;
@@ -20,6 +22,7 @@ class Window {
     unsigned long *bufferPixels_ = nullptr;
     void drawWaves();
     void releaseBuffer();
+    DisplayPacer framePacer_;
     Player player_;
     std::filesystem::path file_;
     FolderPlaylist playlist_;
@@ -30,7 +33,7 @@ class Window {
     bool recording_ = false, fullscreen_ = false;
     bool autoplay_ = true;
     int windowSamples_ = 2048;
-    int speedStep_ = 10;
+    int speedStep_ = 1;
     desktop::Settings preferences_;
     bool preferencesEnabled_ = false;
     std::string savedPreferences_;
@@ -51,7 +54,7 @@ class Window {
     void click(int, int);
     void mouseMove(int, int);
     void openDialog();
-    void openEditor(bool analyze=false);
+    void showAbout();
     bool open(const std::filesystem::path &);
     void tracksMenu();
     void rateMenu();

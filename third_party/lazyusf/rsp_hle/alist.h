@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *   Mupen64plus-rsp-hle - alist.h                                         *
- *   Mupen64Plus homepage: http://code.google.com/p/mupen64plus/           *
+ *   Mupen64Plus homepage: https://mupen64plus.org/                        *
  *   Copyright (C) 2014 Bobby Smiles                                       *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,14 +23,18 @@
 #define ALIST_INTERNAL_H
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 struct hle_t;
 
 typedef void (*acmd_callback_t)(struct hle_t* hle, uint32_t w1, uint32_t w2);
 
+#ifdef DEBUG_INFO
+void alist_process(struct hle_t* hle, const acmd_callback_t abi[], unsigned int abi_size, const char* abi_names[]);
+#else
 void alist_process(struct hle_t* hle, const acmd_callback_t abi[], unsigned int abi_size);
+#endif
 uint32_t alist_get_address(struct hle_t* hle, uint32_t so, const uint32_t *segments, size_t n);
 void alist_set_address(struct hle_t* hle, uint32_t so, uint32_t *segments, size_t n);
 void alist_clear(struct hle_t* hle, uint16_t dmem, uint16_t count);
@@ -110,7 +114,7 @@ void alist_adpcm(
         uint32_t last_frame_address);
 
 void alist_resample(
-        struct hle_t* hle,
+        struct hle_t* hle, 
         bool init,
         bool flag2,
         uint16_t dmemo, uint16_t dmemi, uint16_t count,
@@ -149,6 +153,13 @@ void alist_iirf(
         uint16_t count,
         int16_t* table,
         uint32_t address);
+
+void alist_overload(
+        struct hle_t* hle,
+        uint16_t dmem,
+        int16_t count,
+        int16_t gain,
+        int16_t attenuation);
 
 /*
  * Audio flags

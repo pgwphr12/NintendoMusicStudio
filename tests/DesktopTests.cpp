@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     HKEY isolated = nullptr;
     const std::wstring testKey = L"Software\\NGMVDesktopTests\\" + std::to_wstring(GetCurrentProcessId());
     try {
-        const std::filesystem::path exe = L"C:\\음악 프로그램\\NintendoGameMusicViewer.exe";
+        const std::filesystem::path exe = L"C:\\음악 프로그램\\NintendoMusicStudio.exe";
         auto extensions = supportedExtensions();
         check(extensions.size() == 14 && std::set<std::wstring>(extensions.begin(), extensions.end()).size() == 14, "14 unique extensions required");
         auto entries = registrationPlan(exe);
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
             check(RegOverridePredefKey(HKEY_CURRENT_USER, isolated) == ERROR_SUCCESS, "Override test HKCU");
             defaultAppsPrompt(nullptr, false, false);
             DWORD suppressed = 0, size = sizeof suppressed;
-            check(RegGetValueW(HKEY_CURRENT_USER, L"Software\\NintendoGameMusicViewer\\Preferences", L"DontAskDefaultApps", RRF_RT_REG_DWORD, nullptr, &suppressed, &size) == ERROR_SUCCESS && suppressed == 1, "Remember don't ask again");
+            check(RegGetValueW(HKEY_CURRENT_USER, L"Software\\GameMusicPlayer\\Preferences", L"DontAskDefaultApps", RRF_RT_REG_DWORD, nullptr, &suppressed, &size) == ERROR_SUCCESS && suppressed == 1, "Remember don't ask again");
             defaultAppsPrompt(nullptr, false, false); // Must skip, without a dialog.
             defaultAppsPrompt(nullptr, true, true); // F10 must still work.
             RegOverridePredefKey(HKEY_CURRENT_USER, nullptr);

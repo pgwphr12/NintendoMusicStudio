@@ -30,10 +30,13 @@
   #define OSAL_BREAKPOINT_INTERRUPT __asm{ int 3 };
   #define ALIGN(BYTES,DATA) __declspec(align(BYTES)) DATA
   #define osal_inline __inline
+  #define osal_fastcall __fastcall
 
   /* string functions */
   #define osal_insensitive_strcmp(x, y) _stricmp(x, y)
-  #define snprintf _snprintf
+  #if _MSC_VER < 1900
+    #define snprintf _snprintf
+  #endif
   #define strdup _strdup
 
   /* for isnan() */
@@ -46,6 +49,11 @@
   #define OSAL_BREAKPOINT_INTERRUPT __asm__(" int $3; ");
   #define ALIGN(BYTES,DATA) DATA __attribute__((aligned(BYTES)))
   #define osal_inline inline
+  #ifdef __i386__
+    #define osal_fastcall __attribute__((regparm(1)))
+  #else
+    #define osal_fastcall
+  #endif
 
   /* string functions */
   #define osal_insensitive_strcmp(x, y) strcasecmp(x, y)

@@ -19,7 +19,8 @@ class Settings {
         wchar_t folder[MAX_PATH]{};
         if (FAILED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, folder)))
             return {};
-        return std::filesystem::path(folder) / L"NintendoGameMusicViewer" / L"settings.ini";
+        // Keep the established INI location so public1.5 preserves prior user settings.
+        return std::filesystem::path(folder) / L"GameMusicPlayer" / L"settings.ini";
     }
     void load(const std::filesystem::path &file) {
         values.clear();

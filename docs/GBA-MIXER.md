@@ -1,3 +1,7 @@
+# Historical Studio development record
+
+The notes below describe prior1.4.0–1.4.12 work. Version1.4.13 is player-only: composition, piano-roll import, source editing and project/WAV export are not built or exposed. Current playback support/limits are in README.md; license findings in LICENSE-REVIEW.md.
+
 # GBA software PCM voices
 
 The GBA has four PSG voices and two Direct Sound FIFO outputs. A game's software mixer can combine many sample voices into those FIFO streams; PCM A/B must not be described as the individual instruments inside them.
@@ -86,3 +90,40 @@ Paint/dirty checks compare immutable bank/control identities and model fields in
 Known subset only: GBA PSG notes/activity (including muted sequencer START), custom drivers, RAM/compressed/reverse samples, timer1 routing and irregular captures are rejected. Imported dry mixer-lock timing is not calibrated exact original DAC delay, filtering or reverb. Capture boundaries may truncate tails; import a suitable range. All game formats are not universally editable, and saving a modified GSF/ROM is not implemented. Large project parsing/save and heavy model edits still have synchronous work despite the dirty-check improvement. Main waveform layouts with many tracks may be compact.
 
 1.4.1 and all previous releases are preserved. One-EXE runtime and separate full corresponding source include modified LGPL/GPL core/licenses and own tests, CRC/SHA and exact-byte own-GSF whitelist. Private game music/banks/projects/WAV/screenshots and ROMs remain outside packages.
+
+
+# Nintendo Music Studio 1.4.10 — GBA CPU reduction and channel presentation
+
+All source channel labels remain English in normal and recording views; composer hardware defaults are English too. GBA PULSE1/2,WAVE,NOISE lanes are hidden until actual enabled/DAC/envelope/routing activity is observed, rather than being inferred from DC/filter residue. Activity is retained during that playthrough, and reset on replay/seek/source replacement. Later-used voices can appear dynamically; user mute does not pretend the game never used a voice. PCM and residual lanes are retained, original channel IDs/settings/mute targets remain unchanged.
+
+GBA PSG stem generation now mirrors exact APU register writes, output-volume changes and frame timestamps with audio-only APU/buffer instances, replacing four full ARM-CPU/ROM emulator instances. The authoritative full mix is unchanged. Standard6PCM case uses7 CPU instances instead of11; hardware-only fallback3 instead of7. No lazy replay catch-up spike is introduced when a late PSG voice first plays. Mirror initialization follows CPUReset/soundReset before guest execution, and alignment loss fails explicitly. Optional NGMV_GBA_CPU_PSG diagnostic retains CPU stem path.
+
+Six own/read-only actual cases compared with preserved1.4.9 backend over6seconds each: full mix and every exposed stem maximum error0, replay/seek/all-muted checks pass. First timing sample new rendering INCLUDING comparison overhead was22–38percent faster and loads28–35percent faster. This is a bounded local measurement, not a whole-library or hardware guarantee. Original short probe now waits for the SAME >32 matching writes required for acceptance, fixing the prior early-stop gap; it does not bypass layout validation.
+
+IMPORTANT remaining issue: the three local custom-driver examples still expose PCM A/B, not separated software instruments. This release improves performance and hides unused PSG lanes but does NOT claim broad new driver coverage. Standard-m4a-only note import, dry original timing/filter/reverb limitations and all previous editor limitations remain. Failed first save/load-state mirror link candidate and a mistyped test path are preserved in workspace logs, then corrected using actual reset behavior and enumerated paths.
+
+Runtime one EXE; complete corresponding source includes new mirror, modified LGPL/GPL audio-event hook and test-only preserved previous app backend. Source/runtime ZIPs CRC/SHA and private game asset exclusion checked. Hidden tests use dummy audio, not listening/hardware validation.
+
+
+## Monitor-paced display and corrected PSG reset synchronization
+
+Display changes requested later in the same session: waveform updates now wait on the DXGI output containing the current window, independently of audio rate, rather than a fixed16ms paint timer. Output changes are rediscovered and at most one UI request is queued. Minimized/hidden windows skip drawing; paused frames are not repeatedly rasterized. A separate16ms control timer preserves replay/end behavior but no longer drives waveform paint. DXGI failure falls back to current monitor mode timing; DRR virtualization is disabled only for this process when the optional API is available. No display mode/driver/system timer setting is changed.
+
+Display-only source-position interpolation removes SDL callback-sized jumps at44100/48000/96000; fractional history reads and spatial interpolation avoid integer sample repetition at wide display scales. Audio resampling, samples, speed, pitch and real playback clock are untouched. Pure interpolation/phase/bounds tests and a hidden real-output pacing test cover request coalescing; actual visible end-to-end FPS/multi-monitor/VRR load is not guaranteed by those tests. Microsoft API reference: https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgioutput-waitforvblank
+
+A subsequent own wave/noise/power-cycle fixture caught a PSG-stem mismatch even though pulse and four real-game cases passed. Moving observer attachment before CPUReset and forwarding reset/BIOS sound writes fixed it with exact stem output; the failed candidate is preserved. The delayed-voice visibility test originally assumed a2second start; it now waits within the fixture's bounded8second duration.
+
+
+# Nintendo Music Studio 1.4.11 — Super Mario Advance2/3/4 PCM voices
+
+The user's original E:/fceux-2.3.0-win32/고전게임 노래 series libraries matched prior private test copies by SHA. New read-only diagnostics identified a custom Nintendo-family signed16-bit intermediate mixer, distinct from the standard-m4a layout supported for Advance1. The viewer now recognizes this family from actual Thumb declared-pool cleanup structure and observed ARM signed-halfword accumulation plus validated per-call stack context. No title IDs, fixed ROM/RAM offsets, hardcoded song times, fake banks or host execution of game routines. Seven120-byte voice slots are declared in the three inspected drivers. Different gain paths (MUL/ASR and MLA) and saved-register frames are handled separately.
+
+Isolated emulator instances suppress only other slots' accumulation writes while preserving sequencer/sample/cache state. Original full core writes are never changed. PCM VOICE1–7 and EFFECTS / OTHER represent polyphony slots and residual, not fixed MIDI instruments. Default original mix is authoritative; mute/level uses these stems and residual. Custom-driver note/instrument import into the piano roll remains unsupported; standard-m4a import is preserved.
+
+Own structure tests cover declared pool bounds, generic instruction/stack proof, selected/other/original write behavior and changed-known-kernel failure. Three representative actual tracks compared12seconds each: original mix maximum error0; activePCM slots7/6/7; residual energy ratio approximately0.000001/0.0040/0.0021. Replay/seek/all-mute pass, and custom drivers explicitly reject the standard-m4a score API. The original user folders were scanned read-only across45+40+57=142 tracks: each initial2second window recognized7slots and rendered without error or PCM A/B fallback. This is not a full-song/all-gimmicks proof.
+
+English labels, source-state unused PSG hiding with late activation/reset, audio-only PSG mirrors removing four full CPU copies, monitor-targeted DXGI vblank requests, bounded request coalescing, fractional waveform presentation at44100/48000/96000 and spatial interpolation are retained from1.4.10. Audio samples/speed/pitch are not smoothed or changed. Extra real PCM voices require additional emulator instances; this provides more separation rather than claiming a free CPU cost. Visible end-to-end FPS/all-monitor/VRR behavior remains hardware-dependent. Monitor API reference: https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgioutput-waitforvblank
+
+Earlier failed linkage, missing optional disassembler package and targeted wave-mirror/reset candidates are recorded in workspace checkpoints. Windows SDK dumpbin was used only on bounded private code windows; raw code/trace/sample files stay outside packages. New public code is an independent recognizer/filter, not copied driver routines.
+
+One-EXE runtime and full corresponding GPL/LGPL source ZIPs retain all previous releases/licenses. CRC/SHA and private-game exclusion checked. User originals/settings/processes are untouched. Dummy and own hidden-window tests are not physical listening or guaranteed display-FPS validation.

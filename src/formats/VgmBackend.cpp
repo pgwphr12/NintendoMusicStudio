@@ -2,6 +2,7 @@
 #include <set>
 #include <stdexcept>
 namespace ngmv {
+std::unique_ptr<IMusicBackend> makeExtendedVgmBackend(const std::vector<uint8_t>&);
 std::unique_ptr<IMusicBackend> makeVgmBackend(const std::vector<uint8_t> &bytes) {
     auto fail = [](bool ok, const char *message) {
         if (!ok)
@@ -19,6 +20,11 @@ std::unique_ptr<IMusicBackend> makeVgmBackend(const std::vector<uint8_t> &bytes)
     fail(version >= 0x100 && version <= 0x171, "Unsupported VGM version.");
     size_t start = version >= 0x150 && le(0x34) ? uint64_t(le(0x34)) + 0x34 : 0x40;
     fail(start >= 64 && start < end, "Invalid VGM command offset.");
+    // Preserve the existing SMS/Mega Drive path; additional chips use the
+    // explicitly bounded extended decoder rather than being ignored by GME.
+    for (size_t field : {size_t(0x50),size_t(0x98),size_t(0x9c),size_t(0xd0)})
+        if (field+4<=start && le(field))
+            return makeExtendedVgmBackend(bytes);
     for (size_t field : {size_t(12), size_t(16), size_t(44)})
         fail(!(le(field) & 0xc0000000) &&
                  (!le(field) || (le(field) >= 100000 && le(field) <= 20000000)),

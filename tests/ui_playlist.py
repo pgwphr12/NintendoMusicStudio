@@ -23,7 +23,7 @@ try:
         def visit(w,_):
             pid=wintypes.DWORD();user.GetWindowThreadProcessId(w,ctypes.byref(pid))
             name=ctypes.create_unicode_buffer(128);user.GetClassNameW(w,name,128)
-            if pid.value==process.pid and name.value=='NintendoGameMusicViewerWindow': matches.append(w)
+            if pid.value==process.pid and name.value=='NintendoMusicStudioWindow': matches.append(w)
             return True
         user.EnumWindows(visit,0)
         if matches: hwnd=matches[0];break
@@ -75,7 +75,7 @@ try:
         def visit(w,_):
             pid=wintypes.DWORD();user.GetWindowThreadProcessId(w,ctypes.byref(pid))
             name=ctypes.create_unicode_buffer(128);user.GetClassNameW(w,name,128)
-            if pid.value==process.pid and name.value=='NintendoGameMusicViewerWindow':matches.append(w)
+            if pid.value==process.pid and name.value=='NintendoMusicStudioWindow':matches.append(w)
             return True
         user.EnumWindows(visit,0)
         if matches:
@@ -100,11 +100,14 @@ try:
     assert '01 Track.mini2sf' in title(),'Disabled autoplay advanced'
     key(0x27);assert '02 Track.mini2sf' in title(),'Manual next disabled with autoplay'
     key(0x25);assert '01 Track.mini2sf' in title(),'Manual previous disabled with autoplay'
-    click_autoplay();key(0x20);wait_next() # enable and replay
+    # Autoplay-off deliberately keeps the decoder/clock running past metadata
+    # length. Manual next/previous preserve that playing state, so Space here
+    # would pause the app instead of replaying it. Enabling must advance it.
+    click_autoplay();wait_next()
     key(0x78);key(ord('A'));key(0x25) # F9, toggle off, previous while playing
     time.sleep(.65)
     assert '01 Track.mini2sf' in title(),'Recording-view autoplay off failed'
-    key(ord('A'));key(0x20);wait_next()
+    key(ord('A'));wait_next()
     user.SendMessageW(hwnd,0x10,0,0)
     assert process.wait(timeout=5)==0
     print('Autoplay button off/on, manual navigation while off, and recording-view A toggle: PASS')
@@ -121,7 +124,7 @@ try:
         def visit(w,_):
             pid=wintypes.DWORD();user.GetWindowThreadProcessId(w,ctypes.byref(pid))
             name=ctypes.create_unicode_buffer(128);user.GetClassNameW(w,name,128)
-            if pid.value==process.pid and name.value=='NintendoGameMusicViewerWindow':matches.append(w)
+            if pid.value==process.pid and name.value=='NintendoMusicStudioWindow':matches.append(w)
             return True
         user.EnumWindows(visit,0)
         if matches:

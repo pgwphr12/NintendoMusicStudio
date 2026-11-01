@@ -222,6 +222,7 @@ void soundEvent(GBASystem *gba, u32 address, u8 data)
 	{
         gba->ioMem[address] = data;
         gba->gb_apu->write_register( blip_time(gba), gb_addr, data );
+        if(gba->viewerApuEvent)gba->viewerApuEvent(gba->viewerApuContext,0,blip_time(gba),gb_addr,data,0);
 
 		if ( address == NR52 )
             apply_control(gba);
@@ -241,6 +242,7 @@ static void apply_volume( GBASystem *gba, bool apu_only = false )
 	{
 		static float const apu_vols [4] = { 0.25, 0.5, 1, 0.25 };
         gba->gb_apu->volume( gba->soundVolume_ * apu_vols [gba->ioMem [SGCNT0_H] & 3] );
+        if(gba->viewerApuEvent)gba->viewerApuEvent(gba->viewerApuContext,2,0,0,0,gba->soundVolume_*apu_vols[gba->ioMem[SGCNT0_H]&3]);
 	}
 
 	if ( !apu_only )
@@ -303,6 +305,7 @@ static void end_frame( GBASystem *gba, GBA::blip_time_t time )
 
     gba->gb_apu       ->end_frame( time );
     gba->stereo_buffer->end_frame( time );
+    if(gba->viewerApuEvent)gba->viewerApuEvent(gba->viewerApuContext,1,time,0,0,0);
 }
 
 void flush_samples(GBASystem *gba, GBA::Multi_Buffer * buffer)
@@ -390,6 +393,7 @@ static void reset_apu(GBASystem *gba)
 	{
         gba->gb_apu->reduce_clicks(gba->soundDeclicking);
         gba->gb_apu->reset( gba->gb_apu->mode_agb, true );
+        if(gba->viewerApuEvent)gba->viewerApuEvent(gba->viewerApuContext,3,0,0,0,0);
 	}
 
     if ( gba->stereo_buffer )

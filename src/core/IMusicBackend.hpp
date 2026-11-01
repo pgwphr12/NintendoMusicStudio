@@ -24,6 +24,7 @@ class IMusicBackend {
     virtual bool drainGbaEvents(std::vector<GbaVoiceEvent>&,std::string&) {return false;}
     virtual bool drainGbaMixFrames(std::vector<GbaMixFrame>&,std::string&) {return false;}
     virtual bool gbaPsgActivity(uint32_t&) const {return false;}
+    virtual bool gbaPsgUsed(uint32_t&) const {return false;}
     // Actual emulated execution boundary; prefetch can lead audible playback.
     virtual bool gbaEmulatedCycles(uint64_t&) const {return false;}
     // Explicit offline, owned ROM-only PCM8 copy; RAM samples are unsupported.

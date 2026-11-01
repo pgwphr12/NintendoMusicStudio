@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *   Mupen64plus-rsp-hle - alist_audio.c                                   *
- *   Mupen64Plus homepage: http://code.google.com/p/mupen64plus/           *
+ *   Mupen64Plus homepage: https://mupen64plus.org/                        *
  *   Copyright (C) 2014 Bobby Smiles                                       *
  *   Copyright (C) 2009 Richard Goedeken                                   *
  *   Copyright (C) 2002 Hacktarux                                          *
@@ -25,12 +25,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "common.h"
-
 #include "alist.h"
-#include "../usf.h"
+#include "common.h"
+#include "usf/usf.h"
 #include "hle_internal.h"
 #include "memory.h"
+#include "ucodes.h"
 
 enum { DMEM_BASE = 0x5c0 };
 
@@ -58,7 +58,7 @@ static void SPNOOP(struct hle_t* UNUSED(hle), uint32_t UNUSED(w1), uint32_t UNUS
 static void CLEARBUFF(struct hle_t* hle, uint32_t w1, uint32_t w2)
 {
     uint16_t dmem  = w1 + DMEM_BASE;
-    uint16_t count = w2;
+    uint16_t count = w2 & 0xfff;
 
     if (count == 0)
         return;
@@ -112,7 +112,7 @@ static void RESAMPLE(struct hle_t* hle, uint32_t w1, uint32_t w2)
 
     alist_resample(
             hle,
-            flags & 0x1,
+            flags & A_INIT,
             flags & 0x2,
             hle->alist_audio.out,
             hle->alist_audio.in,
@@ -153,8 +153,8 @@ static void ADPCM(struct hle_t* hle, uint32_t w1, uint32_t w2)
 
     alist_adpcm(
             hle,
-            flags & 0x1,
-            flags & 0x2,
+            flags & A_INIT,
+            flags & A_LOOP,
             false,          /* unsupported in this ucode */
             hle->alist_audio.out,
             hle->alist_audio.in,
@@ -279,8 +279,22 @@ void alist_process_audio(struct hle_t* hle)
         MIXER,          INTERLEAVE,     POLEF,          SETLOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x10] = {
+      "SPNOOP",        "ADPCM",        "CLEARBUFF",    "ENVMIXER",
+      "LOADBUFF",      "RESAMPLE",     "SAVEBUFF",     "SEGMENT",
+      "SETBUFF",       "SETVOL",       "DMEMMOVE",     "LOADADPCM",
+      "MIXER",         "INTERLEAVE",   "POLEF",        "SETLOOP"
+    };
+    #endif
+
     clear_segments(hle);
+    #ifdef DEBUG_INFO
+    alist_process(hle, ABI, 0x10, ABI_names);
+    #else
     alist_process(hle, ABI, 0x10);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_audio_ge(struct hle_t* hle)
@@ -294,8 +308,22 @@ void alist_process_audio_ge(struct hle_t* hle)
         MIXER,          INTERLEAVE,     POLEF,          SETLOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x10] = {
+      "SPNOOP",        "ADPCM",        "CLEARBUFF",    "ENVMIXER_GE",
+      "LOADBUFF",      "RESAMPLE",     "SAVEBUFF",     "SEGMENT",
+      "SETBUFF",       "SETVOL",       "DMEMMOVE",     "LOADADPCM",
+      "MIXER",         "INTERLEAVE",   "POLEF",        "SETLOOP"
+    };
+    #endif
+
     clear_segments(hle);
+    #ifdef DEBUG_INFO
+    alist_process(hle, ABI, 0x10, ABI_names);
+    #else
     alist_process(hle, ABI, 0x10);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_audio_bc(struct hle_t* hle)
@@ -309,6 +337,20 @@ void alist_process_audio_bc(struct hle_t* hle)
         MIXER,          INTERLEAVE,     POLEF,          SETLOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x10] = {
+      "SPNOOP",        "ADPCM",        "CLEARBUFF",    "ENVMIXER_GE",
+      "LOADBUFF",      "RESAMPLE",     "SAVEBUFF",     "SEGMENT",
+      "SETBUFF",       "SETVOL",       "DMEMMOVE",     "LOADADPCM",
+      "MIXER",         "INTERLEAVE",   "POLEF",        "SETLOOP"
+    };
+    #endif
+
     clear_segments(hle);
+    #ifdef DEBUG_INFO
+    alist_process(hle, ABI, 0x10, ABI_names);
+    #else
     alist_process(hle, ABI, 0x10);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }

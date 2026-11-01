@@ -1,0 +1,102 @@
+[
+  {
+    "file": "alist.c",
+    "old_insert_line": 33,
+    "new_insert_line": 34
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 147,
+    "new_insert_line": 157
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 159,
+    "new_insert_line": 169
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 168,
+    "new_insert_line": 178
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 173,
+    "new_insert_line": 183
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 226,
+    "new_insert_line": 236
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 341,
+    "new_insert_line": 351
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 422,
+    "new_insert_line": 432
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 497,
+    "new_insert_line": 507
+  },
+  {
+    "file": "alist.c",
+    "old_insert_line": 565,
+    "new_insert_line": 575
+  },
+  {
+    "file": "alist_audio.c",
+    "old_insert_line": 30,
+    "new_insert_line": 29
+  },
+  {
+    "file": "alist_audio.c",
+    "old_insert_line": 271,
+    "new_insert_line": 271
+  },
+  {
+    "file": "alist_audio.c",
+    "old_insert_line": 284,
+    "new_insert_line": 298
+  },
+  {
+    "file": "alist_audio.c",
+    "old_insert_line": 297,
+    "new_insert_line": 325
+  },
+  {
+    "file": "alist_naudio.c",
+    "old_insert_line": 29,
+    "new_insert_line": 28
+  },
+  {
+    "file": "alist_naudio.c",
+    "old_insert_line": 269,
+    "new_insert_line": 279
+  },
+  {
+    "file": "alist_naudio.c",
+    "old_insert_line": 281,
+    "new_insert_line": 303
+  },
+  {
+    "file": "alist_naudio.c",
+    "old_insert_line": 294,
+    "new_insert_line": 328
+  },
+  {
+    "file": "alist_naudio.c",
+    "old_insert_line": 319,
+    "new_insert_line": 377
+  },
+  {
+    "file": "hle_internal.h",
+    "old_insert_line": 31,
+    "new_insert_line": 31
+  }
+]

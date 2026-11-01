@@ -34,16 +34,20 @@ SDL_AudioDeviceID SdlOutput::create(int rate) {
 }
 void SdlOutput::callback(void *self, Uint8 *out, int bytes) {
     auto &a = *static_cast<SdlOutput *>(self);
+    auto tick=PresentationClock::now();auto before=a.consumed_.load();
     std::memset(out, 0, bytes);
     a.resampler_.pull(a.ring_, reinterpret_cast<float *>(out), size_t(bytes) / sizeof(float) / 2,
-                      a.master_.load(), a.speed_.load());
+                      a.master_.load(), a.speed_.load(), a.pitch_.load(), a.finished_.load());
+    a.drained_=a.resampler_.drained(a.ring_,a.finished_.load());
     a.consumed_.store(a.resampler_.consumed);
+    a.visualClock_.publish(before,a.resampler_.consumed,tick,uint64_t(bytes/8)*1000000000ull/uint64_t(a.rate_));
     a.underruns_.store(a.resampler_.underruns);
 }
 void SdlOutput::pause(bool value) {
     if(!value&&!device_)device_=create(rate_);
     if (device_)
         SDL_PauseAudioDevice(device_, value ? 1 : 0);
+    if(value&&!paused_)frozenVisual_=visualClock_.position(PresentationClock::now());
     paused_ = value;
 }
 void SdlOutput::releaseDevice(){pause(true);if(device_){SDL_CloseAudioDevice(device_);device_=0;}}
@@ -90,7 +94,8 @@ void SdlOutput::reset() {
     if (!paused_)
         throw std::runtime_error("Audio reset requires a paused device.");
     resampler_.reset();
-    consumed_ = 0;
+    finished_=drained_=false;
+    consumed_ = 0;frozenVisual_=0;visualClock_.publish(0,0,PresentationClock::now(),1);
     underruns_ = 0;
 }
 } // namespace ngmv

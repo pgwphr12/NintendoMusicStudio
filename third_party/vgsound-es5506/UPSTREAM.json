@@ -1,0 +1,7 @@
+{
+  "repo": "https://github.com/tildearrow/furnace",
+  "commit": "592e7fd387e7bb5f0c908452c60632c8d37cdc39",
+  "subtree": "extern/vgsound_emu-modified/vgsound_emu",
+  "license": "zlib (explicit per-file headers + parent LICENSE)",
+  "changes": "Upstream core unmodified; independent app wrapper is src/formats/LicensedChips.cpp"
+}

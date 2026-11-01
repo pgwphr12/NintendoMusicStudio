@@ -4,8 +4,8 @@
 #include <vector>
 #include <windows.h>
 namespace ngmv::desktop {
-inline constexpr wchar_t WindowClass[] = L"NintendoGameMusicViewerWindow";
-inline constexpr wchar_t InstanceProperty[] = L"NGMV.SingleInstance.Studio149";
+inline constexpr wchar_t WindowClass[] = L"NintendoMusicStudioWindow";
+inline constexpr wchar_t InstanceProperty[] = L"NGMV.SingleInstance.Studio150";
 inline constexpr ULONG_PTR CopyDataTag = 0x4e474d31;
 inline constexpr UINT OpenQueuedFile = WM_APP + 21;
 inline constexpr UINT AskDefaultApps = WM_APP + 22;

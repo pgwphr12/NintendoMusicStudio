@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *   Mupen64plus-rsp-hle - alist_nead.c                                    *
- *   Mupen64Plus homepage: http://code.google.com/p/mupen64plus/           *
+ *   Mupen64Plus homepage: https://mupen64plus.org/                        *
  *   Copyright (C) 2014 Bobby Smiles                                       *
  *   Copyright (C) 2009 Richard Goedeken                                   *
  *   Copyright (C) 2002 Hacktarux                                          *
@@ -24,12 +24,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "common.h"
-
 #include "alist.h"
+#include "common.h"
 #include "hle_external.h"
 #include "hle_internal.h"
 #include "memory.h"
+#include "ucodes.h"
 
 /* remove windows define to 0x06 */
 #ifdef DUPLICATE
@@ -92,7 +92,7 @@ static void ADPCM(struct hle_t* hle, uint32_t w1, uint32_t w2)
 static void CLEARBUFF(struct hle_t* hle, uint32_t w1, uint32_t w2)
 {
     uint16_t dmem  = w1;
-    uint16_t count = w2;
+    uint16_t count = w2 & 0xfff;
 
     if (count == 0)
         return;
@@ -300,7 +300,7 @@ static void ADDMIXER(struct hle_t* hle, uint32_t w1, uint32_t w2)
 static void HILOGAIN(struct hle_t* hle, uint32_t w1, uint32_t w2)
 {
     int8_t   gain  = (w1 >> 16); /* Q4.4 signed */
-    uint16_t count = w1;
+    uint16_t count = w1 & 0xfff;
     uint16_t dmem  = (w2 >> 16);
 
     alist_multQ44(hle, dmem, count, gain);
@@ -371,7 +371,22 @@ void alist_process_nead_mk(struct hle_t* hle)
         SPNOOP,         SPNOOP,         SPNOOP,         SPNOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x20] = {
+        "SPNOOP",         "ADPCM",          "CLEARBUFF",      "SPNOOP",
+        "SPNOOP",         "RESAMPLE",       "SPNOOP",         "SEGMENT",
+        "SETBUFF",        "SPNOOP",         "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE_MK",  "POLEF",          "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1_MK",   "ENVMIXER_MK",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "SPNOOP",
+        "SPNOOP",         "SPNOOP",         "SPNOOP",         "SPNOOP",
+        "SPNOOP",         "SPNOOP",         "SPNOOP",         "SPNOOP"
+    };
+    alist_process(hle, ABI, 0x20, ABI_names);
+    #else
     alist_process(hle, ABI, 0x20);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_sf(struct hle_t* hle)
@@ -387,7 +402,22 @@ void alist_process_nead_sf(struct hle_t* hle)
         SPNOOP,         SPNOOP,         SPNOOP,         SPNOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x20] = {
+        "SPNOOP",         "ADPCM",          "CLEARBUFF",      "SPNOOP",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "SPNOOP",
+        "SETBUFF",        "SPNOOP",         "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE_MK",  "POLEF",          "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "SPNOOP",
+        "HILOGAIN",       "UNKNOWN",        "DUPLICATE",      "SPNOOP",
+        "SPNOOP",         "SPNOOP",         "SPNOOP",         "SPNOOP"
+    };
+    alist_process(hle, ABI, 0x20, ABI_names);
+    #else
     alist_process(hle, ABI, 0x20);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_sfj(struct hle_t* hle)
@@ -403,7 +433,22 @@ void alist_process_nead_sfj(struct hle_t* hle)
         SPNOOP,         SPNOOP,         SPNOOP,         SPNOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x20] = {
+        "SPNOOP",         "ADPCM",          "CLEARBUFF",      "SPNOOP",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "SPNOOP",
+        "SETBUFF",        "SPNOOP",         "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE_MK",  "POLEF",          "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN",
+        "HILOGAIN",       "UNKNOWN",        "DUPLICATE",      "SPNOOP",
+        "SPNOOP",         "SPNOOP",         "SPNOOP",         "SPNOOP"
+    };
+    alist_process(hle, ABI, 0x20, ABI_names);
+    #else
     alist_process(hle, ABI, 0x20);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_fz(struct hle_t* hle)
@@ -419,7 +464,22 @@ void alist_process_nead_fz(struct hle_t* hle)
         SPNOOP,         SPNOOP,         SPNOOP,         SPNOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x20] = {
+        "UNKNOWN",        "ADPCM",          "CLEARBUFF",      "SPNOOP",
+        "ADDMIXER",       "RESAMPLE",       "SPNOOP",         "SPNOOP",
+        "SETBUFF",        "SPNOOP",         "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "SPNOOP",         "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN",
+        "SPNOOP",         "UNKNOWN",        "DUPLICATE",      "SPNOOP",
+        "SPNOOP",         "SPNOOP",         "SPNOOP",         "SPNOOP"
+    };
+    alist_process(hle, ABI, 0x20, ABI_names);
+    #else
     alist_process(hle, ABI, 0x20);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_wrjb(struct hle_t* hle)
@@ -435,7 +495,22 @@ void alist_process_nead_wrjb(struct hle_t* hle)
         SPNOOP,         SPNOOP,         SPNOOP,         SPNOOP
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x20] = {
+        "SPNOOP",         "ADPCM",          "CLEARBUFF",      "UNKNOWN",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "SPNOOP",
+        "SETBUFF",        "SPNOOP",         "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "SPNOOP",         "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN",
+        "HILOGAIN",       "UNKNOWN",        "DUPLICATE",      "FILTER",
+        "SPNOOP",         "SPNOOP",         "SPNOOP",         "SPNOOP"
+    };
+    alist_process(hle, ABI, 0x20, ABI_names);
+    #else
     alist_process(hle, ABI, 0x20);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_ys(struct hle_t* hle)
@@ -449,7 +524,20 @@ void alist_process_nead_ys(struct hle_t* hle)
         LOADBUFF,       SAVEBUFF,       ENVSETUP2,      UNKNOWN
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x18] = {
+        "UNKNOWN",        "ADPCM",          "CLEARBUFF",      "UNKNOWN",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "FILTER",
+        "SETBUFF",        "DUPLICATE",      "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "HILOGAIN",       "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN"
+    };
+    alist_process(hle, ABI, 0x18, ABI_names);
+    #else
     alist_process(hle, ABI, 0x18);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_1080(struct hle_t* hle)
@@ -463,7 +551,20 @@ void alist_process_nead_1080(struct hle_t* hle)
         LOADBUFF,       SAVEBUFF,       ENVSETUP2,      UNKNOWN
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x18] = {
+        "UNKNOWN",        "ADPCM",          "CLEARBUFF",      "UNKNOWN",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "FILTER",
+        "SETBUFF",        "DUPLICATE",      "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "HILOGAIN",       "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN"
+    };
+    alist_process(hle, ABI, 0x18, ABI_names);
+    #else
     alist_process(hle, ABI, 0x18);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_oot(struct hle_t* hle)
@@ -477,7 +578,20 @@ void alist_process_nead_oot(struct hle_t* hle)
         LOADBUFF,       SAVEBUFF,       ENVSETUP2,      UNKNOWN
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x18] = {
+        "UNKNOWN",        "ADPCM",          "CLEARBUFF",      "UNKNOWN",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "FILTER",
+        "SETBUFF",        "DUPLICATE",      "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "HILOGAIN",       "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN"
+    };
+    alist_process(hle, ABI, 0x18, ABI_names);
+    #else
     alist_process(hle, ABI, 0x18);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_mm(struct hle_t* hle)
@@ -491,7 +605,20 @@ void alist_process_nead_mm(struct hle_t* hle)
         LOADBUFF,       SAVEBUFF,       ENVSETUP2,      UNKNOWN
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x18] = {
+        "UNKNOWN",        "ADPCM",          "CLEARBUFF",      "SPNOOP",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "FILTER",
+        "SETBUFF",        "DUPLICATE",      "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "HILOGAIN",       "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN"
+    };
+    alist_process(hle, ABI, 0x18, ABI_names);
+    #else
     alist_process(hle, ABI, 0x18);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_mmb(struct hle_t* hle)
@@ -505,7 +632,20 @@ void alist_process_nead_mmb(struct hle_t* hle)
         LOADBUFF,       SAVEBUFF,       ENVSETUP2,      UNKNOWN
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x18] = {
+        "SPNOOP",         "ADPCM",          "CLEARBUFF",      "SPNOOP",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "FILTER",
+        "SETBUFF",        "DUPLICATE",      "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "HILOGAIN",       "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN"
+    };
+    alist_process(hle, ABI, 0x18, ABI_names);
+    #else
     alist_process(hle, ABI, 0x18);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
 }
 
 void alist_process_nead_ac(struct hle_t* hle)
@@ -519,5 +659,40 @@ void alist_process_nead_ac(struct hle_t* hle)
         LOADBUFF,       SAVEBUFF,       ENVSETUP2,      UNKNOWN
     };
 
+    #ifdef DEBUG_INFO
+    static const char * ABI_names[0x18] = {
+        "UNKNOWN",        "ADPCM",          "CLEARBUFF",      "SPNOOP",
+        "ADDMIXER",       "RESAMPLE",       "RESAMPLE_ZOH",   "FILTER",
+        "SETBUFF",        "DUPLICATE",      "DMEMMOVE",       "LOADADPCM",
+        "MIXER",          "INTERLEAVE",     "HILOGAIN",       "SETLOOP",
+        "NEAD_16",        "INTERL",         "ENVSETUP1",      "ENVMIXER",
+        "LOADBUFF",       "SAVEBUFF",       "ENVSETUP2",      "UNKNOWN"
+    };
+    alist_process(hle, ABI, 0x18, ABI_names);
+    #else
     alist_process(hle, ABI, 0x18);
+    #endif
+    rsp_break(hle, SP_STATUS_TASKDONE);
+}
+
+void alist_process_nead_mats(struct hle_t* hle)
+{
+    /* FIXME: implement proper ucode
+     * Forward the task if possible,
+     * otherwise better to have no sound than garbage sound
+     */
+    if (HleForwardTask(hle->user_defined) != 0) {
+        rsp_break(hle, SP_STATUS_TASKDONE);
+    }
+}
+
+void alist_process_nead_efz(struct hle_t* hle)
+{
+    /* FIXME: implement proper ucode
+     * Forward the task if possible,
+     * otherwise use FZero ucode which should be very similar
+     */
+    if (HleForwardTask(hle->user_defined) != 0) {
+        alist_process_nead_fz(hle);
+    }
 }

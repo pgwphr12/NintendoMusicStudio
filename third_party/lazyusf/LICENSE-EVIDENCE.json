@@ -1,0 +1,10 @@
+{
+  "origin": "https://github.com/losnoco/Cog",
+  "commit": "0ac68cc947a66fc88c130324a593f9bfca698d1a",
+  "path": "Frameworks/lazyusf2/lazyusf2",
+  "component_specific_declaration": "Acknowledgements/Acknowledgements.json: lazyusf2 (Mupen64Plus), GPL-2.0-or-later",
+  "published_primary_notice": "https://cog.losno.co/acknowledgements/",
+  "project_author_context": "Cog README names Christopher Snowhill, maintainer since2013; official contribution records include kode54. Frameworks retain their own terms; GPL claim here is the specific lazyusf2 entry, not generic application root license.",
+  "per_file_exceptions": "RSP CC0, CIC BSD, original notices retained",
+  "modifications": "Windows x64 CRT rounding API port r4300/fpu.h; own GPL voice observer insertions in rsp_hle/{alist.c,alist_audio.c,alist_naudio.c,hle_internal.h} and usf/{usf.c,usf.h}; own CMake cached-interpreter build. Original per-file algorithms/notices retained."
+}

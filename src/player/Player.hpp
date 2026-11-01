@@ -13,10 +13,11 @@ class Player {
     OutputLevel level_;
     Reverb reverb_;
     std::atomic<bool> reverbEnabled_{false};
-    std::atomic<float> reverbAmount_{.45f};
-    std::atomic<float> reverbDecay_{1.2f};
+    std::atomic<float> reverbAmount_{.76f};
+    std::atomic<float> reverbDecay_{3.f};
     std::atomic<bool> dmcUsed_{false};
     std::atomic<uint32_t> usedChannels_{0};
+    std::atomic<int> gbaPsgUsed_{-1};
     ChannelHistory history_;
     std::unique_ptr<IMusicBackend> backend_;
     std::thread worker_;
@@ -84,6 +85,7 @@ class Player {
     bool dmcUsed() const {
         return dmcUsed_.load();
     }
+    bool channelVisible(size_t index)const{int mask=gbaPsgUsed_.load();return mask<0||index>=4||(mask&(1<<index));}
     bool channelUsed(size_t index) const {
         return index < 32 && (usedChannels_.load() & (uint32_t(1) << index));
     }
@@ -115,9 +117,12 @@ class Player {
         return output_.master();
     }
     void channel(size_t index, ChannelState state);
+    void channelVolumes(float volume);
+    float pitch() const { return output_.pitch(); }
+    void pitch(float value) { output_.pitch(value); }
     std::vector<ChannelState> states() const;
     std::vector<std::vector<float>> waveforms() const {
-        return history_.snapshot(base_ + output_.consumed());
+        return history_.interpolatedSnapshot(base_ + output_.visualConsumed());
     }
     std::string error() const;
     uint64_t underruns() const {

@@ -7,7 +7,7 @@
 #include <shlobj.h>
 #include <stdexcept>
 namespace ngmv::desktop {
-static constexpr wchar_t Preferences[] = L"Software\\NintendoGameMusicViewer\\Preferences";
+static constexpr wchar_t Preferences[] = L"Software\\GameMusicPlayer\\Preferences";
 static std::wstring testSession() {
     wchar_t text[256]{};
     DWORD size = GetEnvironmentVariableW(L"NGMV_TEST_SESSION", text, 256);
@@ -65,20 +65,20 @@ std::vector<RegistryValue> registrationPlan(const std::filesystem::path &exe) {
         throw std::runtime_error("File registration requires an absolute executable path.");
     const auto quoted = L"\"" + exe.native() + L"\"";
     const auto command = quoted + L" --play \"%1\"";
-    const std::wstring caps = L"Software\\NintendoGameMusicViewer\\Capabilities";
-    const std::wstring apps = L"Software\\Classes\\Applications\\NintendoGameMusicViewer.exe";
+    const std::wstring caps = L"Software\\NintendoMusicStudio\\Capabilities";
+    const std::wstring apps = L"Software\\Classes\\Applications\\NintendoMusicStudio.exe";
     std::vector<RegistryValue> values{
-        {caps, L"ApplicationName", L"Nintendo Game Music Viewer"},
+        {caps, L"ApplicationName", L"Nintendo Music Studio"},
         {caps, L"ApplicationDescription", L"NES, SNES, Game Boy, GBA, DS, Nintendo 64, 3DS, SMS and Mega Drive game music"},
         {caps, L"ApplicationIcon", quoted + L",0"},
-        {L"Software\\RegisteredApplications", L"NintendoGameMusicViewer", caps},
-        {apps, L"FriendlyAppName", L"Nintendo Game Music Viewer"},
+        {L"Software\\RegisteredApplications", L"NintendoMusicStudio", caps},
+        {apps, L"FriendlyAppName", L"Nintendo Music Studio"},
         {apps + L"\\DefaultIcon", L"", quoted + L",0"},
         {apps + L"\\shell\\open\\command", L"", command},
-        {L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\NintendoGameMusicViewer.exe", L"", exe.native()}
+        {L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\NintendoMusicStudio.exe", L"", exe.native()}
     };
     for (const auto &extension : supportedExtensions()) {
-        const std::wstring progId = L"NintendoGameMusicViewer" + extension;
+        const std::wstring progId = L"NintendoMusicStudio" + extension;
         const std::wstring key = L"Software\\Classes\\" + progId;
         values.push_back({key, L"", L"Nintendo Game Music (" + extension + L")"});
         values.push_back({key + L"\\DefaultIcon", L"", quoted + L",0"});
@@ -123,7 +123,7 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
         // registration, but never changing the user's Windows default choice.
         wchar_t command[32768]{}; DWORD bytes = sizeof command;
         RegGetValueW(HKEY_CURRENT_USER,
-            L"Software\\Classes\\Applications\\NintendoGameMusicViewer.exe\\shell\\open\\command",
+            L"Software\\Classes\\Applications\\NintendoMusicStudio.exe\\shell\\open\\command",
             L"", RRF_RT_REG_SZ, nullptr, command, &bytes);
         auto exe = executablePath();
         if (command != L"\"" + exe.native() + L"\" --play \"%1\"")
@@ -141,7 +141,7 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
     dialog.hInstance = GetModuleHandleW(nullptr);
     dialog.pszMainIcon = MAKEINTRESOURCEW(101);
     dialog.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION | TDF_POSITION_RELATIVE_TO_WINDOW;
-    dialog.pszWindowTitle = L"Nintendo Game Music Viewer";
+    dialog.pszWindowTitle = L"Nintendo Music Studio";
     dialog.pszMainInstruction = english ? L"Use this viewer to open supported game music files?" : L"지원하는 게임 음악 파일을 이 프로그램으로 열까요?";
     dialog.pszContent = english
         ? L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, VGM, VGZ\n\nRegister these 14 types, then choose this viewer in Windows Default apps. Existing defaults stay in place until you select it."
@@ -158,9 +158,9 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
         registerFileTypes(HKEY_CURRENT_USER, executablePath(), true);
         savePreference(L"FileRegistrationConsent", 1);
         savePreference(L"DontAskDefaultApps", 1);
-        auto launched = ShellExecuteW(parent, L"open", L"ms-settings:defaultapps?registeredAppUser=NintendoGameMusicViewer", nullptr, nullptr, SW_SHOWNORMAL);
+        auto launched = ShellExecuteW(parent, L"open", L"ms-settings:defaultapps?registeredAppUser=NintendoMusicStudio", nullptr, nullptr, SW_SHOWNORMAL);
         if (reinterpret_cast<INT_PTR>(launched) <= 32)
-            throw std::runtime_error("Open Windows Settings > Apps > Default apps to choose Nintendo Game Music Viewer.");
+            throw std::runtime_error("Open Windows Settings > Apps > Default apps to choose Nintendo Music Studio.");
     } else if (neverAsk) savePreference(L"DontAskDefaultApps", 1);
 }
 struct Search { ULONG_PTR token; HWND window = nullptr; };
@@ -178,7 +178,7 @@ InstanceGate::~InstanceGate() {
     if (mutex_) CloseHandle(mutex_);
 }
 bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
-    std::wstring name = L"Local\\NintendoGameMusicViewer.Studio149." + userIdentity();
+    std::wstring name = L"Local\\NintendoMusicStudio.Studio150." + userIdentity();
     mutex_ = CreateMutexW(nullptr, TRUE, name.c_str());
     DWORD error = GetLastError();
     if (!mutex_) throw std::runtime_error("Cannot initialize the single-instance player.");

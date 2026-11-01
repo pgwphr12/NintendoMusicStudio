@@ -17,12 +17,12 @@ class Reverb {
     std::array<Comb, 4> combs_{{Comb(1423), Comb(1789), Comb(2131), Comb(2557)}};
     bool enabled_ = false;
     float wet_ = 0;
-    float amount_ = .45f;
+    float amount_ = .76f;
     float decaySeconds_ = 0;
 
   public:
     Reverb() {
-        decay(1.2f);
+        decay(3.f);
     }
     // Approximate low-frequency RT60; damping shortens high-frequency tails.
     void decay(float seconds) {

@@ -1,6 +1,5 @@
 #include "ui/Window.hpp"
 #include "WindowsIntegration.hpp"
-#include "editor/Editor.hpp"
 #include <shellapi.h>
 #include <shobjidl.h>
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
@@ -8,10 +7,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     try {
         int count = 0;
         LPWSTR *raw = CommandLineToArgvW(GetCommandLineW(), &count);
-        if(count>2&&(std::wstring(raw[1])==L"--editor-selftest"||std::wstring(raw[1])==L"--editor-snapshot")){
-            bool snapshot=std::wstring(raw[1])==L"--editor-snapshot";auto output=std::filesystem::path(raw[2]);LocalFree(raw);
-            return ngmv::editor::runMusicEditor(instance,nullptr,output,snapshot);
-        }
+        if(count>1 && std::wstring(raw[1]).rfind(L"--editor-",0)==0){LocalFree(raw);return 2;}
         std::filesystem::path input, screenshot;
         int width = 1280, height = 720;
         bool recording = false, playInitial = false;
@@ -42,11 +38,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
         LocalFree(raw);
         ngmv::desktop::InstanceGate gate;
         if (screenshot.empty() && gate.forwardOrBecomePrimary(input)) return 0;
-        SetCurrentProcessExplicitAppUserModelID(L"NintendoGameMusicViewer");
+        SetCurrentProcessExplicitAppUserModelID(L"NintendoMusicStudio");
         ngmv::Window app;
         return app.run(instance, input, screenshot, width, height, recording, playInitial);
     } catch (const std::exception &e) {
-        MessageBoxW(nullptr, ngmv::wide(e.what()).c_str(), L"Nintendo Game Music Viewer",
+        MessageBoxW(nullptr, ngmv::wide(e.what()).c_str(), L"Nintendo Music Studio",
                     MB_ICONERROR);
         return 1;
     }

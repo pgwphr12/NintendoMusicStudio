@@ -1,39 +1,46 @@
-# V1.3.1 (1.3.1) 검증 기록 · 2026-10-11
+# Nintendo Music Studio 1.5 — public release validation
 
-- VS2022 x64 Release 빌드 성공. FileVersion/ProductVersion 1.3.1, 아이콘 16/24/32/48/64/128/256px와 Common Controls v6 manifest 포함.
-- CTest 8/8 통과: 기존 코어·오디오·화면·채널 클릭·폴더 자동재생 5개와 Windows 등록·기본 앱 안내·단일 실행 3개.
-- 지원 확장자 14개, 공백/한글 경로의 인용부호, 등록 명령의 `--play` 검사. HKCU 아래 독립된 테스트 키에 실제 등록 후 원래 기본값 유지 및 테스트 키 삭제 확인. 사용자 기본 앱과 UserChoice는 변경하지 않았습니다.
-- 기본 앱 안내: 한국어/영어, ‘나중에’, ‘다시 묻지 않기’ 저장, 이후 자동 안내 생략 및 강제 재열기 확인. 테스트 프로세스의 HKCU를 임시 영역으로 리디렉션해 검사했습니다. Windows 설정에서 실제 기본 앱을 선택하는 동작은 사용자에게 남습니다.
-- 별도 실제 프로세스로 한글/공백/특수문자 경로 전달, 기존 PID 유지, 최소화 복원, 파일 없는 실행, 연속 전달, 두 프로세스의 동시 최초 실행 확인. 잘못된 IPC, 비절대 경로, 누락/중복 NUL, 크기 초과 입력 거부 확인.
-- 실행용 ZIP과 GPL 전체 소스 ZIP을 분리하고 각 ZIP의 CRC·SHA256을 확인합니다. 이번 변경으로 오디오 코어를 수정하지 않았습니다. 아래 기존 버전의 ASAN/사용자 음악 검증은 당시 기록입니다.
+## Public package
 
-# V1.3 (1.3.0) 검증 기록 · 2026-10-10
+Fresh Release x64 build succeeded in work/settings-build/studio150. Display title, modeless information, error/prompt branding, EXE filename, manifest, file version/product strings and Windows registration identity are Nintendo Music Studio1.5/NintendoMusicStudio.exe. Numeric resource/manifest version1.5.0.0. Prior INI location and prompt preference keys are intentionally retained for compatibility; control migration revision1415 is unchanged. No user app/settings were operated/changed.
 
-- Release CTest 5/5: 기존 음악 포맷·오디오, SMS PSG/YM2413 melody/rhythm, Genesis FM/DAC/PSG의 독립 파형·음소거·탐색, VGM/VGZ 폴더 순서 및 실제 자동재생.
-- 화면: 9개 이상은 두 열, 31개까지 geometry 범위 검사. native 18채널 오른쪽 마지막 채널의 음소거·+버튼·슬라이더 드래그 및 주변 채널 유지, F9 음소거 검사. 사용자 N64 31항목을 처음부터 표시하는 1080p 화면 확인.
-- 사용자 Sonic 파일 35개(메가 드라이브 19, SMS 16): 첫 6초와 탐색·재시작·전체 음소거 검사 통과. 음악 파일은 배포하지 않습니다. 모든 구간·모든 VGM 버전·칩의 호환을 보증하지 않습니다.
-- ASAN 메모리 검사: CTest 5/5 및 확장 native UI/폴더 검사 3/3 통과. 앱·libgme/Sega·GBA·DS·N64 계측. 동일 Sonic 35개와 N64/Sega native 화면 검사 통과. ASAN 런타임은 정식 빌드에 포함하지 않습니다.
-- 새 빈 빌드 폴더에서 원본 의존성 추출·FDS/Sega 수정 파일 적용 및 CMake 구성 확인. GitHub Actions는 실제 GitHub 서버에서 실행하지 않았습니다.
-- 실제 Windows WASAPI 오디오 장치에서 기존 기능 및 Genesis 워커/96kHz 출력 재생 검사 통과. FileVersion/ProductVersion은 1.3.0입니다.
-- 복사한 portable 실행 파일의 한글 파일 경로에서 기존/신규 포맷 화면 확인. 실행 ZIP에는 소스가 없으며 전체 소스는 별도 source ZIP에 포함됩니다. 두 ZIP의 CRC·SHA256 확인.
+All18CTest cases are covered by passing results. Initial full run passed17/18; native_folder_playlist initially failed because its old test sequence pressed Space after enabling autoplay, pausing a track intentionally still running beyond metadata length. Only the two test inputs were corrected to retain the playing state, and the targeted folder test/fixtures passed. Product audio/transport code was not changed for this test. Original failed log preserved as work/studio150-checks.log; corrected result work/studio150-playlist-final.log. Other17passing tests remain valid, with no product change afterward.
 
-VGM은 실제 대기 명령에서 첫 재생 구간 길이를 구하며, 파일 자체의 반복점으로 돌아가지 않습니다. 앱의 Repeat는 파일 처음부터 반복하고 자동재생은 다음 파일로 이동합니다. streaming DAC 0x90~0x95·다른 칩·이중 칩은 명확한 오류로 거부합니다. GENS FM은 실제 칩과 음색 차이가 있을 수 있습니다. 지원 범위는 README 및 docs/V1.3-SEGA.md에 기록했습니다. 기존 V1.2 오디오 개선과 V1.1 DS one-shot 안정성 수정을 유지합니다.
+Audio/core sources298files SHA-identical to1.4.18, including SCC native-rate/area averaging and count-independent VGM gain corrections; N64 stays enabled. Full private-song18results below are reused as unchanged-source provenance, not claimed freshly rerun for1.5. Fresh1.5SCC pitch, silent-extra-chip gain, positive/negative VGM and N64 fixture tests pass. Dummy audio/offscreen tests are not physical listening/hardware verification.
 
----
+## Complete source route
 
-# V1.2 (1.2.0) 검증 기록 · 2026-10-10
+Fresh default configure from the supplied pinned archives succeeded without private source overrides. Its actual975runtime compile inputs all match the release build's hashes, and64GME headers match. This is source/configuration equivalence, not a claim of a second full clean compilation. Source package includes CMake/scripts, full relevant dependency source/patches/headers and original licenses. Portable packaging accepts --build/--output; CI/doc commands now target the public names. Snapshot builds/tests use only self-authored fixtures.
 
-- Release CTest 5/5: 실제 코어 PCM, 샘플레이트·피치·음량·잔향·탐색·끝, native UI·4K·음소거·폴더·자동재생 검사.
-- 새 회귀 검사: 10512/16384 Hz GBA PCM FIFO, 실제 N64 HLE envelope → interleave → save → DMA의 독립 신호·시간 정렬·잔여 데이터 제거, 3DS 5채널 track table의 stereo/mono 배치, sinc 다운샘플링 alias 억제.
-- 사용자 음악 140개: Super Mario 64 38개 USF, New Super Mario Bros. 2 99개 BCSTM, Super Mario Advance 4 3개 GSF의 첫 6초 및 탐색·전체 음소거 통과. 게임 음악은 배포에 포함하지 않습니다.
-- 메모리 검증: ASAN CTest 5/5, GBA/DS/N64 코어 및 앱 계측. 사용자 N64/GBA 표본의 동일 디코딩 검사 통과. 모든 재생 구간을 검증한 것은 아닙니다.
-- 복사한 portable의 한글 파일 경로 및 GBA/DS/N64/3DS 입력 실행 검사. ZIP CRC·소스 포함·SHA256 검사.
+License inventory:13runtime projects/975translation units, unknown origins0, identified N64 restricted files0. Exact Cog component-specific GPL evidence and CC0/BSD exceptions retained. No old unassigned VGM/resampler/legacy noncommercial N64/ES source restored. No external upload/contact, legal certification or music-use permission is claimed.
 
-GBA PCM 원본은 약 10.5kHz/8비트인 경우가 있으며, 96kHz 출력으로 대역폭을 복원하지 않습니다. N64는 Audio/NAudio 슬롯을 지원하고 다른 합성 방식은 stereo fallback입니다. 3DS에는 저장된 채널만 존재하며 이미 합쳐진 악기를 분리하지 않습니다. 48kHz 내부 시간축, 외부 영상 녹화, GPL 전체 소스 배포를 유지합니다. V1.1 DS one-shot 수정과 자동재생 기능을 포함합니다. 자세한 변경 및 제한은 README 및 docs/V1.2-AUDIO.md를 참조하세요.
+Packaged player-only, About/F1 and independent-control UI checks run against the exact staged EXE. Both ZIPs carry matching README KO/EN, changelog, RELEASE.json, LICENSE/THIRD_PARTY_NOTICES, LICENSE-REVIEW/INVENTORY and licenses/. Source ZIP includes rebuild/relink instructions. CRC/SHA, required source/license files and user music/ROM/bank exclusion are verified by tools/package_player.py. Executable is unsigned and the product is unofficial/not Nintendo-affiliated. Prior packages remain untouched.
 
-정식 V1 (1.0.0): 기본 전체 음량 100%, 0.1~3.0초 잔향 시간 조절, 원음이 끝난 뒤 0.5~1초 구간의 잔향 유지 및 짧은/긴 잔향 비교 검사 통과.
-V1.5: 반향 강도 0~100% 수치 조절, 반사음 진폭/에너지/범위 검사 통과. 녹화뷰 개별 음량 조작부 숨김과 전체 음량 유지를 native 화면으로 확인.
-V1.4: 0.01/0.10 피치 단위, 반향 wet 0.45, F9 포함 전체/채널 ±5% 및 슬라이더, FDS/CHANNEL 이름 표시를 native UI로 확인.
-V1.3: FDS banked NSF/NSFE 회귀 및 사용자 81 tracks, default 96kHz 및 16~96kHz 선택, voice gain 200%, unused/active DMC detection 및 숨김 후 FDS 클릭 mapping, varispeed pitch/clock, reverb bypass/tail/decay 검사 통과. docs/FDS-COMPATIBILITY.md 참조.
-V1.2: 일반 UI 한국어 / 녹화 UI 영어 전환과 일반 화면에서만 단축키 표시를 native snapshot으로 확인.
-V1.1: native fullscreen 복원 뒤 클릭 mute/unmute와 원본 파형 보존 검사 통과. 4K 120-frame GDI 자원 수 유지 검사 통과. FDS +4dB / SPC +10dB 출력 보정, silence/stereo 유지, limiter peak ceiling/release와 실제 PCM 에너지 증가 검사 통과. 렌더링 측정은 docs/PERFORMANCE.md 참조.
+Logs/evidence: work/studio150-{build,checks,playlist-final,license-audit,source-configure,source-reproducibility,package}.log/json and outputs/NintendoMusicStudio-1.5-validation/. GitHub workflow was edited but not run remotely. No external publication occurs.
+
+# Prior1.4.18 validation — retained audio baseline
+
+User identifies1.4.15 as the correct-sounding baseline. The own16/17SCC adapter treated native clock/16 synthesis as48kHz, lowering pitch; own scheduler also reduced gain by sqrt(chip count).18 honors the reported native SCC rate, independently averages native sample-cell overlap when downsampling, and removes arbitrary chip-count attenuation. Chip volume tables/VGM modifier and user settings remain. No unlicensed framework/resampler/core was restored. Details: docs/VGM-SOUND-1418.md/.json.
+
+## Direct reference comparison
+
+Read-only supplied VGM, unmodified1.4.15 compiled libraries vs unmodified17 and final18. Before: early SCC peak528Hz ->226Hz; all buses about57.7% RMS. Final18: original528Hz restored. Whole79s SCC zero-lag correlation0.9999999994/RMS ratio1.0000035773; whole mix correlation0.9946569860/RMS ratio0.9995105911 (~0.05% difference). Final18 full trace SHA equals the tested correction candidate. This is measured PCM comparison, not physical listening or a whole-output byte-identity claim. The first rate-only/point-interpolation candidate was less accurate; final native-cell averaging is the verified implementation.
+
+## Fresh18 checks
+
+Release x64 build PASS. Eleven selected CTests PASS: fixture generation, settings, core audio/channels, modeless About, independent controls, independent pitch/tempo, N64 replacement, bounded VGM, Nintendo structure, presentation and monitor pacing. The actual freshly built gme.dll was copied before checks. New SCC sine pitch check measured888Hz vs expected886.525Hz (half-second crossing resolution), and a declared silent second chip leaves mix gain unchanged. Existing156malformed/unsupported cases, own ES5506 ROM/tone/mute/model rejection and YM2612 DAC normal/fast streams PASS.
+
+Both private actual VGMs freshly rendered to end+1s under18:
+
+-23lanes/78.350s: peak0.730525, voice recombination maximum1.78814e-7, wall21.7742s.
+-12lanes/165.275s: peak0.729551, voice recombination maximum6.15045e-5, wall107.036s.
+
+Both peaks <1(no clipped float output); finite audio, deterministic reset, seek500ms vs equivalent rendering, all-mute/unmute and dummy SDL worker0underruns PASS. Original bytes unchanged. Music/banks/raw traces are excluded from packages.
+
+## Preserved scope
+
+N64 replacement source byte-identical to17 across231files, verified against17 source ZIP. New18N64 fixture test passed; previous17actual3track/observer-off-on/exactseek findings remain provenance-reused, not claimed freshly rerun. Existing independent controls/modeless About/recording behavior pass. Previous17runtime/source ZIPs are preserved; the historical own library build directory was used for a private correction probe, not repackaged as17.
+
+License audit:13runtime projects/975translation units, unknown origins0, identified restricted N64TUs0. Pinned official component declarations/CC0/BSD exceptions/full source/notices remain; no external contact or legal certification. Public1.5packaging follows below/above. README KO/EN, source and license notes updated.
+
+Package script checks runtime/source CRC/SHA, source/license presence and game-asset exclusion, plus packaged player-only/About/controls tests with own offscreen processes/dummy audio. User apps/settings untouched. Logs: work/player1418-{build,checks,actual-vgm,license-audit,package}.log. Comparison evidence: work/vgm-sound-regression/; no raw audio traces bundled.

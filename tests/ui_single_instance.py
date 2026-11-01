@@ -21,7 +21,7 @@ def windows(pid):
     def visit(hwnd,_):
         p=w.DWORD();user.GetWindowThreadProcessId(hwnd,ctypes.byref(p))
         name=ctypes.create_unicode_buffer(128);user.GetClassNameW(hwnd,name,128)
-        if p.value==pid and name.value=='NintendoGameMusicViewerWindow':found.append(hwnd)
+        if p.value==pid and name.value=='NintendoMusicStudioWindow':found.append(hwnd)
         return True
     user.EnumWindows(visit,0);return found
 def wait_for(test, message, timeout=15):

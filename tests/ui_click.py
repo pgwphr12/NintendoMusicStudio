@@ -22,7 +22,7 @@ for clicks in [1,2,3]:
   def visit(w,_):
    pid=wintypes.DWORD();user.GetWindowThreadProcessId(w,ctypes.byref(pid))
    name=ctypes.create_unicode_buffer(128);user.GetClassNameW(w,name,128)
-   if pid.value==process.pid and name.value=="NintendoGameMusicViewerWindow":matches.append(w)
+   if pid.value==process.pid and name.value=="NintendoMusicStudioWindow":matches.append(w)
    return True
   user.EnumWindows(visit,0)
   if matches:hwnd=matches[0];break
@@ -67,7 +67,7 @@ for mode,recording in [('mute',False),('mute',True),('plus',False),('drag',False
   def visit(w,_):
    pid=wintypes.DWORD();user.GetWindowThreadProcessId(w,ctypes.byref(pid))
    name=ctypes.create_unicode_buffer(128);user.GetClassNameW(w,name,128)
-   if pid.value==process.pid and name.value=='NintendoGameMusicViewerWindow':matches.append(w)
+   if pid.value==process.pid and name.value=='NintendoMusicStudioWindow':matches.append(w)
    return True
   user.EnumWindows(visit,0)
   if matches:hwnd=matches[0];break

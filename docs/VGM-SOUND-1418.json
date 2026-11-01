@@ -1,0 +1,33 @@
+{
+  "seconds": 79.0,
+  "baseline": "Unmodified1.4.15 compiled libraries",
+  "candidate": "Final1.4.18 compiled libraries; exact output SHA equals prepackage corrected candidate",
+  "source_SHA256": "03bbf089a707366253f647c8ff6c29bfe7f7d5967058f72739826babadd4b9e2",
+  "chips": {
+    "mix": {
+      "rms_ratio": 0.9995105911416101,
+      "correlation_zero_lag": 0.9946569860435908,
+      "peak15": 0.7416043877601624,
+      "peak_fixed": 0.7305247783660889
+    },
+    "YM3812": {
+      "rms_ratio": 0.9983436764453831,
+      "correlation_zero_lag": 0.9882396758386848,
+      "peak15": 0.19322918355464935,
+      "peak_fixed": 0.1948471963405609
+    },
+    "MSM6295": {
+      "rms_ratio": 0.9995257788577264,
+      "correlation_zero_lag": 0.9946325115559174,
+      "peak15": 0.5615038871765137,
+      "peak_fixed": 0.5614591836929321
+    },
+    "K051649": {
+      "rms_ratio": 1.0000035772815532,
+      "correlation_zero_lag": 0.9999999994027602,
+      "peak15": 0.22289693355560303,
+      "peak_fixed": 0.22289764881134033
+    }
+  },
+  "final18_trace_SHA256": "b407c34fecb251abaff8215294b8f89e2926ea2f477444cb6abe234ba8713f15"
+}

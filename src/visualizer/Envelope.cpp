@@ -4,7 +4,7 @@
 namespace ngmv {
 std::vector<EnvelopePoint> envelope(const std::vector<float> &s, size_t columns, size_t window) {
     std::vector<EnvelopePoint> out(columns);
-    if (s.empty() || columns == 0)
+    if (s.empty() || columns == 0 || window == 0)
         return out;
     window = std::min(window, s.size());
     size_t begin = s.size() - window;
@@ -17,6 +17,8 @@ std::vector<EnvelopePoint> envelope(const std::vector<float> &s, size_t columns,
             break;
         }
     for (size_t x = 0; x < columns; x++) {
+        if(window<columns){double at=begin+double(x)*(window-1)/std::max(size_t(1),columns-1);auto a=size_t(at),b=std::min(a+1,s.size()-1);float f=float(at-a),v=s[a]*(1-f)+s[b]*f;out[x]={v,v,v};continue;}
+
         size_t a = begin + x * window / columns,
                b = std::min(s.size(), begin + (x + 1) * window / columns);
         b = std::max(a + 1, b);

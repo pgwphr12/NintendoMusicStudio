@@ -26,9 +26,9 @@ void Player::startWorker() {
 }
 void Player::prefill() {
     const size_t target = std::min(
-        size_t(8192), std::max(size_t(4096), size_t(std::ceil(1024. * InternalRate /
+        size_t(14336), std::max(size_t(4096), size_t(std::ceil(1024. * InternalRate /
                                                               output_.rate() * output_.speed())) +
-                                                 1024));
+                                                 (output_.speed()!=1 || output_.pitch()!=1 ? 4096 : 1024)));
     for (int i = 0; i < 500 && audio_.available() < target && !atEnd_ && error().empty(); i++)
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     if (!error().empty())
@@ -50,6 +50,7 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
         fds = fds || channel.name == "FDS WAVE";
     dmcUsed_ = false;
     usedChannels_ = 0;
+    gbaPsgUsed_ = -1;
     level_.configure(format, fds);
     reverb_.reset();
     {
@@ -79,6 +80,7 @@ void Player::restart(int track, int ms, bool play) {
         if (track != track_)
             dmcUsed_ = false;
         backend_->selectTrack(track);
+        gbaPsgUsed_ = -1;
         if (ms)
             backend_->seek(ms);
         track_ = track;
@@ -141,12 +143,17 @@ std::vector<ChannelState> Player::states() const {
     std::lock_guard<std::mutex> lock(stateMutex_);
     return channelStates_;
 }
+void Player::channelVolumes(float volume) {
+    if(!std::isfinite(volume))return;
+    std::lock_guard<std::mutex> lock(stateMutex_);
+    for(auto&state:channelStates_)state.volume=std::clamp(volume,0.f,2.f);
+}
 std::string Player::error() const {
     std::lock_guard<std::mutex> lock(stateMutex_);
     return error_;
 }
 bool Player::ended() const {
-    return atEnd_ && audio_.available() <= 2;
+    return atEnd_ && output_.drained();
 }
 void Player::produce() {
     try {
@@ -155,12 +162,14 @@ void Player::produce() {
         int length = tracks()[track_].lengthMs;
         backend_->continuousEnd(continueAfterLength_.load());
         while (!quit_) {
-            if (audio_.available() > 8192 - 512) {
+            const size_t target=output_.speed()!=1 || output_.pitch()!=1 ? 14336 : 8192;
+            if (audio_.available() > target - 512) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
                 continue;
             }
             if (!continueAfterLength_ && length > 0 && produced >= uint64_t(length) * InternalRate / 1000) {
                 atEnd_ = true;
+                output_.finished();
                 break;
             }
             size_t frames = 512;
@@ -179,6 +188,7 @@ void Player::produce() {
             }
             backend_->muteMask(mask);
             backend_->render(frames, block);
+            uint32_t psg=0;if(backend_->gbaPsgUsed(psg))gbaPsgUsed_=int(psg&15);
             history_.append(block);
             uint32_t active = usedChannels_.load();
             for (size_t c = 0; c < block.voices.size() && c < 32; ++c)
@@ -220,6 +230,7 @@ void Player::produce() {
         std::lock_guard<std::mutex> lock(stateMutex_);
         error_ = e.what();
         atEnd_ = true;
+        output_.finished();
     }
 }
 } // namespace ngmv

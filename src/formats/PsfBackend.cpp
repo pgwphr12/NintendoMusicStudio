@@ -1,6 +1,8 @@
 #include "PsfBackend.hpp"
 #include "GbaMixerTap.hpp"
 #include "GbaRomSample.hpp"
+#include "GbaPsgMirror.hpp"
+#include "NintendoMixerTap.hpp"
 #include "UsfVoiceTap.hpp"
 #include <GBA.h>
 #include <Gb_Apu.h>
@@ -236,19 +238,23 @@ struct Image {
 struct GbaCore : GBASoundOut {
     GBASystem system;
     GbaMixerTap mixer;
+    NintendoMixerTap nintendo;
+    std::unique_ptr<GbaPsgMirror> psg;
     std::deque<Stereo> pending;
-    GbaCore(const Image &image, int enabled,int voice=-1,uint32_t info=0,int voices=0) {
+    GbaCore(const Image &image, int enabled,int voice=-1,uint32_t info=0,int voices=0,std::vector<NintendoVoicePool> pools={}) : nintendo(std::move(pools),voice) {
         system.cpuIsMultiBoot = (image.entry >> 24) == 2;
         need(CPULoadRom(&system, image.rom.data(), unsigned(image.rom.size())) > 0,
              "Cannot load GSF music image.");
         soundInit(&system, this);
         soundSetSampleRate(&system, InternalRate);
         soundReset(&system);
+        if(enabled==0x30f&&!std::getenv("NGMV_GBA_CPU_PSG")){psg=std::make_unique<GbaPsgMirror>(system);system.viewerApuContext=psg.get();system.viewerApuEvent=&GbaPsgMirror::callback;}
         CPUInit(&system);
         CPUReset(&system);
-        mixer.isolate=voice;mixer.info=info;mixer.voices=voices;system.viewerMixerContext=&mixer;system.viewerMixerWrite=&GbaMixerTap::callback;
+        mixer.isolate=voice;mixer.info=info;mixer.voices=voices;system.viewerMixerContext=this;system.viewerMixerWrite=&GbaCore::filter;
         soundSetEnable(&system, enabled);
         soundResume(&system);
+        if(enabled==0x30f)system.gb_apu->viewer_inspection(true);
     }
     ~GbaCore() override {
         soundShutdown(&system);
@@ -264,14 +270,17 @@ struct GbaCore : GBASoundOut {
             need(attempts < 100, "GSF core did not produce audio.");
             CPULoop(&system, 250000);
         }
+        need(!nintendo.fault,"Unsupported Nintendo mixer context/kernel change; no partial voice output");
         out.resize(frames);
         for (auto &v : out) {
             v = pending.front();
             pending.pop_front();
         }
     }
+    static u32 filter(void*p,GBASystem*g,u32 address,u32 value,int width){auto&core=*static_cast<GbaCore*>(p);auto result=core.mixer.filter(g,address,value,width);return core.mixer.info?result:core.nintendo.filter(g,address,result,width);}
     void probe(){
-        for(int i=0;i<50&&!mixer.recognized;i++){CPULoop(&system,250000);if(!mixer.info)mixer.scan(&system);}
+        int limit=nintendo.candidates.empty()?50:200;
+        for(int i=0;i<limit&&mixer.recognized<=32&&nintendo.recognized<=32;i++){CPULoop(&system,250000);if(!mixer.info)mixer.scan(&system);}
     }
 };
 using DsFrame = std::array<Stereo, 17>;
@@ -406,7 +415,9 @@ class PsfBackend final : public IMusicBackend {
     uint32_t mask_ = 0;
     uint64_t clock_ = 0;
     int fadeStart_ = -1, fadeMs_ = 0;
-    int gbaVoices_=0;
+    int gbaVoices_=0,nintendoVoices_=0;
+    std::vector<NintendoVoicePool> nintendoPools_;
+    int gbaVoiceCount()const{return gbaVoices_?gbaVoices_:nintendoVoices_;}
     uint32_t gbaMixerInfo_=0;
     bool continuousEnd_=false;
     bool gbaInspection_=false,gbaMixInspection_=false;
@@ -448,6 +459,7 @@ class PsfBackend final : public IMusicBackend {
         if(!gbaMixInspection_||gba_.empty()||!gba_[0]->mixer.mixCapture)return false;
         return gba_[0]->mixer.mixCapture->drain(out,error);
     }
+    bool gbaPsgUsed(uint32_t&out) const override {if(gba_.empty()||!gba_[0]->system.gb_apu)return false;out=gba_[0]->system.gb_apu->viewer_psg_mask();return true;}
     bool gbaPsgActivity(uint32_t&out) const override {
         if(!gbaMixInspection_||gba_.empty()||!gba_[0]->system.gb_apu)return false;
         out=gba_[0]->system.gb_apu->viewer_psg_mask()|(gba_[0]->mixer.mixCapture&&gba_[0]->mixer.mixCapture->psgNoteSeen()?16u:0u);return true;
@@ -491,13 +503,15 @@ class PsfBackend final : public IMusicBackend {
 #ifdef NGMV_GBA_LEGACY_BOOTSTRAP
             selectTrack(0); // Reproducible pre-1.4.0 startup, benchmark target only.
 #else
-            gba_.push_back(std::make_unique<GbaCore>(image_,0x30f));
+            nintendoPools_=findNintendoVoicePools(image_.rom);
+            gba_.push_back(std::make_unique<GbaCore>(image_,0x30f,-1,0,0,nintendoPools_));
 #endif
             if(!std::getenv("NGMV_GBA_HARDWARE_ONLY"))gba_[0]->probe();
             if(std::getenv("NGMV_GBA_MIXER_DEBUG"))std::fprintf(stderr,"GBA mixer: layout=%d slots=%d RAMwrites=%llu recognized=%llu checks=%u\n",gba_[0]->mixer.info!=0,gba_[0]->mixer.voices,(unsigned long long)gba_[0]->mixer.writes,(unsigned long long)gba_[0]->mixer.recognized,gba_[0]->mixer.checks);
             if(std::getenv("NGMV_GBA_MIXER_DEBUG")&&gba_[0]->mixer.info){auto s=GbaMixerTap::ram(&gba_[0]->system,gba_[0]->mixer.info,24);std::fprintf(stderr,"GBA mixer fields: reverb=%u master=%u freq=%u samples=%u\n",s[5],s[7],GbaMixerTap::word(s+20),GbaMixerTap::word(s+16));}
             if(std::getenv("NGMV_GBA_MIXER_DEBUG")&&gba_[0]->mixer.info)std::fprintf(stderr,"GBA DMA offsets: A=%x B=%x\n",GbaMixerTap::word(gba_[0]->system.ioMem+0xbc)-gba_[0]->mixer.info,GbaMixerTap::word(gba_[0]->system.ioMem+0xc8)-gba_[0]->mixer.info);
             if(!std::getenv("NGMV_GBA_HARDWARE_ONLY")&&gba_[0]->mixer.recognized>32){gbaVoices_=gba_[0]->mixer.voices;gbaMixerInfo_=gba_[0]->mixer.info;channels_.resize(4);for(int i=0;i<gbaVoices_;i++)channels_.push_back({"PCM VOICE "+std::to_string(i+1)});channels_.push_back({"EFFECTS / OTHER"});}
+            if(!std::getenv("NGMV_GBA_HARDWARE_ONLY")&&!gbaVoices_&&gba_[0]->nintendo.recognized>32&&!gba_[0]->nintendo.fault){auto profile=gba_[0]->nintendo.selected;nintendoVoices_=int(profile.count);nintendoPools_={profile};channels_.resize(4);for(int i=0;i<nintendoVoices_;i++)channels_.push_back({"PCM VOICE "+std::to_string(i+1)});channels_.push_back({"EFFECTS / OTHER"});}
             // Do not retain the probe's prefetched, unmuted output in either mode.
             selectTrack(0);
         } else selectTrack(0);
@@ -528,9 +542,9 @@ class PsfBackend final : public IMusicBackend {
         clock_ = 0;
         if (image_.format == Format::Gsf) {
             int bits[] = {1, 2, 4, 8, 0x100, 0x200};
-            gba_.push_back(std::make_unique<GbaCore>(image_, 0x30f,-1,gbaMixerInfo_,gbaVoices_));
-            if(gbaVoices_){for(int c=0;c<4;c++)gba_.push_back(std::make_unique<GbaCore>(image_,bits[c]));for(int c=0;c<gbaVoices_;c++)gba_.push_back(std::make_unique<GbaCore>(image_,0x300,c,gbaMixerInfo_,gbaVoices_));}
-            else for (int bit : bits)gba_.push_back(std::make_unique<GbaCore>(image_, bit));
+            gba_.push_back(std::make_unique<GbaCore>(image_, 0x30f,-1,gbaMixerInfo_,gbaVoices_,nintendoVoices_?nintendoPools_:std::vector<NintendoVoicePool>{}));
+            if(gbaVoiceCount()){if(!gba_[0]->psg)for(int c=0;c<4;c++)gba_.push_back(std::make_unique<GbaCore>(image_,bits[c]));for(int c=0;c<gbaVoiceCount();c++)gba_.push_back(std::make_unique<GbaCore>(image_,0x300,c,gbaMixerInfo_,gbaVoices_,nintendoVoices_?nintendoPools_:std::vector<NintendoVoicePool>{}));}
+            else for (int c=gba_[0]->psg?4:0;c<6;c++)gba_.push_back(std::make_unique<GbaCore>(image_,bits[c]));
             if(gbaInspection_){gba_[0]->mixer.capture=std::make_unique<GbaVoiceCapture>();if(gbaMixInspection_){gba_[0]->mixer.mixCapture=std::make_unique<GbaMixCapture>();gba_[0]->system.gb_apu->viewer_inspection(true);}gba_[0]->system.viewerEventClock=true;}
         } else if (image_.format == Format::Usf)
             usf_ = std::make_unique<UsfCore>(image_);
@@ -542,7 +556,7 @@ class PsfBackend final : public IMusicBackend {
         mask_ = mask;
         if (ds_)
             ds_->state.dwChannelMute = mask;
-        if (!gba_.empty()&&!gbaVoices_) {
+        if (!gba_.empty()&&!gbaVoiceCount()) {
             int bits[] = {1, 2, 4, 8, 0x100, 0x200};
             int enabled = 0;
             for (size_t c = 0; c < 6; c++)
@@ -586,10 +600,12 @@ class PsfBackend final : public IMusicBackend {
             }
         else {
             gba_[0]->render(frames, out.mix);
-            for (size_t c = 0; c < (gbaVoices_?size_t(4+gbaVoices_):6); c++)
-                gba_[c + 1]->render(frames, out.voices[c]);
-            if(gbaVoices_){
-                for(size_t i=0;i<frames;i++){Stereo dry{};for(int c=0;c<4+gbaVoices_;c++){dry.l+=out.voices[c][i].l;dry.r+=out.voices[c][i].r;}out.voices.back()[i]={out.mix[i].l-dry.l,out.mix[i].r-dry.r};if(mask_){Stereo mix{};for(size_t c=0;c<out.voices.size();c++)if(!(mask_&(1u<<c))){mix.l+=out.voices[c][i].l;mix.r+=out.voices[c][i].r;}out.mix[i]=mix;}}
+            for (size_t c = 0; c < (gbaVoiceCount()?size_t(4+gbaVoiceCount()):6); c++){
+                if(gba_[0]->psg&&c<4)gba_[0]->psg->render(int(c),frames,out.voices[c]);
+                else gba_[c+1-(gba_[0]->psg?4:0)]->render(frames,out.voices[c]);
+            }
+            if(gbaVoiceCount()){
+                for(size_t i=0;i<frames;i++){Stereo dry{};for(int c=0;c<4+gbaVoiceCount();c++){dry.l+=out.voices[c][i].l;dry.r+=out.voices[c][i].r;}out.voices.back()[i]={out.mix[i].l-dry.l,out.mix[i].r-dry.r};if(mask_){Stereo mix{};for(size_t c=0;c<out.voices.size();c++)if(!(mask_&(1u<<c))){mix.l+=out.voices[c][i].l;mix.r+=out.voices[c][i].r;}out.mix[i]=mix;}}
             }
         }
         // Fade tagged files in the original source-time domain, including isolated signals.

@@ -23,7 +23,7 @@ def session(path,click=False):
             def visit(w,_):
                 pid=wintypes.DWORD();user.GetWindowThreadProcessId(w,ctypes.byref(pid))
                 name=ctypes.create_unicode_buffer(128);user.GetClassNameW(w,name,128)
-                if pid.value==process.pid and name.value=='NintendoGameMusicViewerWindow':matches.append(w)
+                if pid.value==process.pid and name.value=='NintendoMusicStudioWindow':matches.append(w)
                 return True
             user.EnumWindows(visit,0)
             if matches:hwnd=matches[0];break
@@ -47,12 +47,12 @@ with tempfile.TemporaryDirectory(prefix='ngmv-settings-ui-') as folder:
     keys=[k for k in data if k.startswith('channel.') and k.endswith('.volume')]
     assert keys,'Loaded channels were not saved'
     channel=keys[0]
-    data.update(master='37',speed='123',speedStep='1',rate='44100',reverb='1',reverbAmount='63',reverbDecay='23',repeat='1',autoplay='0',recording='1',windowSamples='1024')
+    data.update(controlsRevision='1415',pitch='112',master='37',speed='123',speedStep='1',rate='44100',reverb='1',reverbAmount='63',reverbDecay='23',repeat='1',autoplay='0',recording='1',windowSamples='1024')
     data[channel]='175';data[channel.replace('.volume','.mute')]='1'
     path.write_text(''.join(f'{k}={v}\n' for k,v in data.items()))
     session(path,True);restored=read(path)
-    assert restored['master']=='42',restored
-    for k in ['speed','speedStep','rate','reverb','reverbAmount','reverbDecay','repeat','autoplay','recording','windowSamples',channel,channel.replace('.volume','.mute')]:assert restored[k]==data[k],(k,data[k],restored[k])
+    assert restored['master']=='37',restored
+    for k in ['pitch','speed','speedStep','rate','reverb','reverbAmount','reverbDecay','repeat','autoplay','recording','windowSamples',channel,channel.replace('.volume','.mute')]:assert restored[k]==data[k],(k,data[k],restored[k])
     session(path);again=read(path)
-    assert again['master']=='42' and again[channel]=='175'
+    assert again['master']=='37' and again[channel]=='175'
 print('Real app restart: global settings, recording view, +/- volume edit, per-system channel gain/mute: PASS')
