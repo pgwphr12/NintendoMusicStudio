@@ -61,6 +61,7 @@ class Window {
     bool open(const std::filesystem::path &);
     void tracksMenu();
     void rateMenu();
+    void soundFontMenu();
     void updatePlayback();
     void toggleFullscreen();
     void report(const std::exception &e);

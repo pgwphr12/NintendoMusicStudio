@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/schellingb/TinySoundFont",
+  "commit": "853a0a171759f1ddba0de1442133a75912bbeffa",
+  "files": {
+    "tsf.h": "70d55963c98f60ebb81518eaa1f25d46888d5180eb5f5289fd6b74ffc177d197",
+    "LICENSE": "ef10cb839de73fb6d5d32ea7151979e87809a6df70dc7e7ee8457ae1c9e7aa7e"
+  },
+  "local_changes": "Bound final interpolation pair in all3 output modes to validated region end; own SF2 preflight and region validation in MidiBackend.cpp/MidiBank.inl",
+  "modified_tsf_sha256": "94758adf3177ca45a30cd2e25fa507765283e14e5caf4113ad7d2310e0af28ba"
+}

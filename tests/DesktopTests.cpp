@@ -1,5 +1,6 @@
 #include "app/WindowsIntegration.hpp"
 #include <iostream>
+#include <algorithm>
 #include <set>
 #include <stdexcept>
 using namespace ngmv::desktop;
@@ -15,7 +16,8 @@ int main(int argc, char **argv) {
     try {
         const std::filesystem::path exe = L"C:\\음악 프로그램\\NintendoMusicStudio.exe";
         auto extensions = supportedExtensions();
-        check(extensions.size() == 18 && std::set<std::wstring>(extensions.begin(), extensions.end()).size() == 18, "18 unique extensions required");
+        check(extensions.size() == 20 && std::set<std::wstring>(extensions.begin(), extensions.end()).size() == 20, "20 unique extensions required");
+        for(auto ext:{L".mp3",L".wav",L".ogg",L".flac",L".mid",L".midi"})check(std::find(extensions.begin(),extensions.end(),ext)!=extensions.end(),"Audio/MIDI registration missing");
         auto entries = registrationPlan(exe);
         for (const auto &entry : entries) {
             check(entry.key.find(L"UserChoice") == std::wstring::npos, "Never overwrite UserChoice");
@@ -47,6 +49,18 @@ int main(int argc, char **argv) {
         registerFileTypes(isolated, exe, false);
         for (const auto &entry : entries) check(read(isolated, entry.key, entry.name) == entry.value, "Registered value differs");
         check(read(isolated, L"Software\\Classes\\.nsf", L"") == old, "Previous default must survive");
+        // Prior consent must refresh the extension list even at the same EXE path.
+        registerFileTypes(isolated, executablePath(), false);
+        HKEY pref=nullptr;check(RegCreateKeyExW(isolated,L"Software\\GameMusicPlayer\\Preferences",0,nullptr,0,KEY_SET_VALUE,nullptr,&pref,nullptr)==ERROR_SUCCESS,"Seed prior consent");
+        DWORD consent=1;RegSetValueExW(pref,L"FileRegistrationConsent",0,REG_DWORD,reinterpret_cast<const BYTE*>(&consent),sizeof(consent));RegCloseKey(pref);
+        HKEY assoc=nullptr;check(RegOpenKeyExW(isolated,L"Software\\NintendoMusicStudio\\Capabilities\\FileAssociations",0,KEY_SET_VALUE,&assoc)==ERROR_SUCCESS,"Open isolated associations");
+        RegDeleteValueW(assoc,L".mid");RegDeleteValueW(assoc,L".flac");RegCloseKey(assoc);
+        check(RegOverridePredefKey(HKEY_CURRENT_USER,isolated)==ERROR_SUCCESS,"Isolate consent refresh");
+        defaultAppsPrompt(nullptr,false,false);
+        RegOverridePredefKey(HKEY_CURRENT_USER,nullptr);
+        check(!read(isolated,L"Software\\NintendoMusicStudio\\Capabilities\\FileAssociations",L".mid").empty(),"Existing consent did not refresh MIDI");
+        check(!read(isolated,L"Software\\NintendoMusicStudio\\Capabilities\\FileAssociations",L".flac").empty(),"Existing consent did not refresh audio");
+        check(read(isolated,L"Software\\Classes\\.nsf",L"")==old,"Consent refresh overwrote default");
         RegCloseKey(isolated); isolated = nullptr;
         check(RegDeleteTreeW(HKEY_CURRENT_USER, testKey.c_str()) == ERROR_SUCCESS, "Clean test registry");
         std::wstring out, path = L"E:\\노래\\Test & Track.mini2sf";
@@ -63,7 +77,7 @@ int main(int argc, char **argv) {
         wchar_t empty[] = L""; request.cbData = sizeof empty; request.lpData = empty;
         check(decodeRequest(&request,out) && out.empty(), "Activation-only request");
         check(!decodeRequest(nullptr,out), "Reject absent request");
-        std::cout << "18 file types, quoted Unicode commands, isolated registry, preservation of defaults, IPC validation: PASS\n";
+        std::cout << "20 file types, quoted Unicode commands, isolated registry, preservation of defaults, IPC validation: PASS\n";
         return 0;
     } catch (const std::exception &e) {
         RegOverridePredefKey(HKEY_CURRENT_USER, nullptr);

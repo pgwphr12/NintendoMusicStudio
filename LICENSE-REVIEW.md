@@ -1,3 +1,7 @@
+##1.5.9 MIDI addition
+
+TinySoundFont has an explicit MIT grant, retained verbatim with pinned source and marked interpolation bounds patch. Own MIDI/DLS adapter code is under the project GPL2+ license. Windows GMFilePath / fallback system GM.DLS is read locally and is excluded from both distributions; user-selected banks and MIDI music retain independent rights. No new bank redistribution permission is claimed.
+
 # Software license review — Nintendo Music Studio 1.5.2 /2026-11-01
 
 The user requires N64 support and research only: no public question/contact was sent. The identified VGM and N64 licensing blockers have concrete source replacements. Nintendo Music Studio1.5 is prepared as a public runtime/source package at the user's request. No external upload/contact is performed. Earlier versions are preserved without retroactive clearance claims.

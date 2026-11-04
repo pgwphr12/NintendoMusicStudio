@@ -1,0 +1,85 @@
+{
+  "version": "1.5.9",
+  "date": "2026-11-04",
+  "scope": "MIDI with internal synthesis, system default bank and optional custom PCM SF2/DLS,20extension registration",
+  "architecture": "Own bounded Standard MIDI format0/1 parser, active16-channel TinySoundFont synth copies sharing bank samples; real per-channel PCM -> existing Player gain/pitch/tempo/reverb/history; no external MIDI device output or fabricated waveform",
+  "windows_default": "Read HKLM SOFTWARE/Microsoft/DirectMusic GMFilePath; fallback GetSystemDirectory/drivers/gm.dls; do not modify registry setting or redistribute bank",
+  "custom_bank": "F8 or bottom MIDI bank button; PCM SF2 / mono PCM8/16 DLS1 selection, persisted to local midi-soundfont.txt; new current MIDI restarts after validated change",
+  "registration": "20 unique extensions; adds .mid/.midi to14game+4ordinary; prompts updated fromstale14text to20; existing registration consent refreshes revision159 even if executable path same; never overwrite UserChoice or extension default",
+  "limits": [
+    "Internal TinySoundFont/DLS adapter is not identical to Microsoft GS Wavetable/MIDI Mapper audio",
+    "No automatic import of third-party MIDI Mapper/VirtualMIDISynth-specific bank settings; choose SF2 manually",
+    "Only SMF0/1; PPQN/tempo and SMPTE divisions supported; no SMF2/RMID",
+    "PCM SF2 and DLS1 monoPCM8/16; no SF3/SFZ/compressedDLS/DLS2",
+    "Custom SF2 modulators, aftertouch, vendor SysEx and some DLS connection routes limited; counters in track metadata",
+    "2hour MIDI cap;2s release tail; seeks replay synthesis and may take time on long songs",
+    "No physical listening/device/high-refresh certification"
+  ],
+  "validation": {
+    "full_ctest": "28/28 PASS85.72s",
+    "final_targeted": "3/3 PASS0.82s after added16channel + same-path prior-consent refresh tests",
+    "midi_core": "format0/1 tempo/running-status/SMPTE/error/bank-boundary checks, defaultWindows+ownSF2/DLS realPCM,16stems exact recombine, program/drums, replay/seek/mute/end",
+    "midi_ui": {
+      "pass": true,
+      "cases": [
+        {
+          "bank": "windows",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            9354,
+            15498
+          ]
+        },
+        {
+          "bank": "sf2",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            13876,
+            20168
+          ]
+        },
+        {
+          "bank": "dls",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            13875,
+            20163
+          ]
+        }
+      ],
+      "audio": "dummy",
+      "snapshot_forced_play": false
+    },
+    "midi_repeat": {
+      "file": "single.mid",
+      "wraps": 2,
+      "maximum_ms": 2496,
+      "playing": true,
+      "error": 0,
+      "pass": true
+    },
+    "provided_MIDI": {
+      "file": "FD piano.mid",
+      "read_only": true,
+      "rendered_seconds": 10,
+      "channels": 2,
+      "length_ms": 263200,
+      "seek_5seconds": "PASS",
+      "first_10s_energy": 825.477
+    },
+    "visual_inspection": "Windows bank UI screenshot checked: real2lanes, visible F8 button, normal controls intact"
+  },
+  "dependency": {
+    "name": "TinySoundFont",
+    "commit": "853a0a171759f1ddba0de1442133a75912bbeffa",
+    "license": "MIT",
+    "patch": "Marked final interpolation pair bound in3output modes, own SF2 preflight/post-load region bounds; UPSTREAM.json records original and modified hashes",
+    "assets_in_packages": false
+  },
+  "discarded_approach": "Native DirectMusic offscreen probe compiled but DownloadInstrument buffers not retrievable/PlayBuffer unconfigured; not integrated into player, no native device playback, no native source copied",
+  "sources": [
+    "https://github.com/schellingb/TinySoundFont",
+    "https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/idirectmusicsynth-and-idirectmusicsynthsink",
+    "https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/dls-download-support"
+  ]
+}

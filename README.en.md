@@ -1,4 +1,10 @@
-# Nintendo Music Studio1.5.7
+# Nintendo Music Studio1.5.9
+
+1.5.9: MIDI(.mid/.midi, SMF0/1) with real per-channel synthesized waveforms, tempo/program changes, controllers, drums, seeking and repeat. Uses the Windows DirectMusic GMFilePath bank (system gm.dls fallback), or an SF2/DLS bank selected with **MIDI sound bank / F8**. Selection persists; changing banks restarts the current MIDI. Registration includes all20 game/audio/MIDI extensions; prior registration consent refreshes this list while preserving Windows UserChoice.
+
+MIDI uses internal TinySoundFont synthesis through the existing gain/pitch/tempo/reverb pipeline. The Windows bank's samples are used locally; this is **not bit-identical to Microsoft GS Wavetable Synth or MIDI Mapper**. VirtualMIDISynth-specific settings are not imported; choose its SF2 explicitly. PCM SF2 and mono PCM8/16 DLS1 are supported; use a GM bank. SF3/SFZ, compressed/DLS2 banks, SMF2, custom SF2 modulators and some DLS routes/aftertouch/vendor SysEx are unsupported or limited. Two-hour MIDI limit and2s release tail. Seeking replays synthesis and can be slow far into a long song. No system/user bank or MIDI assets are bundled.
+
+1.5.8: opening MP3/WAV/Ogg Vorbis/FLAC starts playback immediately through the shared file-open path. Folder auto-advance remains a separate setting; manual pause remains available.
 
 1.5.7: recording waveforms end at their channel cell boundary, retaining outer margins and the gap between columns. Channel labels sit nearer the row top with tighter text bounds. Fullscreen repeat scheduling and audio decoding remain unchanged.
 

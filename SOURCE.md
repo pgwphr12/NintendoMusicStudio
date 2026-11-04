@@ -1,4 +1,4 @@
-# Nintendo Music Studio 1.5.7 — complete corresponding source
+# Nintendo Music Studio 1.5.9 — complete corresponding source
 
 Windows x64, C++17, Visual Studio2022 Desktop development with C++, CMake3.24+ and Python3. Dependencies are bundled as pinned source archives/trees with notices; no proprietary music is required. Composition/editor sources are absent. Python/Pillow are used only for build/test/package workflows, not runtime.
 
@@ -36,4 +36,7 @@ Additional VGM playback uses own bounded scheduling/minimal core declarations, e
 1.5.5: Registry path-aware fallback routes ordinary extensions to real decoder validation, preserving known game signatures. IMusicBackend optional decodedEndFrame and AudioFileBackend report actual PCM EOF; Player playbackBoundaryReached uses this for ordinary audio, and metadata for emulated formats. Recording-only wave start extends into labels, deferred outlined labels draw after the waveform. New native button/matrix/recording tests are included; unknown-length emulated loop boundaries are not invented.
 
 
-1.5.7 UI-only service: Window::updatePlayback is called by DisplayPacer::Message and WM_TIMER; no audio-thread or painting restart. Recording ChannelLayout accepts recording-aware right edge. Native tests can explicitly drop timer1 only in own automated snapshot sessions; normal launches cannot activate this fault injection. Optional timer_only_baseline is a diagnostic build target using the old timer-only path, not included in runtime packages. Full evidence: docs/FULLSCREEN-156.json.
+1.5.6 UI-only service: Window::updatePlayback is called by DisplayPacer::Message and WM_TIMER; no audio-thread or painting restart. Recording ChannelLayout accepts recording-aware right edge. Native tests can explicitly drop timer1 only in own automated snapshot sessions; normal launches cannot activate this fault injection. Optional timer_only_baseline is a diagnostic build target using the old timer-only path, not included in runtime packages. Full evidence: docs/FULLSCREEN-156.json.
+
+
+1.5.9 MIDI: own bounded SMF0/1 parser (MidiParser.cpp), DLS1 adapter and SF2 table preflight (MidiBank.inl), MIDI synth backend using pinned TinySoundFont MIT source with marked interpolation bounds patch. No Windows/other bank data is included; tests generate self-authored sine SF2/DLS. F8 selection uses a separate local midi-soundfont.txt next to the existing INI, leaving integer preferences compatible. DLLs, drivers and global MIDI settings are not installed or modified.

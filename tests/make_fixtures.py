@@ -125,3 +125,7 @@ es.extend([0x61,0x4b,0x3c,0x66]);struct.pack_into('<I',es,4,len(es)-4);struct.pa
 (out/'short-scc.vgm').write_bytes(es)
 
 (ordinary/'renamed-game.mp3').write_bytes((out/'channels.nsf').read_bytes())
+
+# New MIDI fixtures use only self-authored sequences and sine samples.
+import subprocess
+subprocess.run([sys.executable,str(Path(__file__).with_name("make_midi_fixtures.py")),str(out/"midi")],check=True)

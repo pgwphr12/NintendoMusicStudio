@@ -46,7 +46,7 @@ std::filesystem::path executablePath() {
 }
 std::vector<std::wstring> supportedExtensions() {
     return {L".nsf", L".nsfe", L".spc", L".gbs", L".gsf", L".minigsf", L".2sf",
-            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".vgm", L".vgz", L".mp3", L".wav", L".ogg", L".flac"};
+            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".vgm", L".vgz", L".mp3", L".wav", L".ogg", L".flac", L".mid", L".midi"};
 }
 bool decodeRequest(const COPYDATASTRUCT *data, std::wstring &result) {
     if (!data || data->dwData != CopyDataTag || !data->lpData ||
@@ -69,7 +69,7 @@ std::vector<RegistryValue> registrationPlan(const std::filesystem::path &exe) {
     const std::wstring apps = L"Software\\Classes\\Applications\\NintendoMusicStudio.exe";
     std::vector<RegistryValue> values{
         {caps, L"ApplicationName", L"Nintendo Music Studio"},
-        {caps, L"ApplicationDescription", L"NES, SNES, Game Boy, GBA, DS, Nintendo 64, 3DS, SMS and Mega Drive game music"},
+        {caps, L"ApplicationDescription", L"NES, SNES, Game Boy, GBA, DS, Nintendo 64, 3DS, SMS and Mega Drive game music, MIDI and ordinary audio"},
         {caps, L"ApplicationIcon", quoted + L",0"},
         {L"Software\\RegisteredApplications", L"NintendoMusicStudio", caps},
         {apps, L"FriendlyAppName", L"Nintendo Music Studio"},
@@ -126,8 +126,8 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
             L"Software\\Classes\\Applications\\NintendoMusicStudio.exe\\shell\\open\\command",
             L"", RRF_RT_REG_SZ, nullptr, command, &bytes);
         auto exe = executablePath();
-        if (command != L"\"" + exe.native() + L"\" --play \"%1\"")
-            registerFileTypes(HKEY_CURRENT_USER, exe, true);
+        if (command != L"\"" + exe.native() + L"\" --play \"%1\"" || preference(L"FileRegistrationRevision") < 159)
+            {registerFileTypes(HKEY_CURRENT_USER, exe, true);savePreference(L"FileRegistrationRevision",159);}
         return;
     }
     if (!force && preference(L"DontAskDefaultApps")) return;
@@ -142,10 +142,10 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
     dialog.pszMainIcon = MAKEINTRESOURCEW(101);
     dialog.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION | TDF_POSITION_RELATIVE_TO_WINDOW;
     dialog.pszWindowTitle = L"Nintendo Music Studio";
-    dialog.pszMainInstruction = english ? L"Use this viewer to open supported game music files?" : L"지원하는 게임 음악 파일을 이 프로그램으로 열까요?";
+    dialog.pszMainInstruction = english ? L"Use this viewer to open supported music files?" : L"지원하는 음악 파일을 이 프로그램으로 열까요?";
     dialog.pszContent = english
-        ? L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, VGM, VGZ\n\nRegister these 14 types, then choose this viewer in Windows Default apps. Existing defaults stay in place until you select it."
-        : L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, VGM, VGZ\n\n14개 확장자를 등록한 뒤 Windows 기본 앱 설정에서 이 프로그램을 선택하세요. 기본 앱 변경은 Windows 설정에서 직접 완료해야 합니다.";
+        ? L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, VGM, VGZ, MP3, WAV, OGG, FLAC, MID, MIDI\n\nRegister these 20 types, then choose this viewer in Windows Default apps. Existing defaults stay in place until you select it."
+        : L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, VGM, VGZ, MP3, WAV, OGG, FLAC, MID, MIDI\n\n20개 확장자를 등록한 뒤 Windows 기본 앱 설정에서 이 프로그램을 선택하세요. 기본 앱 변경은 Windows 설정에서 직접 완료해야 합니다.";
     dialog.pszVerificationText = english ? L"Don't ask again" : L"다시 묻지 않기";
     dialog.cButtons = 2;
     dialog.pButtons = buttons;
@@ -157,6 +157,7 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
     if (choice == 100) {
         registerFileTypes(HKEY_CURRENT_USER, executablePath(), true);
         savePreference(L"FileRegistrationConsent", 1);
+        savePreference(L"FileRegistrationRevision",159);
         savePreference(L"DontAskDefaultApps", 1);
         auto launched = ShellExecuteW(parent, L"open", L"ms-settings:defaultapps?registeredAppUser=NintendoMusicStudio", nullptr, nullptr, SW_SHOWNORMAL);
         if (reinterpret_cast<INT_PTR>(launched) <= 32)
@@ -178,7 +179,7 @@ InstanceGate::~InstanceGate() {
     if (mutex_) CloseHandle(mutex_);
 }
 bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
-    std::wstring name = L"Local\\NintendoMusicStudio.Studio157." + userIdentity();
+    std::wstring name = L"Local\\NintendoMusicStudio.Studio159." + userIdentity();
     mutex_ = CreateMutexW(nullptr, TRUE, name.c_str());
     DWORD error = GetLastError();
     if (!mutex_) throw std::runtime_error("Cannot initialize the single-instance player.");

@@ -1,15 +1,15 @@
 {
   "product": "Nintendo Music Studio",
-  "version": "1.5.7",
-  "file_version": "1.5.7.0",
+  "version": "1.5.9",
+  "file_version": "1.5.9.0",
   "release_date": "2026-11-04",
   "platform": "Windows x64",
   "entrypoint": "NintendoMusicStudio.exe",
   "runtime_library": "gme.dll",
-  "corresponding_source": "NintendoMusicStudio-1.5.7-Source.zip",
+  "corresponding_source": "NintendoMusicStudio-1.5.9-Source.zip",
   "license_notices": "THIRD_PARTY_NOTICES.md",
   "contains_user_music": false,
   "digital_signature": false,
   "uploaded": false,
-  "release_type": "recording-cell-alignment"
+  "release_type": "midi-soundbanks-registration"
 }

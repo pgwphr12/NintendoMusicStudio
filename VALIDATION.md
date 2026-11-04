@@ -1,3 +1,11 @@
+# Nintendo Music Studio1.5.9 validation
+
+Fresh full CTest28/28 PASS85.72s. Final3/3 targeted tests PASS0.82s add16-channel exact stem recombination and existing same-EXE-path registration-consent refresh under isolated HKCU. MIDI parser tempo/running-status/SMPTE, malformed SMF/SF2, own sine PCM SF2/DLS, native Windows default bank, program/drums, replay/seek/mute/EOF tested. Native UI shows actual separate synthesized channel waveforms with system and selected Unicode SF2/DLS banks; snapshot forced Play disabled. MIDI button repeat wraps twice. Earlier supplied FD piano.mid read-only first10s and5sseek PASS (2channels,263200ms including2s release tail). All UI uses dummy audio; no physical listening claim. Windows MIDI Mapper waveform equivalence is not claimed. No system/user bank or music assets shipped. Evidence and known limits: docs/MIDI-159.json.
+
+# Nintendo Music Studio1.5.8 validation
+
+Fresh targeted CTest7/7 PASS31.05s: fixtures, ordinary waveform, actual EOF repeat, recording geometry, fullscreen repeat, fullscreen DS auto-advance, and ordinary open/start. New4-format open test disables the snapshot harness forced Play so only shared Window.open can start playback; folder autoplay is off, each clock advances, and Space pauses. With only that harness suppression and the old open behavior, MP3 remains paused (expected baseline failure). Decoder and audio core unchanged from1.5.7. Native tests use dummy audio, not physical listening.
+
 # Nintendo Music Studio1.5.7 validation
 
 Fresh targeted CTest 5/5 PASS (24.91s): fixture generation, core audio/channel geometry for 4/8/11/16/18/31 lanes, recording waveform native image, fullscreen repeat and fullscreen DS autoplay. Recording image verifies waveform reaches x1887 inside the x32..1888 channel cell, retains x1888..1919 outer margin, and raises the label near the row top. Image visually inspected. Audio is dummy; no physical listening claim. Audio decoding and transport source unchanged from1.5.6.

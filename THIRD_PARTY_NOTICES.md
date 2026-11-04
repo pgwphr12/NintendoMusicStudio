@@ -1,3 +1,7 @@
+## MIDI synthesis (1.5.9)
+
+TinySoundFont, MIT: https://github.com/schellingb/TinySoundFont at853a0a171759f1ddba0de1442133a75912bbeffa. Complete pinned tsf.h and MIT license included in third_party/tinysoundfont and licenses/TinySoundFont-MIT.txt. Marked local modification bounds the final interpolation pair to the validated region; provenance/hashes in UPSTREAM.json. Own SMF parser and bounded DLS1 adapter are GPL2+. No Windows GM.DLS, user SF2/DLS samples or MIDI music is redistributed; only local read access. Internal synthesis is not identical to Windows MIDI Mapper or third-party device effects.
+
 # Third-party notices
 
 ## Game_Music_Emu 0.6.5

@@ -1,9 +1,9 @@
 {
   "date": "2026-11-04",
-  "version": "1.5.6",
+  "version": "1.5.9",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
-  "compiled_translation_units": 976,
+  "compiled_translation_units": 978,
   "unclassified_translation_units": [],
   "removed_VGM_framework_and_old_ES": true,
   "remaining_conflicting_N64_TUs": [],
@@ -12,6 +12,10 @@
   "external_upload": false,
   "legal_certification": false,
   "N64_user_instruction": "Keep N64; research only, no public posting/contact. Licensed replacement retained N64.",
+  "included_header_components": [
+    "TinySoundFont MIT; pinned/marked tsf.h, UPSTREAM.json, licenses/TinySoundFont-MIT.txt",
+    "miniaudio/stb MIT options and original notices retained"
+  ],
   "files": [
     {
       "path": "@gme/gme/Blip_Buffer.cpp",
@@ -1734,7 +1738,7 @@
     },
     {
       "path": "src/app/WindowsIntegration.cpp",
-      "SHA256": "96e73e3971ed1be0c08de2ca9fa77e067071fab88031bbd9a941343f679881d8",
+      "SHA256": "376b6af366e0df994544ecd1484d898b0aeb3c29971eb3dcce852d8b326ad70b",
       "targets": [
         "viewer_desktop"
       ],
@@ -1796,6 +1800,24 @@
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
     },
     {
+      "path": "src/formats/MidiBackend.cpp",
+      "SHA256": "cbc38e7be7eb1aa4cae1209f8a7eedf987fc1a76f80699b765716bd351516601",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "src/formats/MidiParser.cpp",
+      "SHA256": "ca704d358f89e3504bfc54531d332a9f6f6d88afdc89d8bf0a6afc58408c27b3",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
       "path": "src/formats/NsfInspect.cpp",
       "SHA256": "9835becd884e5b40058b842f91e6b17d1d1d15c650a743887cb52ca48588b8a3",
       "targets": [
@@ -1815,7 +1837,7 @@
     },
     {
       "path": "src/formats/Registry.cpp",
-      "SHA256": "9cc04aec2d109f86088390fe820d9cf1f368b9284f012af10ada8cd7eae948a3",
+      "SHA256": "bfef20e215113f236a32286763dfb069577c8a91df2ccd69b8b031cf28745ae8",
       "targets": [
         "viewer_core"
       ],
@@ -1842,7 +1864,7 @@
     },
     {
       "path": "src/player/FolderPlaylist.cpp",
-      "SHA256": "94b3a3d30784917b03472ab3cfb3e17ecb0d742afe1758e51b2331b7308a336b",
+      "SHA256": "90cdde37c031782bda929557d31e0456c7ce5087dd7b82037d192c6df835288e",
       "targets": [
         "viewer_core"
       ],
@@ -1851,7 +1873,7 @@
     },
     {
       "path": "src/player/Player.cpp",
-      "SHA256": "96603fada87083d8e3665e6a83ae01e4a0d7edc356b5cf9d89708edd8e80a14d",
+      "SHA256": "883627cbde0a3a44f9f53a7dcf61186368e4100c75ca83c70e8351d11c63c4aa",
       "targets": [
         "viewer_core"
       ],
@@ -1860,7 +1882,7 @@
     },
     {
       "path": "src/ui/Window.cpp",
-      "SHA256": "7545cf9af354753797e9a65dc638bdf00422da0a4b19b4db7761c9583ea2f520",
+      "SHA256": "0e4adcdba1170788d53e03e1da75dcca6e1d8ee659836a5d08fefd89bfde7425",
       "targets": [
         "NintendoGameMusicViewer"
       ],

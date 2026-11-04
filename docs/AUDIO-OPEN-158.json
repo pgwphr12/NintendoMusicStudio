@@ -1,0 +1,39 @@
+{
+  "version": "1.5.8",
+  "date": "2026-11-04",
+  "request": "Ordinary audio requires pressing Play after opening",
+  "cause": "Window.openPrepared leaves paused; Window.open did not Play. Snapshot tests unconditionally forced Play and masked this.",
+  "fix": "Shared Window.open plays only Format::AudioFile after restoring channel state; existing explicit startup/IPC/snapshot play guarded against duplicate calls. Separate folder autoplay setting and manual pause retained.",
+  "checks": {
+    "targeted_ctest": "7/7 PASS31.05s",
+    "open": {
+      "pass": true,
+      "cases": [
+        {
+          "format": "mp3",
+          "playing_without_play_click": true
+        },
+        {
+          "format": "wav",
+          "playing_without_play_click": true
+        },
+        {
+          "format": "ogg",
+          "playing_without_play_click": true
+        },
+        {
+          "format": "flac",
+          "playing_without_play_click": true
+        }
+      ],
+      "autoplay_next_setting": false,
+      "snapshot_forced_play": false,
+      "audio": "dummy",
+      "route": "shared Window.open"
+    },
+    "baseline": "Diagnostic build only suppresses snapshot-forced Play; fails Opening mp3 did not start playback as expected",
+    "test_development_failure": "Initial cross-process HDROP attempt invalid/not used as product failure evidence; replaced by isolated shared-open test"
+  },
+  "decoder_changes": false,
+  "physical_listening": false
+}

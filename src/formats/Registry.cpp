@@ -1,4 +1,5 @@
 #include "GmeBackend.hpp"
+#include "Midi.hpp"
 #include "PsfBackend.hpp"
 #include "StreamBackend.hpp"
 #include <array>
@@ -11,6 +12,7 @@
 namespace ngmv {
 std::unique_ptr<IMusicBackend> makeAudioFileBackend(const std::filesystem::path&);
 Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path) {
+    if(b.size()>=4 && !memcmp(b.data(),"MThd",4))return Format::Midi;
     if((b.size()>=12 && (!memcmp(b.data(),"RIFF",4)||!memcmp(b.data(),"RF64",4)) && !memcmp(b.data()+8,"WAVE",4)) ||
        (b.size()>=4 && (!memcmp(b.data(),"OggS",4)||!memcmp(b.data(),"fLaC",4))) ||
        (b.size()>=3 && !memcmp(b.data(),"ID3",3)) ||
@@ -44,7 +46,7 @@ Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path
     if(ext==L".mp3"||ext==L".wav"||ext==L".ogg"||ext==L".flac")return Format::AudioFile;
     throw std::runtime_error("Unsupported or truncated music file. Open NSF / NSFE / SPC / GBS / "
                              "GSF / 2SF / USF / BCSTM / BCWAV / VGM / VGZ; "
-                             "MP3 / WAV / OGG Vorbis / FLAC; game ROMs are not supported.");
+                             "MIDI format0/1 / MP3 / WAV / OGG Vorbis / FLAC; game ROMs are not supported.");
 }
 std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
     std::ifstream f(p, std::ios::binary | std::ios::ate);
@@ -56,7 +58,7 @@ std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
         f.seekg(0);
         f.read(reinterpret_cast<char *>(header.data()), 64);
         bool knownGame=!memcmp(header.data(),"NESM\x1a",5)||!memcmp(header.data(),"NSFE",4)||
-                       !memcmp(header.data(),"Vgm ",4)||!memcmp(header.data(),"GBS",3)||
+                       !memcmp(header.data(),"MThd",4)||!memcmp(header.data(),"Vgm ",4)||!memcmp(header.data(),"GBS",3)||
                        !memcmp(header.data(),"PSF",3)||!memcmp(header.data(),"SNES-SPC700 Sound File Data",26);
         bool ordinary=false;try{ordinary=!knownGame && identify(header,p)==Format::AudioFile;}catch(const std::exception&){}
         if (ordinary || !memcmp(header.data(), "CSTM", 4) || !memcmp(header.data(), "CWAV", 4))
@@ -99,6 +101,8 @@ std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
 std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &b,
                                            const std::filesystem::path &path) {
     switch (identify(b,path)) {
+    case Format::Midi:
+        return makeMidiBackend(b,path);
     case Format::AudioFile:
         return makeAudioFileBackend(path);
     case Format::Vgm:

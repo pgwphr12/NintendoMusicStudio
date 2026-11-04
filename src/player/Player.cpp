@@ -45,7 +45,7 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
     output_.pause(true);
     haltWorker();
     backend_ = std::move(candidate);
-    exactSourceEnd_=format==Format::AudioFile;
+    exactSourceEnd_=format==Format::AudioFile || format==Format::Midi;
     sourceEndFrame_=UINT64_MAX;
     bool fds = false;
     for (const auto &channel : backend_->channels())

@@ -1,5 +1,6 @@
 #include "Window.hpp"
 #include "ChannelLayout.hpp"
+#include "formats/Midi.hpp"
 #include "app/WindowsIntegration.hpp"
 #include "visualizer/Envelope.hpp"
 #include <algorithm>
@@ -122,10 +123,11 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.5.7\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.5.9\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
                 L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
+                L"MIDI: MID · MIDI (format0/1), Windows 기본 DLS 또는 선택한 SF2/DLS · F8 음색 선택\r\n"
                 L"추가 VGM: YM2612 · YM3812 · MSM6295 · K051649 · ES5506\r\n"
                 L"ES5506은 칩 전체 MIX 버스입니다. 모든 칩/조합의 지원 완료를 뜻하지 "
                 L"않습니다.\r\n\r\n"
@@ -220,7 +222,8 @@ bool Window::open(const std::filesystem::path &p) {
         return false;
     try {
         ChangingScope guard(changing_);
-        auto playlist = FolderPlaylist::scan(p, identify(readMusicFile(p),p));
+        const auto format = identify(readMusicFile(p),p);
+        auto playlist = FolderPlaylist::scan(p, format);
         rememberChannels();
         message_ = L"음악을 불러오는 중…";
         drag_ = -1;
@@ -228,12 +231,15 @@ bool Window::open(const std::filesystem::path &p) {
         auto prepared = prepareMusic(hwnd_, p);
         if (!prepared)
             return false;
-        player_.openPrepared(std::move(prepared), identify(readMusicFile(p),p));
+        player_.openPrepared(std::move(prepared), format);
         restoreChannels();
         file_ = p;
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.5.7 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.5.9 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
+        // Opening ordinary audio starts it; folder auto-advance is a separate option.
+        if (format == Format::AudioFile || format == Format::Midi)
+            player_.play();
 
         drag_ = -1;
         message_.clear();
@@ -261,7 +267,7 @@ void Window::selectFolder(size_t index, bool play) {
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5.7 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5.9 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -292,8 +298,8 @@ void Window::openDialog() {
     d.lpstrFilter =
         L"음악 파일 "
         L"(*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*.usf;*.miniusf;*."
-        L"bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac)\0*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*."
-        L"usf;*.miniusf;*.bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac\0모든 파일\0*.*\0";
+        L"bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi)\0*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*."
+        L"usf;*.miniusf;*.bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi\0모든 파일\0*.*\0";
     d.lpstrFile = path;
     d.nMaxFile = 32768;
     d.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
@@ -331,6 +337,27 @@ void Window::tracksMenu() {
         else
             player_.select(chosen - 1000);
     }
+}
+void Window::soundFontMenu() {
+    if(changing_)return;
+    auto menu=CreatePopupMenu();auto old=midiSoundFont();bool committed=false;
+    AppendMenuW(menu,MF_STRING|(old.empty()?MF_CHECKED:0),1,L"Windows 기본 음색 (GMFilePath / DLS)");
+    AppendMenuW(menu,MF_STRING|(!old.empty()?MF_CHECKED:0),2,L"SF2 / DLS 파일 선택…");
+    POINT point;GetCursorPos(&point);auto choice=TrackPopupMenu(menu,TPM_RETURNCMD,point.x,point.y,0,hwnd_,nullptr);DestroyMenu(menu);
+    if(!choice)return;
+    std::filesystem::path selected;
+    if(choice==2){wchar_t file[32768]{};OPENFILENAMEW d{};d.lStructSize=sizeof(d);d.hwndOwner=hwnd_;d.lpstrFilter=L"사운드폰트 / 음색 파일 (*.sf2;*.dls)\0*.sf2;*.dls\0\0";d.lpstrFile=file;d.nMaxFile=32768;d.Flags=OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;if(!GetOpenFileNameW(&d))return;selected=file;}
+    try{
+        validateMidiBank(selected);midiSoundFont(selected);
+        if(player_.loaded()&&!player_.tracks().empty()&&player_.tracks()[0].system=="MIDI"&&!open(file_)){midiSoundFont(old);return;}
+        committed=true;
+        if(preferencesEnabled_){
+            auto path=desktop::Settings::path().parent_path()/L"midi-soundfont.txt";std::error_code ec;std::filesystem::create_directories(path.parent_path(),ec);
+            auto temp=path;temp+=L".tmp";std::ofstream out(temp,std::ios::binary|std::ios::trunc);out<<selected.u8string();out.flush();bool ok=bool(out);out.close();
+            if(!ok||!MoveFileExW(temp.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))throw std::runtime_error("Sound bank loaded, but cannot save the selection.");
+        }
+        message_=selected.empty()?L"Windows 기본 MIDI 음색":L"MIDI 음색: "+selected.filename().wstring();InvalidateRect(hwnd_,nullptr,FALSE);
+    }catch(const std::exception&e){if(!committed)midiSoundFont(old);report(e);}
 }
 void Window::rateMenu() {
     auto menu = CreatePopupMenu();
@@ -465,6 +492,7 @@ void Window::paint(HDC dc, int width, int height) {
         button(dc, L"−", 642, 205, 70);
         button(dc, L"+", 722, 205, 70);
         button(dc, L"1.00", 802, 205, 80);
+        button(dc, L"MIDI 음색 (F8)", 1435, 1028, 230);
         button(dc, player_.reverb() ? L"반향 켜짐" : L"반향 꺼짐", 1240, 1028, 180,
                player_.reverb());
         button(dc, speedStep_ == 1 ? L"단위 0.01" : L"단위 0.10", 917, 205, 200);
@@ -657,7 +685,9 @@ void Window::click(int x, int y) {
                 drag_ = 102;
                 SetCapture(hwnd_);
                 mouseMove(x, y);
-            } else if (lx >= 1240 && lx < 1420)
+            } else if (lx >= 1435 && lx < 1665)
+                soundFontMenu();
+            else if (lx >= 1240 && lx < 1420)
                 player_.reverb(!player_.reverb());
             InvalidateRect(hwnd_, nullptr, FALSE);
             return;
@@ -1072,7 +1102,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
                 FlashWindowEx(&flash);
             }
             try {
-                if (!path.empty() && open(path))
+                if (!path.empty() && open(path) && !player_.playing())
                     player_.play();
             } catch (const std::exception &e) {
                 report(e);
@@ -1179,6 +1209,8 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
                     player_.play();
             } else if (a == 'A')
                 autoplay_ = !autoplay_;
+            else if (a == VK_F8)
+                soundFontMenu();
             else if (a == VK_F9) {
                 recording_ = !recording_;
                 drag_ = -1;
@@ -1237,6 +1269,8 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                            GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
     if (preferencesEnabled_) {
         preferences_.load(desktop::Settings::path());
+        { std::ifstream font(desktop::Settings::path().parent_path()/L"midi-soundfont.txt",std::ios::binary);
+          std::string path;char data[32768]{};font.getline(data,32768);if(!font.fail())path=data;if(path.size()<32768 && path.find('\0')==std::string::npos)midiSoundFont(std::filesystem::u8path(path)); }
         player_.master(preferences_.get("master", 100, 0, 100) / 100.f);
         player_.speed(preferences_.get("speed", 100, 50, 200) / 100.f);
         player_.pitch(preferences_.get("pitch", 100, 50, 200) / 100.f);
@@ -1272,7 +1306,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5.7", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5.9", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);
@@ -1304,12 +1338,13 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     framePacer_.start(hwnd_);
     if (preferencesEnabled_)
         SetTimer(hwnd_, 4, 1000, nullptr);
-    if (!initial.empty() && open(initial) && playInitial)
+    if (!initial.empty() && open(initial) && playInitial && !player_.playing())
         player_.play();
     if (screenshot.empty())
         PostMessageW(hwnd_, desktop::AskDefaultApps, 0, 0);
     if (!screenshot.empty()) {
-        if (player_.loaded())
+        if (player_.loaded() && !player_.playing() && !(desktop::automatedSession() &&
+            GetEnvironmentVariableW(L"NGMV_TEST_NO_SNAPSHOT_PLAY",nullptr,0)>0))
             player_.play();
         screenshot_ = screenshot.wstring();
         unsigned delay = 1200;

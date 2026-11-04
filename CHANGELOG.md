@@ -1,3 +1,15 @@
+#1.5.9 — MIDI and sound banks
+
+- Add MIDI(.mid/.midi) format0/1, active-channel waveforms and existing playback effects/controls.
+- Read Windows default DLS bank; F8 selects a custom SF2/DLS or restores the default. Persist choice.
+- Register all20 supported game/audio/MIDI extensions without overwriting Windows defaults. Refresh existing consented registration.
+- Include MIT TinySoundFont source/notices and mark the interpolation bounds patch; do not bundle music or banks.
+
+#1.5.8 — start ordinary audio on open
+
+- Start MP3/WAV/Ogg Vorbis/FLAC immediately after opening, including file dialog, drop and initial-file paths.
+- Preserve the separate folder auto-advance setting and manual pause.
+
 #1.5.7 — recording cell alignment
 
 - End recording waveforms at each channel cell boundary, retaining outer and column gaps.
