@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     try {
         const std::filesystem::path exe = L"C:\\음악 프로그램\\NintendoMusicStudio.exe";
         auto extensions = supportedExtensions();
-        check(extensions.size() == 14 && std::set<std::wstring>(extensions.begin(), extensions.end()).size() == 14, "14 unique extensions required");
+        check(extensions.size() == 18 && std::set<std::wstring>(extensions.begin(), extensions.end()).size() == 18, "18 unique extensions required");
         auto entries = registrationPlan(exe);
         for (const auto &entry : entries) {
             check(entry.key.find(L"UserChoice") == std::wstring::npos, "Never overwrite UserChoice");
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
         wchar_t empty[] = L""; request.cbData = sizeof empty; request.lpData = empty;
         check(decodeRequest(&request,out) && out.empty(), "Activation-only request");
         check(!decodeRequest(nullptr,out), "Reject absent request");
-        std::cout << "14 file types, quoted Unicode commands, isolated registry, preservation of defaults, IPC validation: PASS\n";
+        std::cout << "18 file types, quoted Unicode commands, isolated registry, preservation of defaults, IPC validation: PASS\n";
         return 0;
     } catch (const std::exception &e) {
         RegOverridePredefKey(HKEY_CURRENT_USER, nullptr);

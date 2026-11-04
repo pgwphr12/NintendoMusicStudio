@@ -32,7 +32,7 @@ try:
   if matches:main=matches[0];break
   time.sleep(.01)
  assert main,'Player window missing'
- assert 'Nintendo Music Studio' in main[2] and '1.5' in main[2],main
+ assert 'Nintendo Music Studio' in main[2] and json.loads((Path(__file__).resolve().parents[1]/'RELEASE.json').read_text())['version'] in main[2],main
  # Former composer/import shortcuts must not open another window or stop playback.
  u.PostMessageW(main[0],0x100,0x71,0);u.PostMessageW(main[0],0x100,0x72,0)
  time.sleep(.25)

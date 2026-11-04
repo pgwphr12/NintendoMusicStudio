@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Independent app adapter. Chip implementations retain their own notices.
 #include "LicensedChips.hpp"
+#include "audio/ChipInterpolator.hpp"
 extern "C" {
 #include "licensed-chips/emu/cores/fmopl.h"
 #include "licensed-chips/emu/cores/ym3438.h"
@@ -12,6 +13,7 @@ extern "C" {
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
+#include <cmath>
 namespace ngmv {
 namespace {
 void valid(bool b,const char*s){if(!b)throw std::runtime_error(s);}
@@ -25,13 +27,15 @@ struct SampleMemory:es550x_intf {
 };
 struct Otto:es5506_core {
     using es5506_core::es5506_core;
-    uint32_t rate(uint32_t clock)const{return clock/(16*(uint32_t(m_active)+1));}
+    double rate(uint32_t clock)const{return double(clock)/(16*(std::clamp(uint32_t(m_active),4u,31u)+1));}
+    int serialBits()const{return serial_output_bits();}
 };
 }
 struct LicensedChip::State {
     ChipKind kind;uint32_t clock;void*chip=nullptr;DEV_INFO info{};
     SampleMemory memory;Otto otto{memory};
     double phase=0;Stereo held{},previous{};bool primed=false;
+    ChipInterpolator esInterpolator;
     explicit State(ChipKind k,uint32_t c,uint8_t flags):kind(k),clock(c){
         if(k==ChipKind::Es5506){valid(flags&128,"ES5505 is not implemented by the licensed ES5506 core.");otto.reset();}
         else if(k==ChipKind::Ym2612){chip=nukedopn2_init(c,InternalRate);valid(chip,"YM2612 allocation failed.");nukedopn2_set_options(chip,0);nukedopn2_reset_chip(chip);}
@@ -50,11 +54,15 @@ struct LicensedChip::State {
     double rate(){if(kind==ChipKind::Es5506)return otto.rate(clock);if(kind==ChipKind::Oki)return function<uint32_t(*)(void*)>(RWF_SRATE|RWF_READ,DEVRW_VALUE)(chip);if(kind==ChipKind::Scc)return info.sampleRate;return InternalRate;}
     Stereo native(){
         if(kind==ChipKind::Es5506){
+            valid(otto.serialBits()<=20,"ES5506 serial output precision above20bits is unsupported.");
             otto.tick_perf();valid(!memory.failed,"ES5506 sample address outside supplied ROM.");
-            // Direct 20-bit voice bus tap, not an invented serial pin setting.
-            // The retained viewer lane is one whole-chip stereo mix.
-            int64_t l=0,r=0;for(unsigned v=0;v<32;++v){l+=otto.voice_lout(v);r+=otto.voice_rout(v);}
-            return {float(l/524288.),float(r/524288.)};
+            // Use the configured hardware output buses, not debug voice taps.
+            // tick_perf publishes the prior frame through W_ST/W_END precision,
+            // routing, and output saturation, then advances the voices.
+            int bits=otto.serialBits();
+            double scale=bits>0?std::ldexp(1.,bits-1):1.;
+            int64_t l=0,r=0;for(unsigned bus=0;bus<6;++bus){l+=otto.lout(bus);r+=otto.rout(bus);}
+            return {float(l/scale),float(r/scale)};
         }
         int32_t left=0,right=0;int32_t*planes[]={&left,&right};
         if(kind==ChipKind::Ym2612)nukedopn2_update(chip,1,planes);
@@ -103,6 +111,12 @@ Stereo LicensedChip::sample(){auto&s=*state_;double rate=s.rate();valid(rate>0&&
             s.phase+=weight;left-=weight;
         }
         return {float(l/total),float(r/total)};
+    }
+    if(s.kind==ChipKind::Es5506){
+        if(!s.primed){s.esInterpolator.push(s.native());s.primed=true;}
+        s.phase+=rate/InternalRate;
+        while(s.phase>=1){s.esInterpolator.push(s.native());s.phase-=1;}
+        return s.esInterpolator.at(s.phase);
     }
     // Independent causal linear interpolation; at most one native-frame delay.
     // No render-block-dependent reset or borrowed resampler implementation.

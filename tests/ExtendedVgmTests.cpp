@@ -1,4 +1,5 @@
 #include "core/IMusicBackend.hpp"
+#include "audio/ChipInterpolator.hpp"
 #include "player/Player.hpp"
 #include <algorithm>
 #include <chrono>
@@ -140,19 +141,62 @@ static void structural() {
     std::cout << "Own SCC synthesis, " << negatives
               << " bounded malformed/unsupported cases, mute PASS\n";
 }
+static void chipInterpolationFixture(){
+    constexpr double pi=3.14159265358979323846,rate=31250.;
+    for(double hz:{440.,4000.,8000.,10000.,12000.}){
+        ChipInterpolator filter;double phase=0;unsigned n=0;filter.push({0,0});
+        double energy=0,expectedEnergy=0,error=0,oldEnergy=0;
+        for(unsigned i=0;i<48000;++i){
+            phase+=rate/48000.;while(phase>=1){++n;float v=float(std::sin(2*pi*hz*n/rate));filter.push({v,-v});phase-=1;}
+            auto v=filter.at(phase);double target=std::sin(2*pi*hz*(n+phase-16)/rate);
+            double old=(1-phase)*std::sin(2*pi*hz*(double(n)-1)/rate)+phase*std::sin(2*pi*hz*n/rate);
+            if(i>256){energy+=v.l*v.l;expectedEnergy+=target*target;error+=(v.l-target)*(v.l-target);oldEnergy+=old*old;}
+            need(std::abs(v.l+v.r)<1e-6,"ES interpolator stereo asymmetry");
+        }
+        double amplitude=std::sqrt(energy/expectedEnergy);
+        std::cout<<"ES interpolation "<<hz<<"Hz gain="<<amplitude<<" linear="<<std::sqrt(oldEnergy/expectedEnergy)<<" error="<<std::sqrt(error/expectedEnergy)<<'\n';
+        need(amplitude>.98&&amplitude<1.02,"ES interpolation lost passband level");
+        need(std::sqrt(error/expectedEnergy)<.03,"ES interpolation pitch/phase mismatch");
+    }
+    ChipInterpolator dc;for(unsigned i=0;i<64;++i)dc.push({.25f,-.5f});
+    for(unsigned p=0;p<=256;++p){auto v=dc.at(p/256.);need(std::abs(v.l-.25f)<1e-6&&std::abs(v.r+.5f)<1e-6,"ES interpolation changed DC gain");}
+    ChipInterpolator silence;for(unsigned p=0;p<256;++p){auto v=silence.at(p/256.);need(v.l==0&&v.r==0,"ES interpolation emitted invented audio");}
+    std::cout<<"ES band-limited interpolation passband/DC/silence/stereo PASS\n";
+}
 static void licensedEsFixture(){
     std::vector<uint8_t>b(256);std::memcpy(b.data(),"Vgm ",4);put(b,8,0x171);put(b,0x34,0xcc);put(b,0xd0,0x80000000u|16000000);
     auto byte=[&](uint8_t r,uint8_t v){b.insert(b.end(),{0xbe,r,v});};
     auto reg=[&](uint8_t r,uint32_t value){for(int i=0;i<4;++i)byte(uint8_t(r*4+i),uint8_t(value>>(24-8*i)));};
     b.insert(b.end(),{0x67,0x66,0x90});size_t block=b.size();b.resize(block+12);put(b,block,8+256);put(b,block+4,4096);put(b,block+8,0x80000000u);
     for(int i=0;i<256;++i)b.push_back(uint8_t(int(110*std::sin(i*6.283185307/128))));
+    reg(15,0x20);reg(10,1);reg(11,17);reg(12,32); // actual16-bit output setup
     reg(15,0x20);reg(1,0);reg(2,127u<<11);reg(3,0);
-    reg(15,0);reg(1,0x800);reg(2,0xffff);reg(4,0xffff);reg(7,0xffff);reg(9,0xffff);reg(0,0x308);
+    reg(15,0);reg(12,8); // select internal clocks/reset serial output, as actual Furnace files do
+    reg(1,0x800);reg(2,0xffff);reg(4,0xffff);reg(7,0xffff);reg(9,0xffff);reg(0,0x308);
     b.insert(b.end(),{0x61,0x44,0xac,0x66});put(b,4,uint32_t(b.size()-4));put(b,0x18,44100);
     auto backend=makeBackend(b);AudioBlock out;backend->render(4096,out);double energy=0;
     for(auto v:out.mix){need(std::isfinite(v.l)&&std::isfinite(v.r),"Licensed ES nonfinite");energy+=v.l*v.l+v.r*v.r;}
+    std::cout<<"ES actual serial-output fixture energy="<<energy<<'\n';
     need(backend->channels().size()==1 && energy>1,"Licensed ES did not synthesize real supplied sample ROM");
     need(difference(out.mix,out.voices[0])<1e-6,"ES bus tap differs from full mix");
+    const auto reference=out.mix;
+    auto renderVariant=[&](std::vector<uint8_t> bytes){auto v=makeBackend(bytes);AudioBlock block;v->render(4096,block);return block.mix;};
+    auto extraVolume=[&](uint16_t v){auto bytes=b;bytes.insert(bytes.begin()+256,32,0);put(bytes,4,uint32_t(bytes.size()-4));put(bytes,0x34,0x120-0x34);put(bytes,0xbc,0x100-0xbc);put(bytes,0x100,12);put(bytes,0x108,4);bytes[0x10c]=1;bytes[0x10d]=37;bytes[0x10e]=0;bytes[0x10f]=uint8_t(v);bytes[0x110]=uint8_t(v>>8);return bytes;};
+    need(difference(reference,renderVariant(extraVolume(0x8100)))<1e-7,"Relative ES unity must preserve default calibration");
+    need(difference(reference,renderVariant(extraVolume(0x100)))<1e-7,"Absolute unity ES volume must match normalized bus output");
+    auto twice=renderVariant(extraVolume(0x8200));
+    for(size_t i=0;i<reference.size();++i)need(std::abs(twice[i].l-2*reference[i].l)<1e-7,"Relative ES gain did not multiply default volume");
+    auto serialVariant=[&](uint32_t start,uint32_t end){
+        auto bytes=b;std::vector<uint8_t> writes;
+        for(auto rv:{std::pair<uint8_t,uint32_t>{15,0x20},{10,start},{11,end}})
+            for(int k=0;k<4;++k)writes.insert(writes.end(),{0xbe,uint8_t(rv.first*4+k),uint8_t(rv.second>>(24-8*k))});
+        bytes.insert(bytes.end()-4,writes.begin(),writes.end());put(bytes,4,uint32_t(bytes.size()-4));return bytes;
+    };
+    auto disabled=renderVariant(serialVariant(0,0));for(auto v:disabled)need(v.l==0&&v.r==0,"Disabled ES serial output leaked debug voice audio");
+    auto twelve=renderVariant(serialVariant(1,13));double twelveEnergy=0;for(auto v:twelve)twelveEnergy+=v.l*v.l+v.r*v.r;
+    need(twelveEnergy/energy>.99&&twelveEnergy/energy<1.01,"ES word precision changed normalized gain");
+    bool badWord=false;try{renderVariant(serialVariant(1,22));}catch(const std::exception&){badWord=true;}
+    need(badWord,"Unsupported ES serial word shift was allowed into the core");
     backend->muteMask(1);backend->seek(0);backend->render(4096,out);for(auto v:out.mix)need(v.l==0&&v.r==0,"Licensed ES mute");
     put(b,0xd0,16000000);bool rejected=false;try{auto unsupported=makeBackend(b);}catch(const std::exception&){rejected=true;}need(rejected,"ES5505 incorrectly reported as ES5506");
     std::cout<<"Licensed zlib ES5506 own ROM/host writes/real synthesis/bus/mute/model rejection PASS\n";
@@ -251,6 +295,7 @@ static void actual(const std::filesystem::path &path, const std::filesystem::pat
 int wmain(int argc, wchar_t **argv) {
     try {
         structural();
+        chipInterpolationFixture();
         licensedEsFixture();
         ownDacStream();
         if (argc > 1) {

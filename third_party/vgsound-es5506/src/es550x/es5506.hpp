@@ -318,6 +318,9 @@ class es5506_core : public es550x_shared_core
 
 		inline s32 rout(u8 ch) { return m_output[ch&7].right(); }
 
+		// Local1.5.1 addition: read-only serial precision for host normalization.
+		inline int serial_output_bits() const { return int(m_w_end) - int(m_w_st); }
+
 		//-----------------------------------------------------------------
 		//
 		//	for preview/debug purpose only, not for serious emulators

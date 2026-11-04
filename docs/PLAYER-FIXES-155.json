@@ -1,0 +1,271 @@
+{
+  "version": "1.5.5",
+  "date": "2026-11-04",
+  "changes": [
+    "MP3 extension fallback validated by actual decoder, known game signatures preserved",
+    "Actual decoded PCM EOF for ordinary-audio repeat boundaries",
+    "Recording-only left expansion under channel names; text redrawn with dark outline above waves"
+  ],
+  "mission": {
+    "files": 13,
+    "failed_before": 6,
+    "after_pass": 13,
+    "original_SHA_unchanged": true,
+    "before_direct_decoder": "all13PASS",
+    "tests": "Full short files finite/nonzero, seek/replay/mute"
+  },
+  "repeat": {
+    "overstated_length_old154": {
+      "file": "overstated.mp3",
+      "wraps": 0,
+      "maximum_ms": 9002,
+      "playing": true,
+      "error": 0,
+      "pass": false
+    },
+    "fixed155": {
+      "file": "overstated.mp3",
+      "wraps": 3,
+      "maximum_ms": 2048,
+      "playing": true,
+      "error": 0,
+      "pass": true,
+      "repeat_off_clock_continues": true
+    },
+    "later_format_matrix": {
+      "pass": true,
+      "cases": [
+        {
+          "file": "channels.gsf",
+          "wraps": 2,
+          "maximum_ms": 4010,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.gsf",
+          "exitcode": 0
+        },
+        {
+          "file": "channels.minigsf",
+          "wraps": 2,
+          "maximum_ms": 3008,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.minigsf",
+          "exitcode": 0
+        },
+        {
+          "file": "channels.2sf",
+          "wraps": 2,
+          "maximum_ms": 3008,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.2sf",
+          "exitcode": 0
+        },
+        {
+          "file": "channels.mini2sf",
+          "wraps": 2,
+          "maximum_ms": 3018,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.mini2sf",
+          "exitcode": 0
+        },
+        {
+          "file": "channels.usf",
+          "wraps": 2,
+          "maximum_ms": 3029,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.usf",
+          "exitcode": 0
+        },
+        {
+          "file": "channels.miniusf",
+          "wraps": 2,
+          "maximum_ms": 3018,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.miniusf",
+          "exitcode": 0
+        },
+        {
+          "file": "channels.bcstm",
+          "wraps": 2,
+          "maximum_ms": 3029,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.bcstm",
+          "exitcode": 0
+        },
+        {
+          "file": "channels.bcwav",
+          "wraps": 2,
+          "maximum_ms": 1322,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "channels.bcwav",
+          "exitcode": 0
+        },
+        {
+          "file": "01 Track.vgm",
+          "wraps": 2,
+          "maximum_ms": 373,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "playlist-sega/01 Track.vgm",
+          "exitcode": 0
+        },
+        {
+          "file": "02 Track.vgz",
+          "wraps": 2,
+          "maximum_ms": 352,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "playlist-sega/02 Track.vgz",
+          "exitcode": 0
+        },
+        {
+          "file": "tone.mp3",
+          "wraps": 2,
+          "maximum_ms": 2026,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "audio/tone.mp3",
+          "exitcode": 0
+        },
+        {
+          "file": "tone.wav",
+          "wraps": 2,
+          "maximum_ms": 2005,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "audio/tone.wav",
+          "exitcode": 0
+        },
+        {
+          "file": "tone.ogg",
+          "wraps": 2,
+          "maximum_ms": 2005,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "audio/tone.ogg",
+          "exitcode": 0
+        },
+        {
+          "file": "tone.flac",
+          "wraps": 2,
+          "maximum_ms": 2016,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "format_case": "audio/tone.flac",
+          "exitcode": 0
+        }
+      ],
+      "audio": "dummy",
+      "user_apps_operated": false
+    },
+    "actual_games_and_extended_VGM": {
+      "pass": true,
+      "cases": [
+        {
+          "file": "07 Power Up Fanfare.minigsf",
+          "wraps": 2,
+          "maximum_ms": 2026,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "type": "*.minigsf",
+          "exitcode": 0,
+          "source_SHA_unchanged": true
+        },
+        {
+          "file": "11 Get Star Coin.mini2sf",
+          "wraps": 2,
+          "maximum_ms": 3008,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "type": "*.mini2sf",
+          "exitcode": 0,
+          "source_SHA_unchanged": true
+        },
+        {
+          "file": "24 Game Start.miniusf",
+          "wraps": 2,
+          "maximum_ms": 2016,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "type": "*.miniusf",
+          "exitcode": 0,
+          "source_SHA_unchanged": true
+        },
+        {
+          "file": "short-scc.vgm",
+          "wraps": 2,
+          "maximum_ms": 352,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "type": "extended-SCC-VGM",
+          "exitcode": 0,
+          "source_SHA_unchanged": true
+        },
+        {
+          "file": "mission.mp3",
+          "wraps": 2,
+          "maximum_ms": 1024,
+          "playing": true,
+          "error": 0,
+          "pass": true,
+          "type": "actual-mission",
+          "exitcode": 0,
+          "source_SHA_unchanged": true
+        }
+      ],
+      "audio": "dummy"
+    }
+  },
+  "recording": {
+    "pass": true,
+    "cases": [
+      {
+        "recording": false,
+        "name_area_wave_pixels": 0
+      },
+      {
+        "recording": true,
+        "name_area_wave_pixels": 2178
+      }
+    ],
+    "audio": "dummy"
+  },
+  "limits": [
+    "Unknown-length emulated programs do not have a guessed restart boundary",
+    "Actual representative game files checked, not every song/driver",
+    "Damaged MP3 headers can cause the decoder to skip incomplete frames; original bytes are unchanged",
+    "Dummy native UI/audio tests, not physical listening certification"
+  ],
+  "fresh_CTest": {
+    "passed": 22,
+    "failed": 0,
+    "seconds": 62.67
+  },
+  "packages": "CRC/SHA and packaged player/About/controls checked in package manifest",
+  "final_classifier_followup": "Core audio, ordinary audio/renamed game precedence, actual-EOF repeat and recording native image checks repeated after final reader guard"
+}

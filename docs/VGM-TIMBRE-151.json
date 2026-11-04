@@ -1,0 +1,29 @@
+{
+  "baseline": "Unmodified1.5render first20s",
+  "candidate": "Final1.5.1audio library; byte-identical to verified patch20trace",
+  "reference": "Official LobbyBGM.mp3, hash verified against supplied MP3",
+  "seconds": 20,
+  "settings_for_measurement": {
+    "pitch": 1,
+    "speed": 1,
+    "reverb": false
+  },
+  "baseline_raw_waveform_correlation": 0.7564841332722142,
+  "candidate_raw_waveform_correlation": 0.7829025697589888,
+  "offset_seconds": 0.00025,
+  "complete_intended_timbre_identity_claim": false,
+  "other_VGM_mix_first12s_exact_to18": true,
+  "other_VGM_entire_file_retested": false,
+  "YM3438_candidate_rejected": true,
+  "arbitrary_OKI_attenuation_not_applied": true,
+  "source_core_changes": {
+    "compared_to": "NintendoMusicStudio-1.5-Source.zip",
+    "changed": [
+      "src/formats/ExtendedVgmBackend.cpp",
+      "src/formats/LicensedChips.cpp",
+      "third_party/vgsound-es5506/UPSTREAM.json",
+      "third_party/vgsound-es5506/src/es550x/es5506.hpp"
+    ],
+    "unchanged": 294
+  }
+}

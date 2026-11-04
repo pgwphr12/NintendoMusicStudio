@@ -20,6 +20,9 @@ class Window {
     };
     std::vector<WaveSegment> segments_;
     unsigned long *bufferPixels_ = nullptr;
+    struct OverlayText {std::wstring value;int x,y,w,h,size;COLORREF color;bool bold;};
+    std::vector<OverlayText> overlayText_;
+    void drawOverlayText(HDC);
     void drawWaves();
     void releaseBuffer();
     DisplayPacer framePacer_;
@@ -58,6 +61,7 @@ class Window {
     bool open(const std::filesystem::path &);
     void tracksMenu();
     void rateMenu();
+    void updatePlayback();
     void toggleFullscreen();
     void report(const std::exception &e);
     void capture();

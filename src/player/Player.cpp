@@ -36,7 +36,7 @@ void Player::prefill() {
 }
 void Player::open(const std::filesystem::path &path) {
     auto bytes = readMusicFile(path);
-    auto format = identify(bytes);
+    auto format = identify(bytes,path);
     auto candidate = makeBackend(bytes, path);
     openPrepared(std::move(candidate),format);
 }
@@ -45,6 +45,8 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
     output_.pause(true);
     haltWorker();
     backend_ = std::move(candidate);
+    exactSourceEnd_=format==Format::AudioFile;
+    sourceEndFrame_=UINT64_MAX;
     bool fds = false;
     for (const auto &channel : backend_->channels())
         fds = fds || channel.name == "FDS WAVE";
@@ -79,6 +81,7 @@ void Player::restart(int track, int ms, bool play) {
         reverb_.reset();
         if (track != track_)
             dmcUsed_ = false;
+        sourceEndFrame_=UINT64_MAX;
         backend_->selectTrack(track);
         gbaPsgUsed_ = -1;
         if (ms)
@@ -155,6 +158,12 @@ std::string Player::error() const {
 bool Player::ended() const {
     return atEnd_ && output_.drained();
 }
+bool Player::playbackBoundaryReached() const {
+    if(!backend_)return false;
+    if(exactSourceEnd_){auto end=sourceEndFrame_.load();return end!=UINT64_MAX && base_+output_.consumed()>=end;}
+    auto length=tracks()[track_].lengthMs;
+    return length>0 && seconds()*1000>=length;
+}
 void Player::produce() {
     try {
         AudioBlock block;
@@ -167,13 +176,13 @@ void Player::produce() {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
                 continue;
             }
-            if (!continueAfterLength_ && length > 0 && produced >= uint64_t(length) * InternalRate / 1000) {
+            if (!continueAfterLength_ && (exactSourceEnd_ ? sourceEndFrame_.load()!=UINT64_MAX && produced>=sourceEndFrame_.load() : length > 0 && produced >= uint64_t(length) * InternalRate / 1000)) {
                 atEnd_ = true;
                 output_.finished();
                 break;
             }
             size_t frames = 512;
-            if (!continueAfterLength_ && length > 0)
+            if (!continueAfterLength_ && !exactSourceEnd_ && length > 0)
                 frames = size_t(
                     std::min(uint64_t(frames), uint64_t(length) * InternalRate / 1000 - produced));
             auto state = states();
@@ -188,6 +197,7 @@ void Player::produce() {
             }
             backend_->muteMask(mask);
             backend_->render(frames, block);
+            uint64_t decodedEnd=0;if(exactSourceEnd_ && backend_->decodedEndFrame(decodedEnd))sourceEndFrame_=decodedEnd;
             uint32_t psg=0;if(backend_->gbaPsgUsed(psg))gbaPsgUsed_=int(psg&15);
             history_.append(block);
             uint32_t active = usedChannels_.load();

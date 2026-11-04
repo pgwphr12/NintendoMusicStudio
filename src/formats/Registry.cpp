@@ -3,11 +3,18 @@
 #include "StreamBackend.hpp"
 #include <array>
 #include <cstring>
+#include <algorithm>
+#include <cwctype>
 #include <fstream>
 #include <stdexcept>
 #include <zlib.h>
 namespace ngmv {
-Format identify(const std::vector<uint8_t> &b) {
+std::unique_ptr<IMusicBackend> makeAudioFileBackend(const std::filesystem::path&);
+Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path) {
+    if((b.size()>=12 && (!memcmp(b.data(),"RIFF",4)||!memcmp(b.data(),"RF64",4)) && !memcmp(b.data()+8,"WAVE",4)) ||
+       (b.size()>=4 && (!memcmp(b.data(),"OggS",4)||!memcmp(b.data(),"fLaC",4))) ||
+       (b.size()>=3 && !memcmp(b.data(),"ID3",3)) ||
+       (b.size()>=4 && b[0]==0xff && (b[1]&0xe0)==0xe0 && (b[1]&6) && (b[2]&0xf0)!=0xf0))return Format::AudioFile;
     if (b.size() > 64 && !memcmp(b.data(), "Vgm ", 4))
         return Format::Vgm;
     if (b.size() >= 64 && !memcmp(b.data(), "CSTM", 4))
@@ -30,9 +37,14 @@ Format identify(const std::vector<uint8_t> &b) {
         if (b[3] == 0x24)
             return Format::TwoSf;
     }
+    // Signatures of known game formats take precedence. Ordinary audio may
+    // start with padding or a partial frame; let the real decoder validate it.
+    auto ext=path.extension().wstring();
+    std::transform(ext.begin(),ext.end(),ext.begin(),[](wchar_t c){return std::towlower(c);});
+    if(ext==L".mp3"||ext==L".wav"||ext==L".ogg"||ext==L".flac")return Format::AudioFile;
     throw std::runtime_error("Unsupported or truncated music file. Open NSF / NSFE / SPC / GBS / "
                              "GSF / 2SF / USF / BCSTM / BCWAV / VGM / VGZ; "
-                             "game ROMs are not supported.");
+                             "MP3 / WAV / OGG Vorbis / FLAC; game ROMs are not supported.");
 }
 std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
     std::ifstream f(p, std::ios::binary | std::ios::ate);
@@ -43,7 +55,11 @@ std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
         std::vector<uint8_t> header(64);
         f.seekg(0);
         f.read(reinterpret_cast<char *>(header.data()), 64);
-        if (!memcmp(header.data(), "CSTM", 4) || !memcmp(header.data(), "CWAV", 4))
+        bool knownGame=!memcmp(header.data(),"NESM\x1a",5)||!memcmp(header.data(),"NSFE",4)||
+                       !memcmp(header.data(),"Vgm ",4)||!memcmp(header.data(),"GBS",3)||
+                       !memcmp(header.data(),"PSF",3)||!memcmp(header.data(),"SNES-SPC700 Sound File Data",26);
+        bool ordinary=false;try{ordinary=!knownGame && identify(header,p)==Format::AudioFile;}catch(const std::exception&){}
+        if (ordinary || !memcmp(header.data(), "CSTM", 4) || !memcmp(header.data(), "CWAV", 4))
             return header;
     }
     if (n <= 0 || n > 64 * 1024 * 1024)
@@ -82,7 +98,9 @@ std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
 }
 std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &b,
                                            const std::filesystem::path &path) {
-    switch (identify(b)) {
+    switch (identify(b,path)) {
+    case Format::AudioFile:
+        return makeAudioFileBackend(path);
     case Format::Vgm:
         return makeVgmBackend(b);
     case Format::Bcstm:
@@ -91,7 +109,7 @@ std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &b,
     case Format::Usf:
     case Format::Gsf:
     case Format::TwoSf:
-        return makePsfBackend(path, identify(b));
+        return makePsfBackend(path, identify(b,path));
     case Format::Nsf:
         return std::make_unique<NSFBackend>(b);
     case Format::Nsfe:

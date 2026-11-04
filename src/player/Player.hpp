@@ -31,6 +31,8 @@ class Player {
     std::atomic<bool> atEnd_{false};
     std::atomic<bool> repeat_{false};
     std::atomic<bool> continueAfterLength_{false};
+    bool exactSourceEnd_=false;
+    std::atomic<uint64_t> sourceEndFrame_{UINT64_MAX};
     void haltWorker();
     void startWorker();
     void prefill();
@@ -69,6 +71,7 @@ class Player {
         return double(base_ + output_.consumed()) / InternalRate;
     }
     bool ended() const;
+    bool playbackBoundaryReached() const;
     void continueAfterLength(bool value) { continueAfterLength_ = value; }
     void repeat(bool b) {
         repeat_ = b;

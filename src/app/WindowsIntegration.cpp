@@ -46,7 +46,7 @@ std::filesystem::path executablePath() {
 }
 std::vector<std::wstring> supportedExtensions() {
     return {L".nsf", L".nsfe", L".spc", L".gbs", L".gsf", L".minigsf", L".2sf",
-            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".vgm", L".vgz"};
+            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".vgm", L".vgz", L".mp3", L".wav", L".ogg", L".flac"};
 }
 bool decodeRequest(const COPYDATASTRUCT *data, std::wstring &result) {
     if (!data || data->dwData != CopyDataTag || !data->lpData ||
@@ -178,7 +178,7 @@ InstanceGate::~InstanceGate() {
     if (mutex_) CloseHandle(mutex_);
 }
 bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
-    std::wstring name = L"Local\\NintendoMusicStudio.Studio150." + userIdentity();
+    std::wstring name = L"Local\\NintendoMusicStudio.Studio157." + userIdentity();
     mutex_ = CreateMutexW(nullptr, TRUE, name.c_str());
     DWORD error = GetLastError();
     if (!mutex_) throw std::runtime_error("Cannot initialize the single-instance player.");

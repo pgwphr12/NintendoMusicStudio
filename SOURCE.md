@@ -1,4 +1,4 @@
-# Nintendo Music Studio 1.5 — complete corresponding source
+# Nintendo Music Studio 1.5.7 — complete corresponding source
 
 Windows x64, C++17, Visual Studio2022 Desktop development with C++, CMake3.24+ and Python3. Dependencies are bundled as pinned source archives/trees with notices; no proprietary music is required. Composition/editor sources are absent. Python/Pillow are used only for build/test/package workflows, not runtime.
 
@@ -20,3 +20,20 @@ All corresponding application and used-library source/headers, local patches, bu
 N64 is the official Cog-specific GPL2+ lazyusf2 distribution at0ac68cc947a66fc88c130324a593f9bfca698d1a, subtree Frameworks/lazyusf2/lazyusf2. Exact component notice, original CC0/BSD exceptions, source hashes and local Windows/voice-observer changes are retained in third_party/lazyusf. Rebuild lazyusf and NintendoGameMusicViewer to relink. The old noncommercial archive is excluded.
 
 Additional VGM playback uses own bounded scheduling/minimal core declarations, explicit GPL/BSD/LGPL chip cores and zlib ES5506.18's SCC native-rate/area averaging and mix-gain fixes are preserved byte-for-byte in1.5. Signalsmith Stretch/Linear are pinned MIT headers with source/notice metadata. See THIRD_PARTY_NOTICES.md, LICENSE-REVIEW.md, LICENSE-INVENTORY.json and licenses/. Distribute the complete corresponding source ZIP with the runtime ZIP and retain notices.
+
+1.5.1: ES5506 host integration reads actual output buses and word precision. One explicitly marked read-only accessor was added to es5506.hpp; original zlib header/notice retained. Original synthesis algorithms are unchanged. No old restricted resampler/core is restored.
+
+
+1.5.2 level correction: ES5506 extra default attenuation from1.5.1 is removed; real serial buses remain. Historical1.5.1 correlation is not a chip-balance validation. See docs/VGM-LEVEL-152.json.
+
+
+1.5.3 adds own src/audio/ChipInterpolator.hpp and passband/DC/stereo/silence tests in ExtendedVgmTests.cpp. No new external dependency or altered third-party synthesis. Complete candidate evidence: docs/VGM-INTERPOLATION-153.json.
+
+
+1.5.4 ordinary-audio decoding: own AudioFileBackend.cpp compiles unmodified miniaudio0.11.23 + bundled stb_vorbis as decoder-only code. MIT option chosen, original notices retained. Own wide-path Vorbis pull adapter reports length and enables direct seeks without copying whole compressed files. UI and playback continue using SDL exclusively. Own synthetic compressed fixture vectors are embedded in tests/audio_fixture_data.json; no FFmpeg is required by CTest or runtime. Developers can regenerate the described vectors with FFmpeg.
+
+
+1.5.5: Registry path-aware fallback routes ordinary extensions to real decoder validation, preserving known game signatures. IMusicBackend optional decodedEndFrame and AudioFileBackend report actual PCM EOF; Player playbackBoundaryReached uses this for ordinary audio, and metadata for emulated formats. Recording-only wave start extends into labels, deferred outlined labels draw after the waveform. New native button/matrix/recording tests are included; unknown-length emulated loop boundaries are not invented.
+
+
+1.5.7 UI-only service: Window::updatePlayback is called by DisplayPacer::Message and WM_TIMER; no audio-thread or painting restart. Recording ChannelLayout accepts recording-aware right edge. Native tests can explicitly drop timer1 only in own automated snapshot sessions; normal launches cannot activate this fault injection. Optional timer_only_baseline is a diagnostic build target using the old timer-only path, not included in runtime packages. Full evidence: docs/FULLSCREEN-156.json.

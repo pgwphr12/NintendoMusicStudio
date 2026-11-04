@@ -1,4 +1,51 @@
+#1.5.7 — recording cell alignment
+
+- End recording waveforms at each channel cell boundary, retaining outer and column gaps.
+- Raise recording channel labels and tighten their text bounds.
+- Preserve fullscreen repeat scheduling and existing audio behavior.
+
+#1.5.6 — fullscreen repeat and recording edge
+
+- Service repeat/folder advance from display-paced UI messages, retaining the timer fallback and guarded UI-thread restarts.
+- Extend recording waveforms to right screen/column edges; normal layout unchanged.
+- Add F11/F9/fullscreen transitions and DS autoplay checks under deliberate idle-timer starvation. Audio/decoder source unchanged from1.5.5.
+
+#1.5.5 — compatibility, repeat and recording view
+
+- Fix rejection of playable MP3 files whose first bytes do not match the narrow signature check; validate with the decoder.
+- Repeat ordinary audio at actual decoded EOF, including overstated duration headers.
+- Extend recording-view waveforms left behind channel names, rendering labels above the waves.
+- Add actual Repeat-button regressions and later-format/representative game music coverage. Preserve original music/settings.
+
+#1.5.4 — ordinary audio waveforms
+
+- Add MP3/WAV/Ogg Vorbis/FLAC playback and live stereo/mono waveforms.
+- Share existing controls, recording view and mixed ordinary-audio folder navigation.
+- Decode files on demand, support Unicode paths/direct seeking; no external codecs needed.
+- Preserve game-music playback and prior ES5506 fixes. Add own format/seek/mute/replay/EOF/UI tests.
+
+#1.5.3 — ES5506 interpolation validation candidate
+
+- Replace sub48kHz ES5506 linear interpolation with32-tap causal band-limited conversion, preserving treble and suppressing imaging.
+- Preserve1.5.2 chip levels, ES decoder/filter and other chip paths. Use exact fractional native-rate calculation.
+- Own passband/DC/stereo/silence tests and actual VGM comparisons; exact creator timbre remains unverified.
+
+#1.5.2 — ES5506 level regression fix
+
+- Remove the additional1/8 ES5506 attenuation introduced in1.5.1; restore main melody level.
+- Keep actual ES serial output/routing/precision fixes and explicit VGM volume overrides.
+- Preserve other chips, existing settings and old releases. Exact reference timbre remains unverified.
+
 # Nintendo Music Studio — changes
+
+## 1.5.1 —2026-11-02 timbre validation candidate
+
+- ES5506 configured output buses/precision/routing now replace debug voice summation.
+- Correct ES default VGM calibration and relative/absolute volume overrides.
+- Unsupported serial width errors and disabled-output/word precision tests added.
+- Preserve SCC rate/gain fixes, N64, previous files and user settings.
+- Full reference-timbre identity remains unverified; compare at pitch/speed1.00/reverb off.
+
 
 ## 1.5 —2026-11-01 public package
 

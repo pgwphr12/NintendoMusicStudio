@@ -1,0 +1,110 @@
+{
+  "version": "1.5.6",
+  "date": "2026-11-04",
+  "scope": "Fullscreen repeat and right-edge recording waveforms",
+  "transport_change": "Shared UI-thread updatePlayback runs from coalesced display-paced messages and the existing WM_TIMER fallback; no transport restart from painting/audio callback; changing/playing guard prevents nested restarts",
+  "timer_priority_source": "https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-timer",
+  "reproduction": {
+    "unmodified155_ordinary_4K_trial": "One repeat worked on this machine; exact hardware-specific failure not claimed reproduced",
+    "timer_only_diagnostic": {
+      "pass": false,
+      "cases": [
+        {
+          "phase": "fullscreen",
+          "wrap": false,
+          "maximum_ms": 5002,
+          "fullscreen": true,
+          "recording": false
+        }
+      ],
+      "timer1_delivery": "disabled in own snapshot loop",
+      "audio": "dummy"
+    },
+    "diagnostic_definition": "Same UI source compiled with NGMV_TEST_TIMER_ONLY_BASELINE suppresses new display-path call; isolated test loop drops timer1 deliveries only",
+    "new_fullscreen": {
+      "pass": true,
+      "cases": [
+        {
+          "phase": "fullscreen",
+          "wrap": true,
+          "maximum_ms": 2005,
+          "fullscreen": true,
+          "recording": false
+        },
+        {
+          "phase": "fullscreen-recording",
+          "wrap": true,
+          "maximum_ms": 2005,
+          "fullscreen": true,
+          "recording": true
+        },
+        {
+          "phase": "fullscreen-normal-again",
+          "wrap": true,
+          "maximum_ms": 2005,
+          "fullscreen": true,
+          "recording": false
+        },
+        {
+          "phase": "windowed",
+          "wrap": true,
+          "maximum_ms": 1994,
+          "fullscreen": false,
+          "recording": false
+        },
+        {
+          "phase": "fullscreen-again",
+          "wrap": true,
+          "maximum_ms": 1994,
+          "fullscreen": true,
+          "recording": false
+        }
+      ],
+      "timer1_delivery": "disabled in own snapshot loop",
+      "audio": "dummy"
+    },
+    "DS_autoplay": {
+      "pass": true,
+      "auto_advance": [
+        "02 Track",
+        "10 Track"
+      ],
+      "fullscreen": true,
+      "timer1_delivery": "disabled",
+      "audio": "dummy"
+    }
+  },
+  "recording_wave": {
+    "pass": true,
+    "cases": [
+      {
+        "recording": false,
+        "name_area_wave_pixels": 0,
+        "right_edge_wave_pixels": 0
+      },
+      {
+        "recording": true,
+        "name_area_wave_pixels": 2072,
+        "right_edge_wave_pixels": 586
+      }
+    ],
+    "audio": "dummy"
+  },
+  "audio_and_decoder_source_vs155": {
+    "unchanged_files": 1454,
+    "changed": []
+  },
+  "fresh_CTest": {
+    "pass": 24,
+    "fail": 0,
+    "seconds": 80.63
+  },
+  "original_music_and_user_settings_modified": false,
+  "test_windows": "Own offscreen F11 popup3840x2160, F9 normal/recording transitions, no display-mode change or user app operation",
+  "limits": [
+    "Injected idle-timer starvation validates the scheduling fix; not a physical high-refresh fullscreen certification",
+    "No new decoder/audio/timbre changes",
+    "Previous unknown-length emulated-program limitation remains"
+  ],
+  "external_upload": false
+}

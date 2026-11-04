@@ -1,6 +1,14 @@
-# Nintendo Music Studio 1.5
+# Nintendo Music Studio1.5.7
 
-A Windows game-music player with per-channel waveforms, mute and volume controls. This public package incorporates the internal player improvements and1.4.18 VGM pitch/gain regression fixes. It does not include composition or music editing.
+1.5.7: recording waveforms end at their channel cell boundary, retaining outer margins and the gap between columns. Channel labels sit nearer the row top with tighter text bounds. Fullscreen repeat scheduling and audio decoding remain unchanged.
+
+1.5.6: service repeat/folder advance from coalesced display-paced UI messages as well as the idle timer fallback, preventing transport checks from waiting for idle timer delivery during fullscreen rendering. Preserve UI-thread/track-loading guards. Recording waveforms reach the right screen/column edge; labels stay above the wave. Normal margins unchanged. Own offscreen F11/F9 transitions and DS autoplay tests pass with timer1 delivery deliberately disabled. Decoder/audio code remains unchanged from1.5.5; no physical fullscreen certification is implied.
+
+Changes: route ordinary files with recognized audio extensions to the validating decoder when initial signatures are inconclusive, while known game signatures retain priority. All13provided mission.mp3 files open/play/seek/mute/restart; no original modification. Ordinary audio repeats at actual decoded EOF rather than overstated metadata duration. Recording-view waveforms extend under the name area; labels draw above waves. Native button-repeat checks cover later GBA/DS/N64/3DS/VGM paths, with actual representative GBA/DS/N64 files checked separately. No inferred loop boundary for unknown-length emulated programs.
+
+Open/drop MP3, WAV, Ogg Vorbis or FLAC and see live waveforms in the existing player. Stereo uses PCM LEFT/PCM RIGHT; mono uses PCM MONO. Playback, seeking, repeat, per-lane gains/mutes, pitch/speed, recording view and mixed ordinary-audio folder navigation share the existing controls.
+
+Files are decoded as needed; no whole-track PCM preload and no external codec/FFmpeg installation. More than2 source channels are downmixed to stereo (up to8 input channels). These are output lanes, not vocal/instrument separation. Ogg Opus and M4A/AAC are unsupported;24-hour duration limit. Existing game formats and1.5.3 ES interpolation preserved. No original music/settings overwritten.
 
 ## Run
 
@@ -8,7 +16,7 @@ Extract the ZIP to a new folder on Windows10/11 x64 and launch **NintendoMusicSt
 
 ## Playback
 
-Supported inputs: NSF/NSFE, SPC, GBS, GSF/MINIGSF,2SF/MINI2SF, USF/MINIUSF, BCSTM/BCWAV, VGM/VGZ. VGM uses the SMS/Mega Drive path and an additional YM2612/YM3812/MSM6295/K051649/ES5506 path. All chips/combinations are not supported; unsupported combinations return errors. ES5506 is a whole-chip MIX lane. MP3, composition/editing, project saving and WAV export are not included.
+Supported inputs: NSF/NSFE, SPC, GBS, GSF/MINIGSF,2SF/MINI2SF, USF/MINIUSF, BCSTM/BCWAV, VGM/VGZ, MP3/WAV/OGG(Vorbis)/FLAC. VGM uses the SMS/Mega Drive path and an additional YM2612/YM3812/MSM6295/K051649/ES5506 path. All chips/combinations are not supported; unsupported combinations return errors. ES5506 is a whole-chip MIX lane. Composition/editing, project saving and WAV export are not included.
 
 Open/drop files; select internal tracks; use previous/next, folder autoplay and repeat. Channels have English names, mute and0–200% gain; a common gain control sets all gains without changing mute/master. Pitch and speed are independent0.50–2.00 multipliers with default0.01/optional0.10 steps. Reverb defaults to76%/3.0s with a separate enable switch. Recording view hides volume controls and enlarges the clock. Waveform presentation follows the monitor at output rates44.1kHz and above.
 

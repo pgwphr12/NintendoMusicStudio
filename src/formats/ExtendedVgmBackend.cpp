@@ -206,12 +206,12 @@ struct Program {
         add(0x98,ChipKind::Oki,4,24,"MSM6295",uint8_t(header(0x98)>>31));
         add(0x9c,ChipKind::Scc,5,25,"K051649",uint8_t(header(0x9c)>>31));
         add(0xd0,ChipKind::Es5506,1,37,"ES5506",uint8_t(header(0xd0)>>24)&128);
-        for(auto&c:configs)if(c.kind==ChipKind::Es5506)require(c.flags&128,"Licensed ES5505 support is not implemented.");
+        for(auto&c:configs)if(c.kind==ChipKind::Es5506){require(c.flags&128,"Licensed ES5505 support is not implemented.");} // Real serial output is already normalized; preserve unity chip balance.
         if(auto extra=header(0xbc)){
             size_t x=extra+0xbc;auto volume=read32(b,x+8);
             if(volume){size_t t=x+8+volume;for(unsigned i=0;i<b[t];++i){size_t e=t+1+4*i;
                 require(!(b[e]&128)&&b[e+1]==0,"Unsupported paired/second-chip volume entry.");
-                auto v=read16(b,e+2);for(auto&c:configs)if(c.id==b[e])c.gain=(v&32768)?(v&32767)/256.f:v/256.f;
+                auto v=read16(b,e+2);for(auto&c:configs)if(c.id==b[e])c.gain=(v&32768)?c.gain*((v&32767)/256.f):v/256.f;
             }}
         }
         int modifier=start>0x7c?b[0x7c]:0;if(modifier>=193)modifier-=256;if(modifier==-63)modifier=-64;

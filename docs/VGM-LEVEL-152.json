@@ -1,0 +1,32 @@
+{
+  "version": "1.5.2",
+  "scope": "ES5506 default-level regression correction, not exact-timbre proof",
+  "seconds": 20,
+  "rate": 48000,
+  "ES_gain_vs_151": 8.0,
+  "ES_RMS_vs_150": 1.0000003576278687,
+  "other_stems_bit_identical": true,
+  "peak": 0.5857874155044556,
+  "clip_samples": 0,
+  "actual_bus_path_preserved": true,
+  "explicit_absolute_and_relative_volume_tests": "PASS",
+  "original_music_settings_modified": false,
+  "creator_timbre_exact_verified": false,
+  "full_song": {
+    "seconds": 165.275,
+    "wall_seconds": 104.335,
+    "peak": 0.729498,
+    "clipping_at_unity": false,
+    "stem_sum_max": 6.15045e-05,
+    "ES_energy": 15342,
+    "dummy_underruns": 0,
+    "seek_mute_replay": "PASS"
+  },
+  "tests": {
+    "CTest_initial": "17/18 PASS; About test held stale1.5.1 version expectation",
+    "About_after_reading_release_version": "PASS",
+    "packaged_player_about_controls": "PASS",
+    "packaging_initial": "stale1.5.1 assertion in player_only_ui; replaced with RELEASE.json version check, then PASS"
+  },
+  "physical_listening_verified": false
+}

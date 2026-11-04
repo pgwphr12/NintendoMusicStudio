@@ -1,0 +1,303 @@
+{
+  "version": "1.5.3",
+  "actual20s": {
+    "other_stems_bit_identical": true,
+    "ES_RMS_ratio": 1.0012707710266113,
+    "mix_peak": 0.5283798575401306,
+    "ES_spectrum_bands": [
+      {
+        "Hz": [
+          0,
+          1000
+        ],
+        "new_over_old_power_dB": 0.01050669596704315
+      },
+      {
+        "Hz": [
+          1000,
+          4000
+        ],
+        "new_over_old_power_dB": 0.08789470408511874
+      },
+      {
+        "Hz": [
+          4000,
+          8000
+        ],
+        "new_over_old_power_dB": 0.6424582586524223
+      },
+      {
+        "Hz": [
+          8000,
+          12000
+        ],
+        "new_over_old_power_dB": 2.533271456306532
+      },
+      {
+        "Hz": [
+          12000,
+          15625
+        ],
+        "new_over_old_power_dB": 0.6229508310257946
+      },
+      {
+        "Hz": [
+          16000,
+          24000
+        ],
+        "new_over_old_power_dB": -35.759561466261566
+      }
+    ],
+    "ES_latency_ms": 0.512,
+    "gain_setting_changed": false,
+    "exact_timbre_proven": false
+  },
+  "core_audit": {
+    "synthesis_files_identical_to_pinned_Furnace": {
+      "es5506.cpp": true,
+      "es550x_alu.cpp": true,
+      "es550x_filter.cpp": true
+    },
+    "header_clock": 16000000,
+    "active_voice_register_values": {
+      "15": 1,
+      "31": 1
+    },
+    "CR_compression_flags": {
+      "0": 3668
+    },
+    "CR_filter_modes": {
+      "3": 3668
+    },
+    "ROM_blocks": [
+      {
+        "type": "0x0",
+        "bytes": 1985,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 2274,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 3993,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 3871,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 14338,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 9778,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 2472,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 110943,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 186894,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 169766,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 156797,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 166436,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 162547,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 157840,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 162423,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 146570,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 116978,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 83613,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 67275,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 24722,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 91807,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 338314,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 175958,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 65246,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 110943,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 24443,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 32988,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 12876,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 16138,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 84807,
+        "eight_bit": null
+      },
+      {
+        "type": "0x0",
+        "bytes": 8214,
+        "eight_bit": null
+      },
+      {
+        "type": "0x8b",
+        "bytes": 198526,
+        "eight_bit": null
+      },
+      {
+        "type": "0x90",
+        "bytes": 4194176,
+        "eight_bit": false
+      },
+      {
+        "type": "0x90",
+        "bytes": 1063626,
+        "eight_bit": false
+      }
+    ],
+    "seconds": 164.2749886621315,
+    "source_music_SHA256": "b8cb756ab0c23bfc8827d43f82de03fe7c83e49334a17137c715217d3c3bd6a6",
+    "audit_correction": "W_END page0x20 excluded from ACT lower-page counts"
+  },
+  "independent_tests": "work/studio153-probe-tests.log",
+  "status": "verified engineering candidate; creator timbre not verified",
+  "fresh_tests": {
+    "CTest": {
+      "pass": 18,
+      "fail": 0,
+      "seconds": 48.96
+    },
+    "full_lobby": {
+      "seconds": 165.275,
+      "wall_seconds": 99.6531,
+      "peak": 0.730015,
+      "ES_energy": 15507.7,
+      "stem_sum_max": 6.15045e-05,
+      "dummy_underruns": 0,
+      "reset_seek_mute_replay": "PASS"
+    },
+    "other_VGM_first12s_mix_bit_identical": true,
+    "source_music_unchanged": true,
+    "settings_unchanged": true
+  },
+  "independent_passband": [
+    {
+      "Hz": 440,
+      "new_amplitude": 1.00001,
+      "old_linear": 0.999151
+    },
+    {
+      "Hz": 4000,
+      "new_amplitude": 0.999994,
+      "old_linear": 0.947579
+    },
+    {
+      "Hz": 8000,
+      "new_amplitude": 0.999965,
+      "old_linear": 0.808812
+    },
+    {
+      "Hz": 10000,
+      "new_amplitude": 0.999917,
+      "old_linear": 0.724667
+    },
+    {
+      "Hz": 12000,
+      "new_amplitude": 0.999794,
+      "old_linear": 0.646557
+    }
+  ],
+  "limits": [
+    "No same-project creator reference render; official MP3 identity does not establish identical synthesis/mix",
+    "Fixed16-native-sample causal ES delay (0.512ms at31250Hz)",
+    "Only sub48000Hz ES interpolation changed; higher native rates retain existing interval integration",
+    "Dynamic ACT/rate transitions and all possible sample/filter programs not exhaustively validated",
+    "No physical listening or hardware certification"
+  ]
+}

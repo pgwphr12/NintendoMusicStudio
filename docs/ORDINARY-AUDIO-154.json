@@ -1,0 +1,117 @@
+{
+  "version": "1.5.4",
+  "date": "2026-11-04",
+  "feature": "Ordinary audio playback and live waveforms in same player",
+  "formats": [
+    "MP3",
+    "WAV",
+    "Ogg Vorbis",
+    "FLAC"
+  ],
+  "lanes": {
+    "stereo": [
+      "PCM LEFT",
+      "PCM RIGHT"
+    ],
+    "mono": [
+      "PCM MONO"
+    ],
+    "more_than_two_channels": "downmix to stereo, at most8 input channels"
+  },
+  "decoder": {
+    "name": "miniaudio",
+    "tag": "0.11.23",
+    "Vorbis": "bundled stb_vorbis + own UTF16 pull-mode hookup",
+    "runtime_external_codecs": false,
+    "whole_track_PCM_preload": false,
+    "header_read_bytes": 64,
+    "maximum_duration_hours": 24
+  },
+  "fresh_tests": {
+    "CTest": {
+      "passed": 20,
+      "failed": 0,
+      "seconds": 54.8
+    },
+    "synthetic_audio": [
+      "MP3/WAV/OggVorbis/FLAC stereo routing and pitch",
+      "seek into changed musical section",
+      "deterministic replay",
+      "left/all mute and EOF silence",
+      "exact end seek",
+      "lossless source PCM equality forWAV/FLAC",
+      "mono22050Hz and float32 96000Hz WAV resampling",
+      "Unicode MP3/OGG paths",
+      "malformed3format rejection",
+      "mixed ordinary-format folder list",
+      "dummy Player and waveforms"
+    ],
+    "native_UI": {
+      "pass": true,
+      "audio": "dummy",
+      "offscreen": true,
+      "user_apps_operated": false,
+      "cases": [
+        {
+          "format": "wav",
+          "playing": true,
+          "nonflat_stereo_waveforms": true,
+          "wave_pixels": [
+            13891,
+            26422
+          ]
+        },
+        {
+          "format": "mp3",
+          "playing": true,
+          "nonflat_stereo_waveforms": true,
+          "wave_pixels": [
+            13922,
+            26422
+          ]
+        },
+        {
+          "format": "ogg",
+          "playing": true,
+          "nonflat_stereo_waveforms": true,
+          "wave_pixels": [
+            13779,
+            26217
+          ]
+        },
+        {
+          "format": "flac",
+          "playing": true,
+          "nonflat_stereo_waveforms": true,
+          "wave_pixels": [
+            13881,
+            26417
+          ]
+        }
+      ],
+      "clock_after_actual_EOF": "PASS"
+    },
+    "actual_supplied_MP3": "First6s finite/nonzero stereo, seek500ms/replay/all mute and native snapshot PASS; original SHA unchanged"
+  },
+  "previous_game_audio_regressions": "Existing18CTest cases fresh PASS; no original game music/decoder algorithms changed",
+  "license_audit": {
+    "projects": 13,
+    "compiled_TUs": 976,
+    "unknown": 0,
+    "chosen_new_terms": "MIT options; original complete notices/sources retained"
+  },
+  "limits": [
+    "Ogg Opus and M4A/AAC unsupported",
+    "Stereo/mono output waveform lanes do not separate instruments/vocals",
+    "Compressed audio length/seeking uses backend metadata and accuracy",
+    "Chained Vorbis and every multichannel layout not exhaustively validated",
+    "Dummy audio/native window tests; no physical listening/hardware certification"
+  ],
+  "failures_resolved": [
+    "Initial parallel build process out-of-memory; subsequent single-job build PASS",
+    "stb L/C/R macro leak into Windows headers fixed in own integration",
+    "Vorbis wide-path push fallback reports length0; own wide pull adapter uses real source length/direct seek"
+  ],
+  "external_upload": false,
+  "original_music_or_user_settings_modified": false
+}

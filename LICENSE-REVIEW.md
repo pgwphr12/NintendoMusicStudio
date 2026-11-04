@@ -1,4 +1,4 @@
-# Software license review — Nintendo Music Studio 1.5 /2026-11-01
+# Software license review — Nintendo Music Studio 1.5.2 /2026-11-01
 
 The user requires N64 support and research only: no public question/contact was sent. The identified VGM and N64 licensing blockers have concrete source replacements. Nintendo Music Studio1.5 is prepared as a public runtime/source package at the user's request. No external upload/contact is performed. Earlier versions are preserved without retroactive clearance claims.
 
@@ -8,7 +8,7 @@ The user requires N64 support and research only: no public question/contact was 
 |---|---|
 | Unassigned libvgm framework/player/utils/resampler | Own bounded VGM reader/scheduler/adapter, GPL2+ |
 | Undeclared extra Gens YM2612 copy | Nuked OPN2, LGPL2.1+; full source and relink build |
-| Noncommercial old MAME ES5506 | vgsound_emu ES5506, zlib; original used core unmodified |
+| Noncommercial old MAME ES5506 | vgsound_emu ES5506, zlib; original synthesis retained;1.5.2 adds a marked read-only header accessor |
 | Project64 noncommercial/personal-use LazyUSF CPU | Cog-pinned lazyusf2, specific GPL2+ component notice, CC0/BSD exceptions |
 
 The original restricted files are not relicensed. They and the old N64 archive are absent from the current shipping source and runtime dependency graph. N64 is enabled, not removed as a licensing workaround.
@@ -37,3 +37,11 @@ Other compiled modules: GME LGPL2.1+/emu2413 MIT, SDL zlib, viogsf/vio2sf GPL/LG
 Those libvgm issues were not treated as a blanket grant; the ambiguous dependency was removed. Validation and remaining playback limitations are documented in VALIDATION.md.
 
 1.4.18 adds independent sample-rate/gain regression corrections. The17N64/license replacements are retained. No restricted framework/resampler/source was restored; no external contact occurred. The subsequent1.5public package preserves these corrections.
+
+The1.5.2timbre validation candidate retains these licenses. es5506.hpp has a plainly marked local read-only serial precision accessor; zlib copyright/license unchanged.
+
+
+1.5.2 level correction: ES5506 extra default attenuation from1.5.1 is removed; real serial buses remain. Historical1.5.1 correlation is not a chip-balance validation. See docs/VGM-LEVEL-152.json.
+
+
+1.5.4 adds unmodified miniaudio0.11.23 and its bundled stb_vorbis, under their MIT license options. Full sources/original notices included; own adapter GPL2+. See third_party/miniaudio/UPSTREAM.json and new notices. These software licenses do not grant rights to user music.

@@ -30,9 +30,12 @@ class IMusicBackend {
     // Explicit offline, owned ROM-only PCM8 copy; RAM samples are unsupported.
     // Unsupported backends leave both caller outputs unchanged.
     virtual bool copyGbaSample(const GbaSampleInfo&,GbaSampleData&,std::string&) const {return false;}
+    // Decoder-owner-thread query: actual absolute output-frame EOF, if known.
+    // Compressed headers may overstate duration. This does not infer silence.
+    virtual bool decodedEndFrame(uint64_t&) const {return false;}
     virtual void continuousEnd(bool) {}
 };
-Format identify(const std::vector<uint8_t> &bytes);
+Format identify(const std::vector<uint8_t> &bytes, const std::filesystem::path &path = {});
 std::vector<uint8_t> readMusicFile(const std::filesystem::path &path);
 std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &bytes, const std::filesystem::path &path = {});
 } // namespace ngmv

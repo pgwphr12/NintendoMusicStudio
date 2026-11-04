@@ -122,9 +122,10 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.5\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.5.7\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
+                L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
                 L"추가 VGM: YM2612 · YM3812 · MSM6295 · K051649 · ES5506\r\n"
                 L"ES5506은 칩 전체 MIX 버스입니다. 모든 칩/조합의 지원 완료를 뜻하지 "
                 L"않습니다.\r\n\r\n"
@@ -219,7 +220,7 @@ bool Window::open(const std::filesystem::path &p) {
         return false;
     try {
         ChangingScope guard(changing_);
-        auto playlist = FolderPlaylist::scan(p, identify(readMusicFile(p)));
+        auto playlist = FolderPlaylist::scan(p, identify(readMusicFile(p),p));
         rememberChannels();
         message_ = L"음악을 불러오는 중…";
         drag_ = -1;
@@ -227,11 +228,11 @@ bool Window::open(const std::filesystem::path &p) {
         auto prepared = prepareMusic(hwnd_, p);
         if (!prepared)
             return false;
-        player_.openPrepared(std::move(prepared), identify(readMusicFile(p)));
+        player_.openPrepared(std::move(prepared), identify(readMusicFile(p),p));
         restoreChannels();
         file_ = p;
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.5 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.5.7 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
 
         drag_ = -1;
@@ -256,11 +257,11 @@ void Window::selectFolder(size_t index, bool play) {
     auto prepared = prepareMusic(hwnd_, path);
     if (!prepared)
         return;
-    player_.openPrepared(std::move(prepared), identify(readMusicFile(path)));
+    player_.openPrepared(std::move(prepared), identify(readMusicFile(path),path));
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5.7 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -289,10 +290,10 @@ void Window::openDialog() {
     d.lStructSize = sizeof d;
     d.hwndOwner = hwnd_;
     d.lpstrFilter =
-        L"게임 음악 "
+        L"음악 파일 "
         L"(*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*.usf;*.miniusf;*."
-        L"bcstm;*.bcwav;*.vgm;*.vgz)\0*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*."
-        L"usf;*.miniusf;*.bcstm;*.bcwav;*.vgm;*.vgz\0모든 파일\0*.*\0";
+        L"bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac)\0*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*."
+        L"usf;*.miniusf;*.bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac\0모든 파일\0*.*\0";
     d.lpstrFile = path;
     d.nMaxFile = 32768;
     d.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
@@ -344,6 +345,20 @@ void Window::rateMenu() {
     if (n >= 1 && n <= 6)
         player_.rate(rates[n - 1]);
 }
+void Window::updatePlayback(){
+    // Both display messages and the idle WM_TIMER fallback service transport.
+    // UI-thread work only; never a paint/audio callback or concurrent restart.
+    if(changing_ || !player_.playing())return;
+    const bool scheduledEnd=player_.playbackBoundaryReached();
+    const bool advance=player_.repeat() || (autoplay_ && playlist_.active() &&
+                                          playlist_.current+1<playlist_.files.size());
+    if(!player_.ended() && !(scheduledEnd && advance))return;
+    const bool repeat=player_.repeat();
+    player_.pause();
+    if(repeat){player_.stop();player_.play();}
+    else if(autoplay_ && playlist_.active() && playlist_.current+1<playlist_.files.size())nextTrack(1,true);
+    else message_=L"Track ended";
+}
 void Window::toggleFullscreen() {
     fullscreen_ = !fullscreen_;
     if (fullscreen_) {
@@ -351,13 +366,16 @@ void Window::toggleFullscreen() {
         SetWindowLongPtrW(hwnd_, GWL_STYLE, WS_POPUP | WS_VISIBLE);
         MONITORINFO m{sizeof m};
         GetMonitorInfoW(MonitorFromWindow(hwnd_, MONITOR_DEFAULTTONEAREST), &m);
-        SetWindowPos(hwnd_, HWND_TOP, m.rcMonitor.left, m.rcMonitor.top,
+        const bool isolated=!screenshot_.empty() && desktop::automatedSession();
+        SetWindowPos(hwnd_, isolated ? nullptr : HWND_TOP, isolated ? -20000 : m.rcMonitor.left,
+                     isolated ? -20000 : m.rcMonitor.top,
                      m.rcMonitor.right - m.rcMonitor.left, m.rcMonitor.bottom - m.rcMonitor.top,
-                     SWP_FRAMECHANGED);
+                     SWP_FRAMECHANGED | (isolated ? SWP_NOACTIVATE|SWP_NOZORDER : 0));
     } else {
         SetWindowLongPtrW(hwnd_, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
         SetWindowPos(hwnd_, nullptr, oldRect_.left, oldRect_.top, oldRect_.right - oldRect_.left,
-                     oldRect_.bottom - oldRect_.top, SWP_FRAMECHANGED | SWP_NOZORDER);
+                     oldRect_.bottom - oldRect_.top, SWP_FRAMECHANGED | SWP_NOZORDER |
+                     ((!screenshot_.empty() && desktop::automatedSession()) ? SWP_NOACTIVATE : 0));
     }
 }
 std::vector<size_t> Window::visibleChannels() const {
@@ -371,6 +389,7 @@ std::vector<size_t> Window::visibleChannels() const {
 }
 void Window::paint(HDC dc, int width, int height) {
     segments_.clear();
+    overlayText_.clear();
     segments_.reserve(8 * 1576 * 2);
     fill(dc, {0, 0, width, height}, RGB(6, 9, 14));
     scale_ = std::min(width / 1920., height / 1080.);
@@ -471,6 +490,10 @@ void Window::paint(HDC dc, int width, int height) {
                                RGB(126, 213, 228), RGB(247, 163, 181)};
     auto visible = visibleChannels();
 
+    auto labelText=[&](const std::wstring&s,int x,int y,int w,int h,int size,COLORREF color,bool bold=false){
+        if(recording_)overlayText_.push_back({s,x,y,w,h,size,color,bold});
+        else text(dc,s,x,y,w,h,size,color,bold);
+    };
     size_t count = visible.size();
     for (size_t i = 0; i < count; i++) {
         size_t c = visible[i];
@@ -491,12 +514,13 @@ void Window::paint(HDC dc, int width, int height) {
             label += L" " + std::to_wstring(int(std::round(states[c].volume * 100))) + L"%";
         if (cell.compact && states[c].mute)
             label += L" MUTED";
-        text(dc, label, cell.labelX(),
-             y + (cell.compact ? 2
+        labelText(label, cell.labelX(),
+             y + (recording_ ? 2 : cell.compact ? 2
                   : lane < 100 ? 5
                                : 15),
              cell.split ? 140 : 205,
              cell.compact ? 18
+             : recording_ ? (lane < 100 ? 26 : 30)
              : lane < 100 ? 30
                           : 36,
              cell.compact ? 13 : std::min(cell.split ? 20 : 24, lane / 4), color, true);
@@ -509,7 +533,7 @@ void Window::paint(HDC dc, int width, int height) {
                 status = (states[c].mute ? L"음소거 · " : L"") +
                          std::to_wstring(int(std::round(states[c].volume * 100))) + L"%";
             if (!status.empty())
-                text(dc, status, cell.labelX(), y + (lane < 100 ? 35 : 48), cell.split ? 140 : 178,
+                labelText(status, cell.labelX(), y + (recording_ ? (lane < 100 ? 30 : 36) : lane < 100 ? 35 : 48), cell.split ? 140 : 178,
                      lane < 100 ? 14 : 22, lane < 100 ? 12 : 15, RGB(118, 136, 158));
         }
         if (!recording_) {
@@ -522,7 +546,7 @@ void Window::paint(HDC dc, int width, int height) {
                  sliderY, color, 3);
             volumeButton(dc, L"+", cell.plusX(), cell.volumeY(), cell.buttonSize());
         }
-        int x0 = cell.waveLeft(), x1 = cell.waveRight(), center = y + (lane - 8) / 2;
+        int x0 = cell.waveLeft(recording_), x1 = cell.waveRight(recording_), center = y + (lane - 8) / 2;
         float amp = (lane - 22) * .44f;
         line(dc, x0, center, x1, center, RGB(44, 56, 73));
         for (int x = x0; x < x1; x += int((x1 - x0) / 8))
@@ -837,6 +861,7 @@ void Window::renderFrame(HDC dc, int width, int height) {
                      int(segment.from.y * scale_) + offsetY_, int(segment.to.x * scale_) + offsetX_,
                      int(segment.to.y * scale_) + offsetY_, segment.color,
                      std::max(1, int(2 * scale_)));
+            drawOverlayText(dc);
             return;
         }
         bufferOld_ = SelectObject(bufferDC_, bufferBitmap_);
@@ -847,7 +872,19 @@ void Window::renderFrame(HDC dc, int width, int height) {
     // Complete background/text GDI work before touching the same DIB memory.
     GdiFlush();
     drawWaves();
+    drawOverlayText(bufferDC_);
     BitBlt(dc, 0, 0, width, height, bufferDC_, 0, 0, SRCCOPY);
+}
+void Window::drawOverlayText(HDC dc){
+    if(overlayText_.empty())return;
+    int saved=SaveDC(dc);SetGraphicsMode(dc,GM_ADVANCED);
+    XFORM xf{FLOAT(scale_),0,0,FLOAT(scale_),FLOAT(offsetX_),FLOAT(offsetY_)};SetWorldTransform(dc,&xf);
+    for(const auto&v:overlayText_){
+        for(auto offset:{POINT{-1,0},POINT{1,0},POINT{0,-1},POINT{0,1}})
+            text(dc,v.value,v.x+offset.x,v.y+offset.y,v.w,v.h,v.size,RGB(6,9,14),v.bold);
+        text(dc,v.value,v.x,v.y,v.w,v.h,v.size,v.color,v.bold);
+    }
+    RestoreDC(dc,saved);
 }
 void Window::drawWaves() {
     // Rasterize the actual min/max envelope directly: no per-segment kernel/GDI calls.
@@ -980,6 +1017,9 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
                 return LRESULT(std::lround(player_.reverbDecay() * 10));
             case 9:
                 return speedStep_;
+            case 14: return fullscreen_;
+            case 15: return recording_;
+            case 16: return player_.repeat();
             case 12:
                 return LRESULT(player_.underruns());
             case 13:
@@ -1003,6 +1043,9 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         return 0;
     case DisplayPacer::Message:
         framePacer_.acknowledge();
+#ifndef NGMV_TEST_TIMER_ONLY_BASELINE
+        updatePlayback();
+#endif
         if (!IsIconic(hwnd_) && (player_.playing() || changing_))
             InvalidateRect(hwnd_, nullptr, FALSE);
         return 0;
@@ -1084,23 +1127,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             return 0;
         }
         try {
-            bool scheduledEnd =
-                player_.loaded() && player_.tracks()[player_.track()].lengthMs > 0 &&
-                player_.seconds() * 1000 >= player_.tracks()[player_.track()].lengthMs;
-            bool advance = player_.repeat() || (autoplay_ && playlist_.active() &&
-                                                playlist_.current + 1 < playlist_.files.size());
-            if (!changing_ && player_.playing() && (player_.ended() || (scheduledEnd && advance))) {
-                bool repeat = player_.repeat();
-                player_.pause();
-                if (repeat) {
-                    player_.stop();
-                    player_.play();
-                } else if (autoplay_ && playlist_.active() &&
-                           playlist_.current + 1 < playlist_.files.size()) {
-                    nextTrack(1, true);
-                } else
-                    message_ = L"Track ended";
-            }
+            updatePlayback();
             if (a == 2) {
                 KillTimer(hwnd_, 2);
                 capture();
@@ -1245,7 +1272,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5.7", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);
@@ -1294,8 +1321,13 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
         }
         SetTimer(hwnd_, 2, delay, nullptr);
     }
+    const bool dropPlaybackTimer=!screenshot_.empty() && desktop::automatedSession() &&
+        GetEnvironmentVariableW(L"NGMV_TEST_DISABLE_PLAYBACK_TIMER",nullptr,0)>0;
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
+        // Fault-injection only in explicitly isolated snapshot tests: verify
+        // transport still advances with no idle timer delivery at all.
+        if(dropPlaybackTimer && msg.hwnd==hwnd_ && msg.message==WM_TIMER && msg.wParam==1)continue;
         if (aboutWindow_ && (msg.hwnd == aboutWindow_ || IsChild(aboutWindow_, msg.hwnd))) {
             if (msg.message == WM_KEYDOWN && msg.wParam == VK_F1) {
                 showAbout();

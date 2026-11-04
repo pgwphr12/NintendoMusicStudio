@@ -86,3 +86,42 @@ header=bytearray(base[:128]);struct.pack_into('<H',header,12,new_play)
 import subprocess
 subprocess.run([sys.executable,str(Path(__file__).with_name("make_psf_fixtures.py")),str(out)],check=True)
 subprocess.run([sys.executable,str(Path(__file__).with_name("make_sega_fixtures.py")),str(out)],check=True)
+
+# Own ordinary audio fixtures; compressed vectors contain only synthetic test tones.
+import json,base64,wave
+ordinary=out/'audio';ordinary.mkdir(exist_ok=True)
+with wave.open(str(ordinary/'tone.wav'),'wb') as w:
+    w.setnchannels(2);w.setsampwidth(2);w.setframerate(48000)
+    w.writeframes(b''.join(struct.pack('<hh',round(12000*math.sin(2*math.pi*(440 if i<48000 else 660)*i/48000)),round(8000*math.sin(2*math.pi*(880 if i<48000 else 990)*i/48000))) for i in range(96000)))
+with wave.open(str(ordinary/'mono22050.wav'),'wb') as w:
+    w.setnchannels(1);w.setsampwidth(2);w.setframerate(22050)
+    w.writeframes(b''.join(struct.pack('<h',round(9000*math.sin(2*math.pi*330*i/22050))) for i in range(44100)))
+for ext,value in json.loads((Path(__file__).parent/'audio_fixture_data.json').read_text())['base64'].items():
+    (ordinary/('tone.'+ext)).write_bytes(base64.b64decode(value))
+(ordinary/'한글 파일.mp3').write_bytes((ordinary/'tone.mp3').read_bytes())
+(ordinary/'bad.wav').write_bytes(b'RIFF'+bytes(4)+b'WAVE'+bytes(64))
+(ordinary/'bad.ogg').write_bytes(b'OggS'+bytes(64))
+(ordinary/'bad.mp3').write_bytes(b'ID3'+bytes(64))
+
+(ordinary/'한글 파일.ogg').write_bytes((ordinary/'tone.ogg').read_bytes())
+
+float_data=b''.join(struct.pack('<ff',.25*math.sin(2*math.pi*330*i/96000),.2*math.sin(2*math.pi*550*i/96000)) for i in range(96000))
+float_fmt=struct.pack('<HHIIHH',3,2,96000,96000*8,8,32)
+float_body=b'WAVEfmt '+struct.pack('<I',len(float_fmt))+float_fmt+b'data'+struct.pack('<I',len(float_data))+float_data
+(ordinary/'float96000.wav').write_bytes(b'RIFF'+struct.pack('<I',len(float_body))+float_body)
+
+(ordinary/'padded.MP3').write_bytes(bytes(128)+(ordinary/'tone.mp3').read_bytes())
+
+over=bytearray((ordinary/'tone.mp3').read_bytes());at=over.find(b'Info');at=at if at>=0 else over.find(b'Xing')
+assert at>=0 and int.from_bytes(over[at+4:at+8],'big')&1
+n=int.from_bytes(over[at+8:at+12],'big');over[at+8:at+12]=(n*10).to_bytes(4,'big')
+(ordinary/'overstated.mp3').write_bytes(over)
+
+# Own short extended-chip VGM for native repeat coverage.
+es=bytearray(256);es[:4]=b'Vgm ';struct.pack_into('<I',es,8,0x171);struct.pack_into('<I',es,0x34,0xcc);struct.pack_into('<I',es,0x9c,2000000)
+for i in range(32):es.extend([0xd2,0,i,int(110*math.sin(i*2*math.pi/32))&255])
+for port,reg,val in [(1,0,140),(1,1,0),(2,0,15),(3,0,1)]:es.extend([0xd2,port,reg,val])
+es.extend([0x61,0x4b,0x3c,0x66]);struct.pack_into('<I',es,4,len(es)-4);struct.pack_into('<I',es,0x18,15435)
+(out/'short-scc.vgm').write_bytes(es)
+
+(ordinary/'renamed-game.mp3').write_bytes((out/'channels.nsf').read_bytes())

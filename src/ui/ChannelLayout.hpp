@@ -8,10 +8,12 @@ struct ChannelCell {
     int labelX() const {
         return x + 22;
     }
-    int waveLeft() const {
+    int waveLeft(bool recording=false) const {
+        if(recording)return x+4;
         return split ? x + 176 : 280;
     }
-    int waveRight() const {
+    int waveRight(bool recording=false) const {
+        if(recording)return x + width;
         return x + width - 32;
     }
     int buttonSize() const {

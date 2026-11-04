@@ -1,14 +1,14 @@
 {
-  "date": "2026-11-01",
-  "version": "1.5",
+  "date": "2026-11-04",
+  "version": "1.5.6",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
-  "compiled_translation_units": 975,
+  "compiled_translation_units": 976,
   "unclassified_translation_units": [],
   "removed_VGM_framework_and_old_ES": true,
   "remaining_conflicting_N64_TUs": [],
   "identified_license_blockers_remaining": 0,
-  "public_release_package": true,
+  "validation_candidate": true,
   "external_upload": false,
   "legal_certification": false,
   "N64_user_instruction": "Keep N64; research only, no public posting/contact. Licensed replacement retained N64.",
@@ -1734,7 +1734,7 @@
     },
     {
       "path": "src/app/WindowsIntegration.cpp",
-      "SHA256": "db0e9ac0ead536a932cc92a358070f97898d2da6c260274924a524b08c62c0d2",
+      "SHA256": "96e73e3971ed1be0c08de2ca9fa77e067071fab88031bbd9a941343f679881d8",
       "targets": [
         "viewer_desktop"
       ],
@@ -1760,8 +1760,17 @@
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
     },
     {
+      "path": "src/formats/AudioFileBackend.cpp",
+      "SHA256": "67172c8008b680951149c4a2ddda8ed96d1e4da6abe0a2f773a6801e5f1747e8",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
       "path": "src/formats/ExtendedVgmBackend.cpp",
-      "SHA256": "4f06e04a243068c45469bb658d97f51786827ae176b34c9ce721dd645f2b047f",
+      "SHA256": "f988752e62296d55fb02bcb0752a36b911ccca5539aaf06fdff49966dd3d15d2",
       "targets": [
         "viewer_core"
       ],
@@ -1779,7 +1788,7 @@
     },
     {
       "path": "src/formats/LicensedChips.cpp",
-      "SHA256": "08818a636a88c4086d8bc920b0e4b1972c7365ea98dbb830cc75c5224faa2cc8",
+      "SHA256": "ed398ae09024f8d7dcbfbbf04dadca226e3ca8e69438ff0a7bc3d806ad064bc7",
       "targets": [
         "viewer_core"
       ],
@@ -1806,7 +1815,7 @@
     },
     {
       "path": "src/formats/Registry.cpp",
-      "SHA256": "692e0ca37a436c1807cabfdc380003ddcf20aabeea30ab222bd495f268e8fca3",
+      "SHA256": "9cc04aec2d109f86088390fe820d9cf1f368b9284f012af10ada8cd7eae948a3",
       "targets": [
         "viewer_core"
       ],
@@ -1833,7 +1842,7 @@
     },
     {
       "path": "src/player/FolderPlaylist.cpp",
-      "SHA256": "5e87cd31d490752ecb4dd434f729f5cfa52969d3e1d35cedfe5ccaf907dca959",
+      "SHA256": "94b3a3d30784917b03472ab3cfb3e17ecb0d742afe1758e51b2331b7308a336b",
       "targets": [
         "viewer_core"
       ],
@@ -1842,7 +1851,7 @@
     },
     {
       "path": "src/player/Player.cpp",
-      "SHA256": "352640cece79cd7538c67b861ffa3f88f39c9d132b3c917a19d9d7152c2345fb",
+      "SHA256": "96603fada87083d8e3665e6a83ae01e4a0d7edc356b5cf9d89708edd8e80a14d",
       "targets": [
         "viewer_core"
       ],
@@ -1851,7 +1860,7 @@
     },
     {
       "path": "src/ui/Window.cpp",
-      "SHA256": "6215549f806149fbd8125a60c4ad1a52eb395b28b9779c0b5e7a01f1b940ab2d",
+      "SHA256": "7545cf9af354753797e9a65dc638bdf00422da0a4b19b4db7761c9583ea2f520",
       "targets": [
         "NintendoGameMusicViewer"
       ],

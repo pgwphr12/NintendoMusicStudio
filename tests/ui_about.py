@@ -79,7 +79,7 @@ for entry in ['F1', 'button', 'recording-F1']:
         wait_for(lambda: state(0) and state(1) and state(2) > 50, 'No active playback')
         title = ctypes.create_unicode_buffer(512)
         u.GetWindowTextW(main, title, len(title))
-        assert '1.5' in title.value, title.value
+        assert json.loads((Path(__file__).resolve().parents[1] / 'RELEASE.json').read_text())['version'] in title.value, title.value
         rect = W.RECT()
         u.GetWindowRect(main, ctypes.byref(rect))
         assert rect.left < -10000, 'Test must stay offscreen'

@@ -3,5 +3,5 @@
   "commit": "592e7fd387e7bb5f0c908452c60632c8d37cdc39",
   "subtree": "extern/vgsound_emu-modified/vgsound_emu",
   "license": "zlib (explicit per-file headers + parent LICENSE)",
-  "changes": "Upstream core unmodified; independent app wrapper is src/formats/LicensedChips.cpp"
+  "changes": "Local1.5.1 read-only serial_output_bits() accessor in es5506.hpp; chip synthesis unmodified. Independent host adapter now uses real output buses instead of debug voice taps."
 }
