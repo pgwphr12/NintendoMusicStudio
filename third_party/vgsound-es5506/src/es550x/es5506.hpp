@@ -321,6 +321,29 @@ class es5506_core : public es550x_shared_core
 		// Local1.5.1 addition: read-only serial precision for host normalization.
 		inline int serial_output_bits() const { return int(m_w_end) - int(m_w_st); }
 
+		// Local1.5.10: read-only observation of the last completed voice frame.
+		// Deltas include the original per-bus saturation in voice order. These
+		// fields never feed back into ALU, filters, envelopes or hardware output.
+		inline s32 observed_left(unsigned v) const { return v<32?m_observed[v][0]:0; }
+		inline s32 observed_right(unsigned v) const { return v<32?m_observed[v][1]:0; }
+		inline u8 observed_bus(unsigned v) const { return v<32?m_observed_bus[v]:7; }
+		inline bool serial_output_enabled() {
+			return !m_mode.lrclk_en() && !m_mode.bclk_en() && !m_mode.wclk_en() && m_w_st<m_w_end;
+		}
+		// Local1.5.11: read-only programmed voice-use query for an independent
+		// whole-VGM register trace. No oscillator/filter clocking is required.
+		inline unsigned long long programmed_voice_mask(){
+			if(!serial_output_enabled())return 0;
+			unsigned long long result=0;
+			for(unsigned i=0;i<=unsigned(VGS_CLAMP(m_active,4,31));i++){
+				auto&v=m_voice[i];
+				if(v.alu().busy() && v.cr().ca()<6 &&
+				   (v.lvol()>0||v.rvol()>0||(v.ecount()>0&&(v.lvramp()>0||v.rvramp()>0))))result|=1ull<<i;
+			}
+			for(unsigned i=0;i<6;i++)if(m_ch[i].left()||m_ch[i].right())result|=1ull<<32;
+			return result;
+		}
+
 		//-----------------------------------------------------------------
 		//
 		//	for preview/debug purpose only, not for serious emulators
@@ -357,6 +380,8 @@ class es5506_core : public es550x_shared_core
 
 	private:
 		voice_t m_voice[32];  // 32 voices
+		s32 m_observed[32][2]{}; // Local1.5.10 observation only
+		u8 m_observed_bus[32]{};
 
 		// Host interfaces
 		u32 m_read_latch  = 0;	// 32 bit register latch for host read

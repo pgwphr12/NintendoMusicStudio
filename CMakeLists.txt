@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(NintendoMusicStudio VERSION 1.5.9 LANGUAGES C CXX)
+project(NintendoMusicStudio VERSION 1.5.11 LANGUAGES C CXX)
 if(NOT WIN32)
  message(FATAL_ERROR "This native desktop build currently targets Windows.")
 endif()
@@ -46,6 +46,7 @@ add_library(licensed_vgm_chips STATIC
  third_party/licensed-chips/emu/cores/okim6295.c
  third_party/licensed-chips/emu/cores/okiadpcm.c
  third_party/licensed-chips/emu/cores/ym3438.c
+ third_party/furnace-ay8930/ay8910.cpp
  third_party/vgsound-es5506/src/es550x/es5506.cpp
  third_party/vgsound-es5506/src/es550x/es550x.cpp
  third_party/vgsound-es5506/src/es550x/es550x_alu.cpp
@@ -259,4 +260,36 @@ if(BUILD_TESTING AND Python3_Interpreter_FOUND)
  set_tests_properties(native_midi_waveforms PROPERTIES FIXTURES_REQUIRED music TIMEOUT 25)
  add_test(NAME native_midi_repeat COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_audio_repeat.py" $<TARGET_FILE:NintendoGameMusicViewer> "${CMAKE_CURRENT_BINARY_DIR}/fixtures/midi/single.mid" "${CMAKE_CURRENT_BINARY_DIR}/midi-repeat-ui")
  set_tests_properties(native_midi_repeat PROPERTIES FIXTURES_REQUIRED music TIMEOUT 20 ENVIRONMENT "NGMV_REPEAT_TEST_WRAPS=2")
+endif()
+
+if(BUILD_TESTING)
+ add_executable(es_voice_probe EXCLUDE_FROM_ALL tools/es_voice_probe.cpp)
+ target_link_libraries(es_voice_probe PRIVATE viewer_core)
+ add_custom_command(TARGET es_voice_probe POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:gme_shared> $<TARGET_FILE_DIR:es_voice_probe>)
+endif()
+
+if(BUILD_TESTING)
+ add_executable(chip_voice_tests tests/ChipVoiceTests.cpp)
+ target_link_libraries(chip_voice_tests PRIVATE viewer_core)
+ add_custom_command(TARGET chip_voice_tests POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:gme_shared> $<TARGET_FILE_DIR:chip_voice_tests>)
+ add_test(NAME es_ay_voice_structure COMMAND chip_voice_tests "${CMAKE_CURRENT_BINARY_DIR}/fixtures/chips")
+ set_tests_properties(es_ay_voice_structure PROPERTIES FIXTURES_REQUIRED music TIMEOUT 40)
+endif()
+
+if(BUILD_TESTING AND Python3_Interpreter_FOUND)
+ add_test(NAME native_es_ay_voice_controls COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_chip_voices.py" $<TARGET_FILE:NintendoGameMusicViewer> "${CMAKE_CURRENT_BINARY_DIR}/fixtures/chips" "${CMAKE_CURRENT_BINARY_DIR}/chip-voice-ui")
+ set_tests_properties(native_es_ay_voice_controls PROPERTIES FIXTURES_REQUIRED music TIMEOUT 30)
+endif()
+
+if(BUILD_TESTING)
+ add_executable(channel_visibility_tests tests/ChannelVisibilityTests.cpp)
+ target_link_libraries(channel_visibility_tests PRIVATE viewer_core)
+ add_custom_command(TARGET channel_visibility_tests POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:gme_shared> $<TARGET_FILE_DIR:channel_visibility_tests>)
+ add_test(NAME whole_song_channel_visibility COMMAND channel_visibility_tests "${CMAKE_CURRENT_BINARY_DIR}/fixtures")
+ set_tests_properties(whole_song_channel_visibility PROPERTIES FIXTURES_REQUIRED music TIMEOUT 60 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+endif()
+
+if(BUILD_TESTING AND Python3_Interpreter_FOUND)
+ add_test(NAME native_whole_song_visibility COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_visibility.py" $<TARGET_FILE:NintendoGameMusicViewer> "${CMAKE_CURRENT_BINARY_DIR}/fixtures" "${CMAKE_CURRENT_BINARY_DIR}/visibility-ui")
+ set_tests_properties(native_whole_song_visibility PROPERTIES FIXTURES_REQUIRED music TIMEOUT 40)
 endif()

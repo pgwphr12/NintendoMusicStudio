@@ -19,7 +19,7 @@ class Settings {
         wchar_t folder[MAX_PATH]{};
         if (FAILED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, folder)))
             return {};
-        // Keep the established INI location so public1.5.9 preserves prior user settings.
+        // Keep the established INI location so public1.5.11 preserves prior user settings.
         return std::filesystem::path(folder) / L"GameMusicPlayer" / L"settings.ini";
     }
     void load(const std::filesystem::path &file) {

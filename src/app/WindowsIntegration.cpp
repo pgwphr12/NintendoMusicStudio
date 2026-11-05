@@ -126,8 +126,8 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
             L"Software\\Classes\\Applications\\NintendoMusicStudio.exe\\shell\\open\\command",
             L"", RRF_RT_REG_SZ, nullptr, command, &bytes);
         auto exe = executablePath();
-        if (command != L"\"" + exe.native() + L"\" --play \"%1\"" || preference(L"FileRegistrationRevision") < 159)
-            {registerFileTypes(HKEY_CURRENT_USER, exe, true);savePreference(L"FileRegistrationRevision",159);}
+        if (command != L"\"" + exe.native() + L"\" --play \"%1\"" || preference(L"FileRegistrationRevision") < 1510)
+            {registerFileTypes(HKEY_CURRENT_USER, exe, true);savePreference(L"FileRegistrationRevision",1510);}
         return;
     }
     if (!force && preference(L"DontAskDefaultApps")) return;
@@ -157,7 +157,7 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
     if (choice == 100) {
         registerFileTypes(HKEY_CURRENT_USER, executablePath(), true);
         savePreference(L"FileRegistrationConsent", 1);
-        savePreference(L"FileRegistrationRevision",159);
+        savePreference(L"FileRegistrationRevision",1510);
         savePreference(L"DontAskDefaultApps", 1);
         auto launched = ShellExecuteW(parent, L"open", L"ms-settings:defaultapps?registeredAppUser=NintendoMusicStudio", nullptr, nullptr, SW_SHOWNORMAL);
         if (reinterpret_cast<INT_PTR>(launched) <= 32)
@@ -179,7 +179,7 @@ InstanceGate::~InstanceGate() {
     if (mutex_) CloseHandle(mutex_);
 }
 bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
-    std::wstring name = L"Local\\NintendoMusicStudio.Studio159." + userIdentity();
+    std::wstring name = L"Local\\NintendoMusicStudio.Studio1511." + userIdentity();
     mutex_ = CreateMutexW(nullptr, TRUE, name.c_str());
     DWORD error = GetLastError();
     if (!mutex_) throw std::runtime_error("Cannot initialize the single-instance player.");

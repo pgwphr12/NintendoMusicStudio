@@ -1,3 +1,19 @@
+#1.5.11 — fixed whole-song channel visibility
+
+- Determine optional channel use before playback, including late DMC and ES voices; no first-sound appearance or playback-time hiding.
+- Keep console base channels and GBA PCM visible; retain MIDI declared note channels and ordinary mono/stereo.
+- Scan complete extended VGM commands and finite tagged NSF/NSFE length+fade; cache tagged subsong results.
+- Retain unverified optional channels for unknown lengths or tagged analyses over one hour.
+- Preserve pause/mute/seek/repeat lists and existing synthesis, mix, effects and controls.
+
+#1.5.10 — ES5506 voices and AY8930
+
+- Split ES5506 into32 actual voice lanes plus explicit non-voice bus residual; preserve original mix and serial/interpolation timing.
+- Capture one unmuted ES core for all voice lanes; skip unused filters in the main mix path.
+- Extend channel mute/activity masks to64bits; use2/3/4columns for large chip combinations.
+- Add single AY8930 VGM expanded-mode synthesis,3lanes and stereo-mask command, using pinned BSD3 core.
+- Preserve MIDI, custom banks and existing player controls.
+
 #1.5.9 — MIDI and sound banks
 
 - Add MIDI(.mid/.midi) format0/1, active-channel waveforms and existing playback effects/controls.

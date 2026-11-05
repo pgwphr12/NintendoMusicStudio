@@ -23,7 +23,7 @@ GmeBackend::Core GmeBackend::create(const std::vector<uint8_t> &bytes) {
     gme_enable_accuracy(p, 1);
     return core;
 }
-GmeBackend::GmeBackend(const std::vector<uint8_t> &b, Format format) {
+GmeBackend::GmeBackend(const std::vector<uint8_t> &b, Format format):format_(format) {
     full_ = create(b);
     int count = gme_voice_count(full_.get());
     if (count < 1 || count > 30)
@@ -34,6 +34,9 @@ GmeBackend::GmeBackend(const std::vector<uint8_t> &b, Format format) {
         std::unique_ptr<gme_info_t, decltype(&gme_free_info)> info(raw, gme_free_info);
         tracks_.push_back(
             {info->song, info->game, info->author, info->system, info->comment, info->length});
+        int64_t duration=info->length;
+        if(duration>0&&info->fade_length>0)duration+=info->fade_length;
+        usageDurationMs_.push_back(duration>0&&duration<=3600000?int(duration):-1);
     }
     if (tracks_.empty())
         throw std::runtime_error("No tracks in file.");
@@ -69,6 +72,24 @@ void GmeBackend::selectTrack(int index) {
     for (auto &c : isolated_)
         check(gme_start_track(c.get(), index));
     track_ = index;
+    usageKnown_=false;
+    if(format_==Format::Nsf||format_==Format::Nsfe){
+        auto found=usageCache_.find(index);
+        if(found!=usageCache_.end()){usageMask_=found->second;usageKnown_=true;}
+        else if(usageDurationMs_[index]>0){
+            uint64_t mask=15;std::vector<short> pcm(4096*2);
+            // Only optional channels need inspection; stop a channel as soon
+            // as its use is proven, otherwise inspect the entire tagged song.
+            for(size_t c=4;c<isolated_.size();c++){
+                uint64_t left=uint64_t(usageDurationMs_[index])*InternalRate/1000;bool used=false;
+                while(left&&!used){size_t n=size_t(std::min<uint64_t>(left,4096));check(gme_play(isolated_[c].get(),int(n*2),pcm.data()));left-=n;
+                    for(size_t i=0;i<n*2;i++)if(pcm[i]!=0){used=true;break;}}
+                if(used)mask|=uint64_t(1)<<c;
+            }
+            check(gme_start_track(full_.get(),index));for(auto&c:isolated_)check(gme_start_track(c.get(),index));
+            usageMask_=mask;usageCache_[index]=mask;usageKnown_=true;
+        }
+    }
 }
 void GmeBackend::seek(int ms) {
     if (ms < 0)

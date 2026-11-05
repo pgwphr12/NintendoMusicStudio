@@ -33,6 +33,8 @@ for f,targets in sorted(files.items()):
         elif rel.startswith('third_party/licensed-chips/'):
             license='LGPL-2.1-or-later' if f.name.startswith('ym3438') else 'GPL-2.0-or-later' if f.name=='fmopl.c' else 'BSD-3-Clause'
             evidence='Explicit first-line core license + third_party/licensed-chips/UPSTREAM.json'
+        elif rel.startswith('third_party/furnace-ay8930/'):
+            license='BSD-3-Clause';evidence='Explicit license:BSD-3-Clause and copyright-holders:Couriersud; pinned Furnace sound core and full local license notice'
         elif rel.startswith('third_party/vgsound-es5506/'):
             license='Zlib';evidence='Per-file License:Zlib and third_party/vgsound-es5506/LICENSE'
         elif rel.startswith('third_party/viogsf/'):

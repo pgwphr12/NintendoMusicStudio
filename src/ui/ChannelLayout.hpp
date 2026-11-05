@@ -34,13 +34,15 @@ struct ChannelCell {
 };
 inline ChannelCell channelCell(size_t index, size_t count, bool recording) {
     bool split = count > 8;
-    size_t rows = split ? (count + 1) / 2 : count;
+    size_t columns=count>48?4:count>32?3:split?2:1;
+    size_t rows=(count+columns-1)/columns;
     int top = recording ? 205 : 276, bottom = recording ? 1064 : 1000;
     int height = (bottom - top) / int(std::max(size_t(1), rows));
     int column = split ? int(index / rows) : 0;
-    return {32 + column * 944,
+    int step=1888/int(columns);
+    return {32 + column * step,
             top + int(index % std::max(size_t(1), rows)) * height,
-            split ? 912 : 1856,
+            split ? step-32 : 1856,
             height,
             split,
             height < 70};

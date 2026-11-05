@@ -16,7 +16,7 @@ class Player {
     std::atomic<float> reverbAmount_{.76f};
     std::atomic<float> reverbDecay_{3.f};
     std::atomic<bool> dmcUsed_{false};
-    std::atomic<uint32_t> usedChannels_{0};
+    std::atomic<uint64_t> usedChannels_{0};
     std::atomic<int> gbaPsgUsed_{-1};
     ChannelHistory history_;
     std::unique_ptr<IMusicBackend> backend_;
@@ -32,6 +32,9 @@ class Player {
     std::atomic<bool> repeat_{false};
     std::atomic<bool> continueAfterLength_{false};
     bool exactSourceEnd_=false;
+    Format format_=Format::Nsf;
+    uint64_t visibleMask_=UINT64_MAX;
+    void configureVisibleChannels();
     std::atomic<uint64_t> sourceEndFrame_{UINT64_MAX};
     void haltWorker();
     void startWorker();
@@ -88,9 +91,11 @@ class Player {
     bool dmcUsed() const {
         return dmcUsed_.load();
     }
-    bool channelVisible(size_t index)const{int mask=gbaPsgUsed_.load();return mask<0||index>=4||(mask&(1<<index));}
+    bool channelVisible(size_t index)const{
+        return index<channels().size() && index<64 && (visibleMask_&(uint64_t(1)<<index));
+    }
     bool channelUsed(size_t index) const {
-        return index < 32 && (usedChannels_.load() & (uint32_t(1) << index));
+        return index < 64 && (usedChannels_.load() & (uint64_t(1) << index));
     }
     bool reverb() const {
         return reverbEnabled_.load();

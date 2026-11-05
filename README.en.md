@@ -1,4 +1,10 @@
-# Nintendo Music Studio1.5.9
+# Nintendo Music Studio1.5.11
+
+1.5.11: decide the whole-song channel list before playback and keep it fixed through pause, mute, zero gain, seek and repeat. Base NES4/GB4 and other console base channels remain visible, including GBA PSG and PCM. MIDI retains its song-wide note channel list; ordinary mono/stereo lanes remain. Extended VGM scans the entire command stream for ES voices/residual, SCC/OKI and auxiliary OPL2/AY8930; late voices appear from the start. Primary chip lanes remain fixed. This is programmed channel use, not inferred instrument separation or proof of non-silent sample contents. Audio synthesis and mix are unchanged.
+
+Tagged NSF/NSFE checks optional DMC/expansion channels over the entire length plus fade and caches per-subsong results. Unknown-length files and analysis durations beyond one hour conservatively retain unverified optional channels; no arbitrary preview is treated as whole-song proof. Initial finite-track analysis can take time.
+
+1.5.10: ES5506 exposes32 real voice contributions plus an explicit BUS RESIDUAL for non-voice bus output. Legacy ES5506 MIX gain/mute provides a fallback for new lanes; saved individual settings take priority. Original serial precision, saturation order, frame delay, interpolation and audible mix retained. Voices are reusable chip slots, not permanent instruments.64-bit mute masks and2/3/4-column layouts handle chips beyond32lanes (up to64). Add single AY8930 VGM(type3),3separate lanes using the explicitly BSD3 Furnace core, expanded duty/envelopes/noise and VGM stereo mask, fixed20Hz DC block. Other AY/YM models, dual AY and YM2203 SSG remain unsupported; native analog volume is approximate. MIDI/SF2/DLS and20extension registration remain included.
 
 1.5.9: MIDI(.mid/.midi, SMF0/1) with real per-channel synthesized waveforms, tempo/program changes, controllers, drums, seeking and repeat. Uses the Windows DirectMusic GMFilePath bank (system gm.dls fallback), or an SF2/DLS bank selected with **MIDI sound bank / F8**. Selection persists; changing banks restarts the current MIDI. Registration includes all20 game/audio/MIDI extensions; prior registration consent refreshes this list while preserving Windows UserChoice.
 

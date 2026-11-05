@@ -123,13 +123,13 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.5.9\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.5.11\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
                 L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
                 L"MIDI: MID · MIDI (format0/1), Windows 기본 DLS 또는 선택한 SF2/DLS · F8 음색 선택\r\n"
-                L"추가 VGM: YM2612 · YM3812 · MSM6295 · K051649 · ES5506\r\n"
-                L"ES5506은 칩 전체 MIX 버스입니다. 모든 칩/조합의 지원 완료를 뜻하지 "
+                L"추가 VGM: YM2612 · YM3812 · MSM6295 · K051649 · ES5506 · AY8930\r\n"
+                L"ES5506: 32개 음성 및 BUS RESIDUAL · AY8930: 3채널. 모든 칩/조합의 지원 완료를 뜻하지 "
                 L"않습니다.\r\n\r\n"
                 L"프로그램 라이선스와 구성별 조건: LICENSE-REVIEW.md / licenses 폴더.\r\n"
                 L"음악 파일의 권리는 프로그램 코드와 별개입니다.\r\n\r\n"
@@ -235,7 +235,7 @@ bool Window::open(const std::filesystem::path &p) {
         restoreChannels();
         file_ = p;
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.5.9 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.5.11 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening ordinary audio starts it; folder auto-advance is a separate option.
         if (format == Format::AudioFile || format == Format::Midi)
@@ -267,7 +267,7 @@ void Window::selectFolder(size_t index, bool play) {
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5.9 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5.11 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -408,9 +408,8 @@ void Window::toggleFullscreen() {
 std::vector<size_t> Window::visibleChannels() const {
     std::vector<size_t> indices;
     const auto &channels = player_.channels();
-    const bool dmcUsed = player_.dmcUsed();
     for (size_t i = 0; i < channels.size(); ++i)
-        if ((channels[i].name != "DMC" || dmcUsed) && player_.channelVisible(i))
+        if (player_.channelVisible(i))
             indices.push_back(i);
     return indices;
 }
@@ -517,6 +516,8 @@ void Window::paint(HDC dc, int width, int height) {
                                RGB(222, 146, 232), RGB(250, 155, 106), RGB(181, 211, 119),
                                RGB(126, 213, 228), RGB(247, 163, 181)};
     auto visible = visibleChannels();
+    if(visible.empty() && player_.loaded())
+        text(dc,recording_?L"No channels used in this song":L"이 곡에서 사용하는 채널이 없습니다.",54,300,1750,45,24,RGB(118,136,158));
 
     auto labelText=[&](const std::wstring&s,int x,int y,int w,int h,int size,COLORREF color,bool bold=false){
         if(recording_)overlayText_.push_back({s,x,y,w,h,size,color,bold});
@@ -817,8 +818,14 @@ void Window::restoreChannels() {
     for (size_t i = 0; i < channels.size(); ++i) {
         auto key = desktop::Settings::channelKey(system, channels[i].name);
         ChannelState state;
-        state.volume = preferences_.get(key + ".volume", 100, 0, 200) / 100.f;
-        state.mute = preferences_.get(key + ".mute", 0, 0, 1) != 0;
+        int volume=100,mute=0;
+        if(channels[i].name.rfind("ES5506 ",0)==0){
+            auto legacy=desktop::Settings::channelKey(system,"ES5506 MIX");
+            volume=preferences_.get(legacy+".volume",100,0,200);
+            mute=preferences_.get(legacy+".mute",0,0,1);
+        }
+        state.volume = preferences_.get(key + ".volume", volume, 0, 200) / 100.f;
+        state.mute = preferences_.get(key + ".mute", mute, 0, 1) != 0;
         player_.channel(i, state);
     }
 }
@@ -1050,6 +1057,11 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 14: return fullscreen_;
             case 15: return recording_;
             case 16: return player_.repeat();
+            case 17: return LRESULT(player_.channels().size());
+            case 18: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?states[size_t(b)].mute:0;}
+            case 19: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?LRESULT(std::lround(states[size_t(b)].volume*100)):-1;}
+            case 20: return LRESULT(visibleChannels().size());
+            case 21: {auto visible=visibleChannels();return b>=0&&size_t(b)<visible.size()?LRESULT(visible[size_t(b)]):-1;}
             case 12:
                 return LRESULT(player_.underruns());
             case 13:
@@ -1306,7 +1318,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5.9", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5.11", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

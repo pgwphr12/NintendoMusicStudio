@@ -1,4 +1,4 @@
-# Nintendo Music Studio 1.5.9 — complete corresponding source
+# Nintendo Music Studio 1.5.11 — complete corresponding source
 
 Windows x64, C++17, Visual Studio2022 Desktop development with C++, CMake3.24+ and Python3. Dependencies are bundled as pinned source archives/trees with notices; no proprietary music is required. Composition/editor sources are absent. Python/Pillow are used only for build/test/package workflows, not runtime.
 
@@ -40,3 +40,8 @@ Additional VGM playback uses own bounded scheduling/minimal core declarations, e
 
 
 1.5.9 MIDI: own bounded SMF0/1 parser (MidiParser.cpp), DLS1 adapter and SF2 table preflight (MidiBank.inl), MIDI synth backend using pinned TinySoundFont MIT source with marked interpolation bounds patch. No Windows/other bank data is included; tests generate self-authored sine SF2/DLS. F8 selection uses a separate local midi-soundfont.txt next to the existing INI, leaving integer preferences compatible. DLLs, drivers and global MIDI settings are not installed or modified.
+
+
+1.5.11 ES observation: marked sidecar arrays in third_party/vgsound-es5506 record each voice contribution after the original per-bus saturation. Read-only accessors expose the prior completed frame. Owned adapter applies the original serial quantization and same sample conversion; explicit residual covers direct bus writes. No ALU/filter/envelope/sample-decoding calculation changed. One unmuted core emits all voice lanes; main core skips unused voice interpolators. AY8930: unmodified BSD3 Furnace ay8910.cpp/.h, pinned origin and original hashes in third_party/furnace-ay8930/UPSTREAM.json, only the standalone sound core copied. No tracker/player framework, game music or ROM data is bundled.
+
+1.5.11 visibility evidence: docs/VISIBILITY-1511.json. Whole-song metadata API and native query tests are included; no music assets required to generate the late-note fixtures.

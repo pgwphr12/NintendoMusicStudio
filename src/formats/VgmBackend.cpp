@@ -22,7 +22,7 @@ std::unique_ptr<IMusicBackend> makeVgmBackend(const std::vector<uint8_t> &bytes)
     fail(start >= 64 && start < end, "Invalid VGM command offset.");
     // Preserve the existing SMS/Mega Drive path; additional chips use the
     // explicitly bounded extended decoder rather than being ignored by GME.
-    for (size_t field : {size_t(0x50),size_t(0x98),size_t(0x9c),size_t(0xd0)})
+    for (size_t field : {size_t(0x74),size_t(0x50),size_t(0x98),size_t(0x9c),size_t(0xd0)})
         if (field+4<=start && le(field))
             return makeExtendedVgmBackend(bytes);
     for (size_t field : {size_t(12), size_t(16), size_t(44)})

@@ -1,3 +1,7 @@
+##1.5.10 chip additions
+
+The AY8930 emulation files each explicitly declare BSD-3-Clause and Couriersud copyright in the official pinned Furnace tree; unmodified files, full notice and hashes supplied. ES5506 sidecar observation changes are locally marked and preserve the zlib notices. No new music/sample/ROM redistribution is included.
+
 ##1.5.9 MIDI addition
 
 TinySoundFont has an explicit MIT grant, retained verbatim with pinned source and marked interpolation bounds patch. Own MIDI/DLS adapter code is under the project GPL2+ license. Windows GMFilePath / fallback system GM.DLS is read locally and is excluded from both distributions; user-selected banks and MIDI music retain independent rights. No new bank redistribution permission is claimed.

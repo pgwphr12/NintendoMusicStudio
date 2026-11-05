@@ -1,9 +1,9 @@
 {
-  "date": "2026-11-04",
-  "version": "1.5.9",
+  "date": "2026-11-05",
+  "version": "1.5.11",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
-  "compiled_translation_units": 978,
+  "compiled_translation_units": 979,
   "unclassified_translation_units": [],
   "removed_VGM_framework_and_old_ES": true,
   "remaining_conflicting_N64_TUs": [],
@@ -1738,7 +1738,7 @@
     },
     {
       "path": "src/app/WindowsIntegration.cpp",
-      "SHA256": "376b6af366e0df994544ecd1484d898b0aeb3c29971eb3dcce852d8b326ad70b",
+      "SHA256": "6f9dbb2b762cff6a2a44f0dcb1fda40f83f508a2f35c706801ae9c7be422f9f8",
       "targets": [
         "viewer_desktop"
       ],
@@ -1774,7 +1774,7 @@
     },
     {
       "path": "src/formats/ExtendedVgmBackend.cpp",
-      "SHA256": "f988752e62296d55fb02bcb0752a36b911ccca5539aaf06fdff49966dd3d15d2",
+      "SHA256": "58dea116bb44bfcdc38e071f0ff19694ff9799deee2c748323f33440683285f2",
       "targets": [
         "viewer_core"
       ],
@@ -1783,7 +1783,7 @@
     },
     {
       "path": "src/formats/GmeBackend.cpp",
-      "SHA256": "271527d1d27ce39553b26f6a6102cb13d1df9b4e82ec63040eb7f7d53dde6cc2",
+      "SHA256": "492eb7fec53ebf211e1944ef852ff2e63232ee7ab2f950e9ec1cf04019ad6392",
       "targets": [
         "viewer_core"
       ],
@@ -1792,7 +1792,7 @@
     },
     {
       "path": "src/formats/LicensedChips.cpp",
-      "SHA256": "ed398ae09024f8d7dcbfbbf04dadca226e3ca8e69438ff0a7bc3d806ad064bc7",
+      "SHA256": "a7988af66febcacdb65d9594b791a68f419a958a6c45bf22eaea1d54bd7c93a9",
       "targets": [
         "viewer_core"
       ],
@@ -1855,7 +1855,7 @@
     },
     {
       "path": "src/formats/VgmBackend.cpp",
-      "SHA256": "62d0b772652b9099002e788c729f9616a262dc188b0cd096f87061bc90b77db2",
+      "SHA256": "bace626ec6d36c2a5b2c543597fc4bd7367667d92140a22416c810f9f49f8ca7",
       "targets": [
         "viewer_core"
       ],
@@ -1873,7 +1873,7 @@
     },
     {
       "path": "src/player/Player.cpp",
-      "SHA256": "883627cbde0a3a44f9f53a7dcf61186368e4100c75ca83c70e8351d11c63c4aa",
+      "SHA256": "f6f158eb7cca69ff7f95a363370796060301de0cc29d526dfa3769999fb25d28",
       "targets": [
         "viewer_core"
       ],
@@ -1882,7 +1882,7 @@
     },
     {
       "path": "src/ui/Window.cpp",
-      "SHA256": "0e4adcdba1170788d53e03e1da75dcca6e1d8ee659836a5d08fefd89bfde7425",
+      "SHA256": "1bad60c8431ec9facb22a12c6e3017255c53e95f9b5cfab07f98239089c7b643",
       "targets": [
         "NintendoGameMusicViewer"
       ],
@@ -1897,6 +1897,15 @@
       ],
       "declared_terms": "GPL-2.0-or-later",
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "third_party/furnace-ay8930/ay8910.cpp",
+      "SHA256": "2222570b5f805f44f1aae99a658aa84f2bf5af5c708f03e8b0947858e050cd75",
+      "targets": [
+        "licensed_vgm_chips"
+      ],
+      "declared_terms": "BSD-3-Clause",
+      "evidence": "Explicit license:BSD-3-Clause and copyright-holders:Couriersud; pinned Furnace sound core and full local license notice"
     },
     {
       "path": "third_party/lazyusf/ai/ai_controller.c",
@@ -8416,7 +8425,7 @@
     },
     {
       "path": "third_party/vgsound-es5506/src/es550x/es5506.cpp",
-      "SHA256": "d77e030f06405f622baf8392d300def4f8dfe1577aa8042f5f6e66f9cb359c5e",
+      "SHA256": "31856a915caef9ad2d8f7bfc02e87723f8bd9798ad3e3ebd3d9ac0d4a93acd96",
       "targets": [
         "licensed_vgm_chips"
       ],

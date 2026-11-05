@@ -50,6 +50,8 @@ void es5506_core::tick_perf()
 
 void es5506_core::voice_tick()
 {
+	// Local1.5.10: observe real bus contributions without changing synthesis.
+	for (unsigned v=0; v<32; ++v) { m_observed[v][0]=m_observed[v][1]=0; m_observed_bus[v]=7; }
 	// Refresh output
 	m_voice_end	  = true;
 	m_voice_cycle = 0;
@@ -66,7 +68,11 @@ void es5506_core::voice_tick()
 		const u8 ca = m_voice[i].cr().ca() & 7;
 		if (ca < 6)
 		{
+			const s32 before_left=m_ch[ca].left(), before_right=m_ch[ca].right();
 			m_ch[ca] += m_voice[i].ch();
+			m_observed[i][0]=m_ch[ca].left()-before_left;
+			m_observed[i][1]=m_ch[ca].right()-before_right;
+			m_observed_bus[i]=ca;
 		}
 	}
 }
@@ -174,6 +180,8 @@ s32 es5506_core::voice_t::volume_calc(u16 volume, s32 in)
 
 void es5506_core::reset()
 {
+	// Local1.5.10 observation reset; no synthesis state dependency.
+	for(unsigned v=0;v<32;v++){m_observed[v][0]=m_observed[v][1]=0;m_observed_bus[v]=7;}
 	es550x_shared_core::reset();
 	for (auto &elem : m_voice)
 	{

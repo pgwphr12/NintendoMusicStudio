@@ -1,0 +1,120 @@
+{
+  "version": "1.5.10",
+  "date": "2026-11-05",
+  "requests": [
+    "ES5506 per-voice waveform/volume/mute",
+    "Provided ay8930.vgm compatibility"
+  ],
+  "ES5506": {
+    "voices": 32,
+    "additional_lane": "ES5506 BUS RESIDUAL: actual direct/unattributed bus output, not an invented instrument",
+    "method": "Sidecar observes original per-voice before/after bus saturated sum; read prior frame before tick_perf, serial-quantize contributions cumulatively in original order, keep direct bus residual explicit, resample with unchanged causal interpolation",
+    "optimization": "One unmuted ES core emits all32 stems, not32 cloned synths. Main mix core skips unused voice interpolators; zero-history taps skip filter work. No ALU/filter/envelope/sample decode changes.",
+    "masks": "Optional IMusicBackend muteMask64 extension; legacy backend32-bit masks retained; Player activity/mute64-bit; max64totalchannels",
+    "layout": "2columns through32,3columns33..48,4columns49..64; normal/recording cell bounds retained",
+    "final20s_comparison": {
+      "frames": 960000,
+      "seconds": 20,
+      "wall_seconds": 16.453999999997905,
+      "baseline": "1.5.3 final153-20.f32; unchanged ES mix through1.5.9",
+      "mix_max_difference": 0.0,
+      "ym2612_max_difference": 0.0,
+      "oki_max_difference": 0.0,
+      "es_stem_sum_max_difference": 5.960464477539063e-08
+    },
+    "settings_migration": "Legacy ES5506 MIX volume/mute is the fallback for each new voice/residual only when its individual key is absent; existing individual values win; original INI keys preserved."
+  },
+  "AY8930": {
+    "file": "ay8930.vgm",
+    "SHA256": "cdb68939395b828d90fc58abcc57b2b98555f78fba20a6fb218f7a85292fb805",
+    "VGM_version": "1.71",
+    "clock": 12345678,
+    "chip_type": 3,
+    "flags": 1,
+    "duration_ms": 84740,
+    "channels": 3,
+    "body": "41472 AY writes,4237 wait50Hz commands,1stop-inactive-stream,1end; actual expanded modes A0/B0 observed",
+    "core": "Unmodified BSD-3-Clause Couriersud ay8910.cpp/.h from official Furnace592e7fd387e7bb5f0c908452c60632c8d37cdc39",
+    "adapter": "Native clock/4, core models clock-select pin; high-rate sample-cell integration, fixed20Hz DC blocker per voice, real per-channel mute and VGM0x31stereo mask",
+    "limits": "Single AY8930/type3, supported flags/clock<=20MHz; not allAY/YM/dual/SSG. Original core analog volume characteristics approximate."
+  },
+  "validation": {
+    "full_ctest": "30/30 PASS97.91s",
+    "final_targeted": "4/4 PASS15.03s after direct bus fixture added",
+    "own_ES": "32activevoices,5high-ratevoices,16exact-ratevoices; recombine errors1.43051e-6/2.38419e-7/0; above32bit voice32 mute/unmute; explicit direct bus residual and bit32mute; deterministic replay",
+    "own_AY": "Expanded2500Hz/classic1250Hz/half-clock1250Hz at2MHz; duty variants differ;3lanes sum, allmute, model rejection",
+    "native_ui": {
+      "pass": true,
+      "cases": [
+        {
+          "file": "es-many.vgm",
+          "channels": 33,
+          "wave_pixels": 25202,
+          "high_index_controls": false,
+          "recording": true
+        },
+        {
+          "file": "es-last.vgm",
+          "channels": 40,
+          "wave_pixels": 14029,
+          "high_index_controls": true,
+          "recording": false
+        },
+        {
+          "file": "ay-own.vgm",
+          "channels": 3,
+          "wave_pixels": 62824,
+          "high_index_controls": false,
+          "recording": false
+        },
+        {
+          "file": "es-direct-bus.vgm",
+          "channels": 33,
+          "wave_pixels": 0,
+          "high_index_controls": false,
+          "recording": true
+        }
+      ],
+      "audio": "dummy"
+    },
+    "visual_inspection": "33ESlane recording image checked; labels visible, waveform matches cell edge,3columns",
+    "actual_full_timeline": {
+      "ES_lobby": {
+        "length_ms": 164275,
+        "rendered_with_tail_seconds": 165.275,
+        "wall_seconds": 117.529,
+        "mix_peak": 0.730015,
+        "sum_error": 6.15045e-05,
+        "ES_active_voices": 6,
+        "total_lanes": 44,
+        "replay_seek_mute_unmute_source_bytes_unchanged": "PASS",
+        "dummy_playback_seconds": 0.597333,
+        "underruns": 0
+      },
+      "AY_file": {
+        "length_ms": 84740,
+        "rendered_with_tail_seconds": 85.74,
+        "wall_seconds": 36.5573,
+        "mix_peak": 0.354896,
+        "sum_error": 2.98023e-08,
+        "channel_energies": [
+          7110.49,
+          4062.65,
+          6036.28
+        ],
+        "replay_seek_mute_unmute_source_bytes_unchanged": "PASS",
+        "dummy_playback_seconds": 0.597333,
+        "underruns": 0
+      },
+      "scope": "Complete timeline tests precede optimization that skips unused full-mix voice filters; final optimized build receives full30CTest and exact20second mix comparison. Do not claim whole-file bit comparison or listening."
+    },
+    "candidate_failure": "First multi-ES test included a silent YM2612; measured4.57764e-5 sum difference. Isolated ES-only cases then measured1.43e-6 or less, with a separate mixed-chip high-bit test retained. No tolerance-only workaround.",
+    "physical_listening": false,
+    "final_settings": "3/3 PASS9.33s for restart and native migration/individual override cases"
+  },
+  "assets": "No provided VGM/music/sample ROM included in runtime/source packages; only self-authored sine test generator",
+  "sources": [
+    "https://github.com/tildearrow/furnace/tree/592e7fd387e7bb5f0c908452c60632c8d37cdc39/src/engine/platform/sound",
+    "https://github.com/vgmrips/vgmplay-legacy/blob/master/VGMPlay/vgmspec171.txt"
+  ]
+}

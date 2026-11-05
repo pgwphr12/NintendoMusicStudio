@@ -12,6 +12,10 @@ class IMusicBackend {
     virtual void selectTrack(int index) = 0;
     virtual void seek(int milliseconds) = 0;
     virtual void muteMask(uint32_t mask) = 0;
+    virtual void muteMask64(uint64_t mask) { muteMask(uint32_t(mask)); }
+    // Whole-track usage, never a playback-time activity latch. False means
+    // unknown: the UI must preserve optional channels rather than guess.
+    virtual bool channelUsage(uint64_t&) const { return false; }
     virtual void render(size_t frames, AudioBlock &out) = 0;
     // Optional read-only base NES APU state, not a reconstructed tracker project.
     virtual bool nesState(std::vector<int>&) const { return false; }

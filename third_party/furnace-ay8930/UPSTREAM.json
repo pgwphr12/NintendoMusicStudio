@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/tildearrow/furnace",
+  "commit": "592e7fd387e7bb5f0c908452c60632c8d37cdc39",
+  "path": "src/engine/platform/sound",
+  "license": "BSD-3-Clause; explicit first lines // license:BSD-3-Clause // copyright-holders:Couriersud",
+  "files": {
+    "ay8910.cpp": "2222570b5f805f44f1aae99a658aa84f2bf5af5c708f03e8b0947858e050cd75",
+    "ay8910.h": "c3c59310a2a3074f414a0390663167959e10d6896d0f777baaed8f6623d12701"
+  },
+  "local_changes": false,
+  "scope": "Only emulation core; no tracker/platform code or demos copied"
+}

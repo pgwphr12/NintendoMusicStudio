@@ -177,8 +177,8 @@ static void licensedEsFixture(){
     auto backend=makeBackend(b);AudioBlock out;backend->render(4096,out);double energy=0;
     for(auto v:out.mix){need(std::isfinite(v.l)&&std::isfinite(v.r),"Licensed ES nonfinite");energy+=v.l*v.l+v.r*v.r;}
     std::cout<<"ES actual serial-output fixture energy="<<energy<<'\n';
-    need(backend->channels().size()==1 && energy>1,"Licensed ES did not synthesize real supplied sample ROM");
-    need(difference(out.mix,out.voices[0])<1e-6,"ES bus tap differs from full mix");
+    need(backend->channels().size()==33 && energy>1,"Licensed ES did not synthesize real supplied sample ROM");
+    need(difference(out.mix,out.voices[0])<1e-6,"ES single active voice tap differs from full mix");
     const auto reference=out.mix;
     auto renderVariant=[&](std::vector<uint8_t> bytes){auto v=makeBackend(bytes);AudioBlock block;v->render(4096,block);return block.mix;};
     auto extraVolume=[&](uint16_t v){auto bytes=b;bytes.insert(bytes.begin()+256,32,0);put(bytes,4,uint32_t(bytes.size()-4));put(bytes,0x34,0x120-0x34);put(bytes,0xbc,0x100-0xbc);put(bytes,0x100,12);put(bytes,0x108,4);bytes[0x10c]=1;bytes[0x10d]=37;bytes[0x10e]=0;bytes[0x10f]=uint8_t(v);bytes[0x110]=uint8_t(v>>8);return bytes;};
@@ -271,13 +271,13 @@ static void actual(const std::filesystem::path &path, const std::filesystem::pat
     core->seek(500);
     core->render(1024, b);
     need(difference(after500, b.mix) < 1e-6, "VGM seek mismatch");
-    core->muteMask((1u << channels) - 1);
+    core->muteMask64((uint64_t(1) << channels) - 1);
     core->seek(500);
     for (int k = 0; k < 8; ++k)
         core->render(1024, b);
     for (auto s : b.mix)
         need(std::abs(s.l) < 1e-6 && std::abs(s.r) < 1e-6, "All-channel VGM mute");
-    core->muteMask(0);
+    core->muteMask64(0);
     core->seek(0);
     core->render(4096, b);
     need(difference(initial, b.mix) < 1e-6, "Unmute/rewind did not restore PCM");

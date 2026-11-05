@@ -1,6 +1,7 @@
 #pragma once
 #include "core/IMusicBackend.hpp"
 #include <gme.h>
+#include <map>
 namespace ngmv {
 std::unique_ptr<IMusicBackend> makeVgmBackend(const std::vector<uint8_t> &bytes);
 class GmeBackend : public IMusicBackend {
@@ -16,6 +17,11 @@ class GmeBackend : public IMusicBackend {
     std::vector<ChannelInfo> channels_;
     std::vector<short> scratch_;
     int track_ = 0;
+    Format format_;
+    bool usageKnown_=false;
+    uint64_t usageMask_=0;
+    std::map<int,uint64_t> usageCache_;
+    std::vector<int> usageDurationMs_;
     Core create(const std::vector<uint8_t> &data);
 
   public:
@@ -34,6 +40,7 @@ class GmeBackend : public IMusicBackend {
     void render(size_t frames, AudioBlock &out) override;
     bool nesState(std::vector<int>&out) const override;
     bool prepareNesInspection() override;
+    bool channelUsage(uint64_t&mask)const override{if(!usageKnown_)return false;mask=usageMask_;return true;}
 };
 class NSFBackend final : public GmeBackend {
   public:

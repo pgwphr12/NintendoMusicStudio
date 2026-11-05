@@ -129,3 +129,18 @@ es.extend([0x61,0x4b,0x3c,0x66]);struct.pack_into('<I',es,4,len(es)-4);struct.pa
 # New MIDI fixtures use only self-authored sequences and sine samples.
 import subprocess
 subprocess.run([sys.executable,str(Path(__file__).with_name("make_midi_fixtures.py")),str(out/"midi")],check=True)
+
+subprocess.run([sys.executable,str(Path(__file__).with_name("make_chip_fixtures.py")),str(out/"chips")],check=True)
+
+# A tagged song with a DMC note starting around1s; prove pre-play whole-song usage.
+base,original,old_play=nsf();init=bytearray(original[:old_play-0x8000-1])
+for a,v in [(0x4010,0x4f),(0x4012,0),(0x4013,1)]:init.extend([0xa9,v,0x8d,a&255,a>>8])
+init.extend([0xa9,0,0x85,1,0x60]);new_play=0x8000+len(init)
+play_code=bytes([0xe6,1,0xa5,1,0xc9,60,0x90,5,0xa9,0x1f,0x8d,0x15,0x40,0x60])
+payload=init+play_code;payload.extend(bytes(0x4000-len(payload)));payload.extend(bytes([0xf0,0x0f])*16)
+late=b'NSFE'+chunk('INFO',struct.pack('<HHHBBBB',0x8000,0x8000,new_play,0,0,1,0))+chunk('DATA',payload)+chunk('time',struct.pack('<i',3000))+chunk('NEND',b'')
+(out/'dmc-late.nsfe').write_bytes(late)
+late_es=bytearray((out/'chips/es-last.vgm').read_bytes());late_es[256:256]=bytes([0x61,0x44,0xac]);struct.pack_into('<I',late_es,4,len(late_es)-4);struct.pack_into('<I',late_es,0x18,88200);(out/'chips/es-late.vgm').write_bytes(late_es)
+
+# A declared but unused auxiliary OPL is not a primary console channel.
+extra=bytearray((out/'short-scc.vgm').read_bytes());struct.pack_into('<I',extra,0x2c,7670454);struct.pack_into('<I',extra,0x50,4000000);(out/'chips/unused-opl.vgm').write_bytes(extra)

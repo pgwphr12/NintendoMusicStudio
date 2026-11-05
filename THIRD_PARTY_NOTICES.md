@@ -1,3 +1,9 @@
+## AY8930 and ES observations (1.5.10)
+
+AY8910/AY8930 standalone core: copyright Couriersud, explicit BSD-3-Clause in both source files, from official Furnace commit592e7fd387e7bb5f0c908452c60632c8d37cdc39/src/engine/platform/sound/ay8910.cpp and ay8910.h. Unmodified source, hashes, provenance and full BSD3 notice in third_party/furnace-ay8930 and licenses/AY8930-BSD-3-Clause.txt. No Furnace tracker code is linked.
+
+ES5506 zlib source retains original copyright/license. Marked local1.5.10 changes add sidecar observations of original saturated bus deltas and read-only getters; no ALU/filter/envelope calculation is replaced. See UPSTREAM.json. Local1.5.11 adds a read-only programmed-voice mask used only by a separate metadata-trace core; live audio synthesis is unchanged.
+
 ## MIDI synthesis (1.5.9)
 
 TinySoundFont, MIT: https://github.com/schellingb/TinySoundFont at853a0a171759f1ddba0de1442133a75912bbeffa. Complete pinned tsf.h and MIT license included in third_party/tinysoundfont and licenses/TinySoundFont-MIT.txt. Marked local modification bounds the final interpolation pair to the validated region; provenance/hashes in UPSTREAM.json. Own SMF parser and bounded DLS1 adapter are GPL2+. No Windows GM.DLS, user SF2/DLS samples or MIDI music is redistributed; only local read access. Internal synthesis is not identical to Windows MIDI Mapper or third-party device effects.

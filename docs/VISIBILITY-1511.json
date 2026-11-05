@@ -1,0 +1,172 @@
+{
+  "version": "1.5.11",
+  "date": "2026-11-05",
+  "request": "Decide whole-song use before playback; base console channels and GBA PCM always visible. No first-sound latch.",
+  "policy": {
+    "NES": "Base4 always; finite tagged length+fade optional DMC/expansion scan; per-subsong cache",
+    "GB_SPC_GBA_DS_N64_3DS": "Keep basic exposed hardware/bus channels; GBA PCM always",
+    "MIDI": "Keep channels declared by full SMF note events",
+    "ordinary": "Keep mono/stereo lanes",
+    "extended_VGM": "Entire command-timestamp stream; base YM2612 or primary OPL2/AY fixed; programmed ES/SCC/OKI/aux OPL/AY use",
+    "transport": "Fixed through pause, zero gain, mute, seek, repeat; reset on new song/subsong"
+  },
+  "limitations": [
+    "Unknown or tagged duration beyond one hour retains unverified optional NSF channels; never labels arbitrary preview as whole song.",
+    "Tagged analysis can delay first load/subsong; caches reused within backend.",
+    "VGM programmed channel use is logical trigger/volume use, not proof ROM samples are nonzero or permanent instrument identity.",
+    "Other emulation, physical listening, hardware authenticity and all possible files are not certified."
+  ],
+  "checks": {
+    "full_CTest": {
+      "pass": 32,
+      "total": 32,
+      "seconds": 99.28,
+      "log_SHA256": "75e908077840665ee6c2256e24dfc163ff565d07dd593c148fe86683d39a0c89",
+      "timing": "Before final zero-only PCM detection and Unicode test argv adjustments"
+    },
+    "final_targeted_CTest": {
+      "pass": 6,
+      "total": 6,
+      "seconds": 19.6,
+      "log_SHA256": "e02445f773503c2efdbfe9dc1475a261c089632841ed8d51e3a0477d9e5fe1a9"
+    },
+    "native_UI": {
+      "pass": true,
+      "cases": [
+        {
+          "file": "channels.nsfe",
+          "visible": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "dmc-late.nsfe",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "chips/es-late.vgm",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            38
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "chips/es-many.vgm",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "chips/ay-own.vgm",
+          "visible": [
+            0,
+            1,
+            2
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "channels.minigsf",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "channels.mini2sf",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "fixed_before_first_note": true
+        }
+      ],
+      "audio": "dummy"
+    },
+    "provided_lobby": {
+      "read_only": true,
+      "visible_before_playback": 17,
+      "ES_voices": 6,
+      "log_SHA256": "b63db238bd768fc123346fbcca511bbb775d6f0318583afdbfe233e9fdefc8fd",
+      "source_SHA256": "b8cb756ab0c23bfc8827d43f82de03fe7c83e49334a17137c715217d3c3bd6a6"
+    },
+    "failed_candidate": {
+      "log": "studio1511-provided-visibility.log",
+      "reason": "Test narrow argv could not accept Korean path; changed own test entry to wide argv. Application code/path support unaffected."
+    },
+    "audio": "dummy output, no physical listening"
+  },
+  "binary_SHA256": "66f7e86f25bababd485129c44bd7a113c1110b984618f33cf863c987b48cde75",
+  "gme_SHA256": "1868fdaf1a362d3475023e74759d179c523853b3a2d24c786874d59b8952cbb3",
+  "user_assets_in_packages": false,
+  "external_upload": false
+}

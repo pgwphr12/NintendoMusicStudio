@@ -75,7 +75,7 @@ static void segaTests(const std::filesystem::path &root) {
     require(list.files.size() == 3 && list.current == 1 &&
                 list.files[2].filename() == "10 Track.vgm",
             "VGM/VGZ folder order failed");
-    for (size_t count : {size_t(4), size_t(8), size_t(11), size_t(16), size_t(18), size_t(31)})
+    for (size_t count : {size_t(4), size_t(8), size_t(11), size_t(16), size_t(18), size_t(31), size_t(44), size_t(63)})
         for (bool recording : {false, true})
             for (size_t i = 0; i < count; ++i) {
                 auto cell = channelCell(i, count, recording);
@@ -88,7 +88,7 @@ static void segaTests(const std::filesystem::path &root) {
                 require(!recording || cell.waveLeft(true)<cell.labelX(),"Recording wave did not extend into label area");
                 require(!recording || cell.waveRight(true)==cell.x+cell.width,"Recording wave does not match channel cell edge");
                 if (count > 8)
-                    require(cell.x == (i < (count + 1) / 2 ? 32 : 976),
+                    require(cell.x == 32 + int(i/((count+(count>48?4:count>32?3:2)-1)/(count>48?4:count>32?3:2)))*(1888/(count>48?4:count>32?3:2)),
                             "Channels not divided down center");
             }
     std::cout << "Sega invalid input, mixed folder order, all channel geometry: PASS\n";

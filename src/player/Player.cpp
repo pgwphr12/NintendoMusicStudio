@@ -45,6 +45,7 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
     output_.pause(true);
     haltWorker();
     backend_ = std::move(candidate);
+    format_=format;
     exactSourceEnd_=format==Format::AudioFile || format==Format::Midi;
     sourceEndFrame_=UINT64_MAX;
     bool fds = false;
@@ -61,6 +62,7 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
         error_.clear();
     }
     track_ = 0;
+    configureVisibleChannels();
     base_ = 0;
     playing_ = false;
     atEnd_ = false;
@@ -79,10 +81,13 @@ void Player::restart(int track, int ms, bool play) {
     try {
         level_.reset();
         reverb_.reset();
-        if (track != track_)
+        if (track != track_){
             dmcUsed_ = false;
+            usedChannels_=0;
+        }
         sourceEndFrame_=UINT64_MAX;
         backend_->selectTrack(track);
+        configureVisibleChannels();
         gbaPsgUsed_ = -1;
         if (ms)
             backend_->seek(ms);
@@ -104,6 +109,14 @@ void Player::restart(int track, int ms, bool play) {
         playing_ = false;
         throw;
     }
+}
+void Player::configureVisibleChannels(){
+    uint64_t used=UINT64_MAX;
+    if(!backend_||!backend_->channelUsage(used)){visibleMask_=UINT64_MAX;return;}
+    // Base console channels remain fixed, even if silent throughout the song.
+    if(format_==Format::Nsf||format_==Format::Nsfe)used|=15;
+    else if(format_!=Format::Vgm)used=UINT64_MAX;
+    visibleMask_=used;
 }
 void Player::select(int track) {
     if (!backend_ || track < 0 || track >= int(tracks().size()))
@@ -186,26 +199,26 @@ void Player::produce() {
                 frames = size_t(
                     std::min(uint64_t(frames), uint64_t(length) * InternalRate / 1000 - produced));
             auto state = states();
-            uint32_t mask = 0;
+            uint64_t mask = 0;
             bool unity = true;
             for (size_t i = 0; i < state.size(); i++) {
-                if (state[i].mute && i < 32)
-                    mask |= uint32_t(1) << i;
-                if (state[i].mute && i >= 32) unity = false;
+                if (state[i].mute && i < 64)
+                    mask |= uint64_t(1) << i;
+                if (state[i].mute && i >= 64) unity = false;
                 if (state[i].volume != 1)
                     unity = false;
             }
-            backend_->muteMask(mask);
+            backend_->muteMask64(mask);
             backend_->render(frames, block);
             uint64_t decodedEnd=0;if(exactSourceEnd_ && backend_->decodedEndFrame(decodedEnd))sourceEndFrame_=decodedEnd;
             uint32_t psg=0;if(backend_->gbaPsgUsed(psg))gbaPsgUsed_=int(psg&15);
             history_.append(block);
-            uint32_t active = usedChannels_.load();
-            for (size_t c = 0; c < block.voices.size() && c < 32; ++c)
-                if (!(active & (uint32_t(1) << c)))
+            uint64_t active = usedChannels_.load();
+            for (size_t c = 0; c < block.voices.size() && c < 64; ++c)
+                if (!(active & (uint64_t(1) << c)))
                     for (auto sample : block.voices[c])
                         if (std::max(std::abs(sample.l), std::abs(sample.r)) > .0001f) {
-                            active |= uint32_t(1) << c;
+                            active |= uint64_t(1) << c;
                             break;
                         }
             usedChannels_ = active;
