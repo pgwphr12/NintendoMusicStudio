@@ -1,17 +1,17 @@
 {
   "product": "Nintendo Music Studio",
-  "version": "1.6",
-  "file_version": "1.6.0.0",
+  "version": "1.6.1h",
+  "file_version": "1.6.1.1",
   "release_date": "2026-11-07",
   "platform": "Windows x64",
   "entrypoint": "NintendoMusicStudio.exe",
   "runtime_library": "Statically linked GME; Windows system DLLs only",
-  "corresponding_source": "NintendoMusicStudio-1.6-Source.zip",
+  "corresponding_source": "NintendoMusicStudio-1.6.1h-Source.zip",
   "license_notices": "THIRD_PARTY_NOTICES.md",
   "contains_user_music": false,
   "digital_signature": false,
   "uploaded": false,
-  "release_type": "public-consolidated-release",
+  "release_type": "hotfix-no-vms-default-only",
   "previous_public_version": "1.5.11",
   "consolidated_from": [
     "1.5.12",
@@ -19,5 +19,6 @@
     "1.5.12h2",
     "1.5.12h3",
     "1.5.12h4"
-  ]
+  ],
+  "hotfix_of": "1.6"
 }

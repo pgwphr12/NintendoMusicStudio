@@ -18,6 +18,7 @@ MidiSong parseMidi(const std::vector<uint8_t>&,size_t eventLimit=MidiMaxEvents);
 void midiSoundFont(const std::filesystem::path&);
 std::filesystem::path midiSoundFont();
 std::filesystem::path windowsMidiBank();
+bool virtualMidiInstalled();
 std::vector<std::filesystem::path> virtualMidiFonts(const std::filesystem::path& config);
 std::filesystem::path automaticMidiBank();
 std::vector<std::filesystem::path> virtualMidiFontsToImport();

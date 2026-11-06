@@ -64,7 +64,7 @@ class Window {
     void rateMenu();
     void soundFontMenu();
     void updatePlayback();
-    bool followVirtualMidi_=true,virtualMidiSeen_=false;
+    bool followVirtualMidi_=true,virtualMidiSeen_=false,virtualMidiAvailable_=false;
     ULONGLONG virtualMidiNextCheck_=0;
     unsigned virtualMidiReloads_=0;
     std::wstring virtualMidiLoaded_,virtualMidiPending_,virtualMidiFailed_,virtualMidiError_;

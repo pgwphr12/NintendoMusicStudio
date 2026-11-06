@@ -69,14 +69,14 @@ class MidiBackend final:public IMusicBackend {
     }
   public:
     MidiBackend(const std::vector<uint8_t>&b,const std::filesystem::path&file,const std::filesystem::path&bank):song_(parseMidi(b)){
-        auto path=bank.empty()?midiSoundFont():bank;bool system=path.empty();deviceMode_=system&&midiDeviceOutput();LoadedFont loaded;
+        bool basicOnly=bank.empty()&&!virtualMidiInstalled();auto path=basicOnly?windowsMidiBank():bank.empty()?midiSoundFont():bank;bool system=path.empty();deviceMode_=system&&midiDeviceOutput();LoadedFont loaded;
         // Hidden/dummy test sessions must never emit hardware MIDI notes.
         wchar_t dummy[32]{};if(GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy"))deviceMode_=false;
         if(!deviceMode_){if(system)path=automaticMidiBank();loaded=loadFont(path);font_=std::move(loaded.font);}else device_=std::make_unique<MidiDevice>(song_,windowsMidiPort());
         for(unsigned c=0;c<16;c++)if(song_.used&(1<<c))channels_.push_back({"Channel "+std::to_string(c+1)});
         TrackInfo t;t.title=song_.title.empty()?file.stem().u8string():song_.title;t.system="MIDI";t.lengthMs=int((song_.endFrame*1000+InternalRate-1)/InternalRate);
         t.game=path.filename().u8string();
-        t.comment=std::string(system?"Automatic MIDI bank: ":"Sound bank: ")+path.filename().u8string()+" / internal TinySoundFont synthesis; not MIDI Mapper audio. Release tail2s. Aftertouch/vendor SysEx/custom modulators are limited. Missing bank/program falls back to GM program or first preset.";
+        t.comment=std::string(basicOnly?"Windows default bank: ":system?"Automatic MIDI bank: ":"Sound bank: ")+path.filename().u8string()+" / internal TinySoundFont synthesis; not MIDI Mapper audio. Release tail2s. Aftertouch/vendor SysEx/custom modulators are limited. Missing bank/program falls back to GM program or first preset.";
         if(deviceMode_)t.comment="Windows default MIDI Mapper output (F8: internal synthesis). Device supplies audio. Internal waveforms/reverb/pitch do not describe or process device output; silent waveform lanes. Default changes re-open output at current position. Custom SysEx forwarded.";
         if(song_.ignoredSysex||loaded.unsupported)t.comment+=" Limited SysEx/bank routes: "+std::to_string(song_.ignoredSysex)+"/"+std::to_string(loaded.unsupported);
         tracks_.push_back(std::move(t));reset();

@@ -1,6 +1,6 @@
 {
   "date": "2026-11-07",
-  "version": "1.6",
+  "version": "1.6.1h",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
   "compiled_translation_units": 981,
@@ -1801,7 +1801,7 @@
     },
     {
       "path": "src/formats/MidiAutoBank.cpp",
-      "SHA256": "e026a201b54200303ff9c3b754664749aa99ebf00d5e685a3ffd83bd91145b34",
+      "SHA256": "0b3cf2eb6ed174b84b2a0157aacdb449dfea1011031b00960714443f174daca8",
       "targets": [
         "viewer_core"
       ],
@@ -1810,7 +1810,7 @@
     },
     {
       "path": "src/formats/MidiBackend.cpp",
-      "SHA256": "1b616c046407f5e3975679a6bc458ff493ef6e5cfce3feb04b8051f575e86b69",
+      "SHA256": "1cacdff856225e16f66f96f50c6b91bcc06c4d53b989d5539e0bc84e30af2f01",
       "targets": [
         "viewer_core"
       ],
@@ -1900,7 +1900,7 @@
     },
     {
       "path": "src/ui/Window.cpp",
-      "SHA256": "b76ed569c3eb3e894dc7590d9cc9dd01cd179b284d0e8e88938ed2208fdaddd1",
+      "SHA256": "380c95bff78863de67fa187b4dc7ae1405a6bc281fbab97beef9a440f5b730d5",
       "targets": [
         "NintendoGameMusicViewer"
       ],

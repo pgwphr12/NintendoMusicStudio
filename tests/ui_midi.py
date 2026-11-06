@@ -75,14 +75,25 @@ for label,bank in cases:
             ini.write('channel.'+('MIDI\nChannel 1').encode().hex()+'.volume=100\n')
     if bank:(folder/'midi-soundfont.txt').write_text(str(bank),encoding='utf-8')
     env=dict(os.environ,SDL_AUDIODRIVER='dummy',NGMV_TEST_SESSION='midi159-'+label,NGMV_SETTINGS_TEST_FILE=str(settings),NGMV_TEST_SNAPSHOT_MS='20000',NGMV_TEST_NO_SNAPSHOT_PLAY='1')
+    if label in ('sf2','dls'):env['NGMV_TEST_VMS_CONFIG']=str(fixture/'virtual-midi.conf')
+    if label=='windows':
+        env['NGMV_TEST_NO_VMS']='1'
+        (folder/'midi-soundfont.txt').write_text(str(folder/'missing-old-bank.sf2'),encoding='utf-8')
     if config:env['NGMV_TEST_VMS_CONFIG']=str(config)
     p=subprocess.Popen([str(exe),'--snapshot',str(real or fixture/'simultaneous.mid'),str(folder/'midi.bmp'),'--size=1920x1080'],env=env,creationflags=subprocess.CREATE_NO_WINDOW)
     try:
         main=wait_for(lambda:windows(p.pid,'NintendoMusicStudioWindow'),'No MIDI window')[0];state=lambda a:send(main,0x8000+74,a)
         wait_for(lambda:state(1) and state(2)>(1500 if real else 300),'MIDI open did not play',seconds=15);assert not state(13);assert state(23)==0,'Old default device route was not migrated to internal synthesis'
         if label=='sf2':assert send(main,0x8000+74,19,0)==100,'New channel setting did not override legacy label'
+        if label=='windows':
+            assert state(27)==0,'Missing VMS did not restrict controls'
+            send(main,0x100,0x77) # Disabled F8 must return without opening a menu.
+            assert state(23)==0 and not windows(p.pid,'#32768'),'Disabled F8 changed output/opened menu'
+        elif label in ('sf2','dls'):assert state(27)==1,'Installed VMS test disabled advanced controls'
         channel_count=state(17);send(main,0x113,2);assert p.wait(timeout=10)==0
         image=Image.open(folder/'midi.bmp').convert('RGB');image.save(folder/'midi.png')
+        if label=='windows':
+            assert sum(1 for pixel in image.crop((1435,1028,1665,1078)).getdata() if pixel==(118,136,158))>30,'Default-only bank button is not gray'
         lanes=[]
         if real:
             count=channel_count;columns=2 if count>8 else 1;rows=(count+columns-1)//columns;height=(1000-276)//rows;colors=[(247,205,87),(126,222,190),(133,180,255),(222,146,232),(250,155,106),(181,211,119),(126,213,228),(247,163,181)]

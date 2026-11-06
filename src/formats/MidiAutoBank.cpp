@@ -17,7 +17,7 @@ std::wstring decode(const std::vector<char>&b){
 std::wstring trim(std::wstring v){auto first=v.find_first_not_of(L" \t\r\n");if(first==v.npos)return {};return v.substr(first,v.find_last_not_of(L" \t\r\n")-first+1);}
 std::filesystem::path configPath(){
  HANDLE snapshot=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);if(snapshot!=INVALID_HANDLE_VALUE){PROCESSENTRY32W entry{};entry.dwSize=sizeof(entry);if(Process32FirstW(snapshot,&entry))do{if(_wcsicmp(entry.szExeFile,L"VirtualMIDISynth.exe"))continue;HANDLE process=OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,FALSE,entry.th32ProcessID);if(!process)continue;wchar_t path[32768]{};DWORD n=32768;bool ok=QueryFullProcessImageNameW(process,0,path,&n)!=FALSE;CloseHandle(process);if(ok){auto config=std::filesystem::path(path).parent_path()/L"VirtualMIDISynth.conf";if(std::filesystem::is_regular_file(config)){CloseHandle(snapshot);return config;}}}while(Process32NextW(snapshot,&entry));CloseHandle(snapshot);}
- for(auto name:{L"ProgramW6432",L"ProgramFiles"}){wchar_t root[32768]{};DWORD n=GetEnvironmentVariableW(name,root,32768);if(n&&n<32768){auto path=std::filesystem::path(root)/L"VirtualMIDISynth"/L"VirtualMIDISynth.conf";if(std::filesystem::is_regular_file(path))return path;}}
+ for(auto name:{L"ProgramW6432",L"ProgramFiles",L"ProgramFiles(x86)"}){wchar_t root[32768]{};DWORD n=GetEnvironmentVariableW(name,root,32768);if(n&&n<32768){auto path=std::filesystem::path(root)/L"VirtualMIDISynth"/L"VirtualMIDISynth.conf";if(std::filesystem::is_regular_file(path))return path;}}
  return {};
 }
 }
@@ -31,6 +31,14 @@ std::vector<std::filesystem::path> virtualMidiFonts(const std::filesystem::path&
  }
  return out;
 }
+bool virtualMidiInstalled(){
+ wchar_t dummy[32]{};bool isolated=GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy");
+ if(isolated){if(GetEnvironmentVariableW(L"NGMV_TEST_NO_VMS",nullptr,0))return false;return GetEnvironmentVariableW(L"NGMV_TEST_VMS_CONFIG",nullptr,0)>0;}
+ UINT count=midiOutGetNumDevs();for(UINT i=0;i<count;i++){MIDIOUTCAPSW caps{};if(!midiOutGetDevCapsW(i,&caps,sizeof(caps))&&wcsstr(caps.szPname,L"VirtualMIDISynth"))return true;}
+ auto config=configPath();std::error_code ec;if(!config.empty()&&std::filesystem::is_regular_file(config.parent_path()/L"VirtualMIDISynth.exe",ec)&&!ec)return true;
+ for(auto name:{L"ProgramW6432",L"ProgramFiles",L"ProgramFiles(x86)"}){wchar_t root[32768]{};auto n=GetEnvironmentVariableW(name,root,32768);if(n&&n<32768){ec.clear();if(std::filesystem::is_regular_file(std::filesystem::path(root)/L"VirtualMIDISynth"/L"VirtualMIDISynth.exe",ec)&&!ec)return true;}}
+ return false;
+}
 std::vector<std::filesystem::path> virtualMidiFontsToImport(){
  std::filesystem::path config;wchar_t test[32768]{},dummy[32]{};
  bool isolated=GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy");
@@ -42,6 +50,7 @@ std::vector<std::filesystem::path> virtualMidiFontsToImport(){
  return fonts;
 }
 std::filesystem::path automaticMidiBank(){
+ if(!virtualMidiInstalled())return windowsMidiBank();
  // Isolated dummy tests use system bank, unless given an owned test config.
  wchar_t dummy[32]{},test[32768]{};bool isolated=GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy");
  std::filesystem::path config;

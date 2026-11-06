@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(NintendoMusicStudio VERSION 1.6.0 LANGUAGES C CXX)
+project(NintendoMusicStudio VERSION 1.6.1 LANGUAGES C CXX)
 if(NOT WIN32)
  message(FATAL_ERROR "This native desktop build currently targets Windows.")
 endif()

@@ -1,4 +1,8 @@
-# Nintendo Music Studio 1.6
+# Nintendo Music Studio 1.6.1h
+
+## 1.6.1h hotfix
+
+Without VirtualMIDISynth, use only the Windows default bank, ignoring stale custom bank/direct-device choices for this run. Keep the old-style bank button in the same location, gray/disabled and labeled Windows default; mouse and F8 open no menu. Import/custom bank/follow/external MIDI options are restricted; internal default audio/waves/effects remain. Preserve saved selections on disk. Installed systems retain advanced controls. Presence is detected from MIDI device/executable, not just a running process or stale config; restart the player after installation/removal.
 
 ## 1.6 consolidated release
 

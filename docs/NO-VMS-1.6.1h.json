@@ -1,0 +1,32 @@
+{
+  "version": "1.6.1h",
+  "date": "2026-11-07",
+  "request": "Without VirtualMIDISynth use only Windows default bank and restrict bank button with existing style",
+  "policy": {
+    "absent": "Windows bank internal synthesis only; stale saved SF2/native-output preferences ignored for this run; gray Windows 기본 button and F8 disabled",
+    "installed": "Custom SF2/DLS, import, saved-config follow and native output options retained",
+    "detection": "Startup WinMM device or actual installed executable; stale configuration alone does not establish installation",
+    "preferences": "Saved font path is preserved; restart after install/removal"
+  },
+  "validation": {
+    "ctest": {
+      "passed": 34,
+      "failed": 0,
+      "seconds": 112.02,
+      "log_sha256": "b6b4329018613b6ed9fffa46b2c4c51e318397072dd14ad55c64517bac27daa8"
+    },
+    "exe_sha256": "b8be9de5673015f7059d36ec8d9c700d7145b04713596320f57a8811d4105df3",
+    "cases": [
+      "Isolated absent-VMS stale missing font and native preference: actual default bank and audible rendered PCM",
+      "Absent-VMS native UI: automatic playback, visible waveform, disabled gray button pixels and F8 produces no menu",
+      "Installed-VMS isolated SF2/DLS UI and live saved-config reload remain enabled"
+    ],
+    "method": "Owned generated MIDI/fonts/configuration, dummy audio and test-session presence overrides. Host driver not uninstalled and user configuration not modified. No physical listening.",
+    "failed_candidate": "Initial unpublished candidate placed startup detection in About. Installed UI/live tests failed; moved initialization to main Window::run and reran all 34 successfully. work/studio16h-checks.log retained."
+  },
+  "limits": [
+    "Presence checked at startup, not runtime install/removal monitoring",
+    "Internal synthesis is not capture or exact reproduction of VirtualMIDISynth audio",
+    "Explicit bank constructor remains for offline test/prepared decoder API; restricted public UI cannot select it when absent"
+  ]
+}

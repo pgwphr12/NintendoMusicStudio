@@ -1,4 +1,4 @@
-# Nintendo Music Studio 1.6 — complete corresponding source
+# Nintendo Music Studio 1.6.1h — complete corresponding source
 
 Windows x64, C++17, Visual Studio2022 Desktop development with C++, CMake3.24+ and Python3. Dependencies are bundled as pinned source archives/trees with notices; no proprietary music is required. Composition/editor sources are absent. Python/Pillow are used only for build/test/package workflows, not runtime.
 

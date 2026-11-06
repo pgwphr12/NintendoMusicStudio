@@ -89,9 +89,9 @@ static std::wstring time(double s) {
     swprintf_s(b, L"%02d:%02d", n / 60, n % 60);
     return b;
 }
-static void button(HDC dc, const wchar_t *s, int x, int y, int w, bool active = false) {
+static void button(HDC dc, const wchar_t *s, int x, int y, int w, bool active = false,bool enabled=true) {
     fill(dc, {x, y, x + w, y + 50}, active ? RGB(31, 76, 76) : RGB(28, 34, 46));
-    text(dc, s, x + 16, y, w - 28, 50, 20, active ? RGB(101, 237, 204) : RGB(214, 220, 235));
+    text(dc, s, x + 16, y, w - 28, 50, 20, !enabled?RGB(118,136,158):active ? RGB(101, 237, 204) : RGB(214, 220, 235));
 }
 static void volumeButton(HDC dc, const wchar_t *label, int x, int y, int size = 32) {
     fill(dc, {x, y, x + size, y + size - 2}, RGB(28, 34, 46));
@@ -124,7 +124,7 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.1h\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
                 L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
@@ -241,7 +241,7 @@ bool Window::open(const std::filesystem::path &p) {
         file_ = p;
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.6 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6.1h — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening ordinary audio starts it; folder auto-advance is a separate option.
         if (format == Format::AudioFile || format == Format::Midi)
@@ -273,7 +273,7 @@ void Window::selectFolder(size_t index, bool play) {
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.1h — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -345,7 +345,7 @@ void Window::tracksMenu() {
     }
 }
 void Window::soundFontMenu() {
-    if(changing_)return;
+    if(changing_||!virtualMidiAvailable_)return;
     auto menu=CreatePopupMenu();auto old=midiSoundFont();bool oldDevice=midiDeviceOutput(),committed=false,imported=false;
     AppendMenuW(menu,MF_STRING|(followVirtualMidi_&&!oldDevice&&!old.empty()?MF_CHECKED:0),5,L"VirtualMIDISynth 사용 중인 SF2 가져오기…");
     AppendMenuW(menu,MF_SEPARATOR,0,nullptr);
@@ -390,7 +390,7 @@ void Window::saveMidiFontSelection(const std::filesystem::path&selected){
     if(!ok||!MoveFileExW(temp.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))throw std::runtime_error("Cannot save MIDI soundfont selection.");
 }
 void Window::checkVirtualMidi(){
-    if(changing_||!followVirtualMidi_||midiDeviceOutput()||!player_.loaded()||player_.tracks().empty()||player_.tracks()[0].system!="MIDI")return;
+    if(changing_||!virtualMidiAvailable_||!followVirtualMidi_||midiDeviceOutput()||!player_.loaded()||player_.tracks().empty()||player_.tracks()[0].system!="MIDI")return;
     if(desktop::automatedSession()&&!GetEnvironmentVariableW(L"NGMV_TEST_VMS_CONFIG",nullptr,0))return;
     auto now=GetTickCount64();if(now<virtualMidiNextCheck_)return;virtualMidiNextCheck_=now+500;
     try{
@@ -559,7 +559,7 @@ void Window::paint(HDC dc, int width, int height) {
         button(dc, L"−", 642, 205, 70);
         button(dc, L"+", 722, 205, 70);
         button(dc, L"1.00", 802, 205, 80);
-        button(dc, midiDeviceOutput()&&midiSoundFont().empty()?L"외부 MIDI (F8)":followVirtualMidi_&&virtualMidiSeen_?L"VMS 음색 자동 (F8)":midiSoundFont().empty()?L"Windows 기본 (F8)":L"MIDI SF2/DLS (F8)", 1435, 1028, 230);
+        button(dc, !virtualMidiAvailable_?L"Windows 기본":midiDeviceOutput()&&midiSoundFont().empty()?L"외부 MIDI (F8)":followVirtualMidi_&&virtualMidiSeen_?L"VMS 음색 자동 (F8)":midiSoundFont().empty()?L"Windows 기본 (F8)":L"MIDI SF2/DLS (F8)", 1435, 1028, 230,false,virtualMidiAvailable_);
         button(dc, player_.reverb() ? L"반향 켜짐" : L"반향 꺼짐", 1240, 1028, 180,
                player_.reverb());
         button(dc, speedStep_ == 1 ? L"단위 0.01" : L"단위 0.10", 917, 205, 200);
@@ -1144,6 +1144,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 17: return LRESULT(player_.channels().size());
             case 18: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?states[size_t(b)].mute:0;}
             case 19: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?LRESULT(std::lround(states[size_t(b)].volume*100)):-1;}
+            case 27: return virtualMidiAvailable_;
             case 25: return virtualMidiReloads_;
             case 26: return !virtualMidiError_.empty();
             case 23: return midiDeviceOutput();
@@ -1397,6 +1398,8 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
         } catch (const std::exception &) { /* Keep the output's existing default. */
         }
     }
+    virtualMidiAvailable_=virtualMidiInstalled();
+    if(!virtualMidiAvailable_){midiSoundFont({});midiDeviceOutput(false);followVirtualMidi_=false;}
     WNDCLASSW wc{};
     wc.hInstance = instance;
     wc.lpszClassName = desktop::WindowClass;
@@ -1408,7 +1411,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.1h", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

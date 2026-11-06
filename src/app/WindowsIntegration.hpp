@@ -5,7 +5,7 @@
 #include <windows.h>
 namespace ngmv::desktop {
 inline constexpr wchar_t WindowClass[] = L"NintendoMusicStudioWindow";
-inline constexpr wchar_t InstanceProperty[] = L"NGMV.SingleInstance.Studio160";
+inline constexpr wchar_t InstanceProperty[] = L"NGMV.SingleInstance.Studio161h";
 inline constexpr ULONG_PTR CopyDataTag = 0x4e474d31;
 inline constexpr UINT OpenQueuedFile = WM_APP + 21;
 inline constexpr UINT AskDefaultApps = WM_APP + 22;
