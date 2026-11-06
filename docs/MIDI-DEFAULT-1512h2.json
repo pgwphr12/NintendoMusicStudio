@@ -1,0 +1,53 @@
+{
+  "version": "1.5.12h2",
+  "date": "2026-11-07",
+  "user_request": "Windows default selection must show MIDI channel waveforms, using configured SF2 internally.",
+  "changes": [
+    "F8 Windows-default choice3 always selects internal synthesis; direct MIDI moved to explicit choice4 labeled no waveforms.",
+    "Existing VirtualMIDISynth config/single enabled font takes priority without relying on mapper preferred-ID result. Missing/ambiguous configured fonts raise error rather than silent DLS fallback; no VMS config uses Windows bank.",
+    "Actual bank filename displayed in track info; existing direct-route defaults migrate once.",
+    "Single EXE and prior16M event/large SF2 fixes retained."
+  ],
+  "tests": {
+    "full_CTest": {
+      "passed": 33,
+      "total": 33,
+      "seconds": 107.94,
+      "log_SHA256": "250ff577c3a58f6c70fb6a62b65a59fe169830d67bbcaf3949b0a6dbf045ea50",
+      "stage": "Before final button-label shortening only; packaged tests cover final EXE"
+    },
+    "unit_policy": "Choice4 external then choice3 internal; active configured SF2 selected and multiple-font error cannot silently return DLS.",
+    "provided_current_MIDI": {
+      "file": "Basics In Behaviour (Midi Fixing.2).mid",
+      "events": 10695,
+      "duration_ms": 239898,
+      "render10s_energy": 24562.4,
+      "seek5s_energy": 244.309,
+      "bank_bytes": 12697366,
+      "log_SHA256": "64fb1a9bdcc391e35c2807837b7e4d3fb661c42712f9f39c4b4ebf66aa992232"
+    },
+    "actual_UI": {
+      "pass": true,
+      "cases": [
+        {
+          "bank": "configured",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            0
+          ]
+        }
+      ],
+      "audio": "dummy",
+      "snapshot_forced_play": false
+    },
+    "audio": "dummy; no physical listening or external device notes; no user app changed"
+  },
+  "limitations": [
+    "This synthesizes same SF2 internally; it is not captured/identical VirtualMIDISynth audio or BASS effects.",
+    "Only single active SF2 auto; layers/remapping require manual bank selection.",
+    "Reopen/select Windows-default again after bank configuration changes."
+  ],
+  "user_config_or_assets_modified": false,
+  "external_upload": false,
+  "binary_SHA256": "3fa73313ae8c6007ea6dcd7f8606feae84dcba456a22edcd54f331a786517c6a"
+}

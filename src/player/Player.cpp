@@ -4,6 +4,7 @@
 #include <stdexcept>
 namespace ngmv {
 Player::~Player() {
+    try{pause();}catch(...){}
     output_.pause(true);
     haltWorker();
 }
@@ -40,10 +41,11 @@ void Player::open(const std::filesystem::path &path) {
     auto candidate = makeBackend(bytes, path);
     openPrepared(std::move(candidate),format);
 }
-void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format) {
+void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format,uint64_t startFrame,const std::vector<ChannelState>& initialStates) {
     if(!candidate)throw std::runtime_error("No prepared music");
     output_.pause(true);
     haltWorker();
+    if(backend_)backend_->devicePlayback(0,false,states(),master());
     backend_ = std::move(candidate);
     format_=format;
     exactSourceEnd_=format==Format::AudioFile || format==Format::Midi;
@@ -59,24 +61,24 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
     {
         std::lock_guard<std::mutex> lock(stateMutex_);
         channelStates_.assign(backend_->channels().size(), ChannelState{});
+        if(initialStates.size()==channelStates_.size())channelStates_=initialStates;
         error_.clear();
     }
     track_ = 0;
     configureVisibleChannels();
-    base_ = 0;
+    base_ = startFrame;
     playing_ = false;
     atEnd_ = false;
     audio_.reset();
     output_.reset();
-    history_.reset(channelStates_.size());
+    history_.reset(channelStates_.size(),startFrame);
     startWorker();
     prefill();
 }
 void Player::restart(int track, int ms, bool play) {
     if (!backend_)
         return;
-    output_.pause(true);
-    playing_ = false;
+    pause();
     haltWorker();
     try {
         level_.reset();
@@ -132,10 +134,13 @@ void Player::play() {
     prefill();
     output_.pause(false);
     playing_ = true;
+    serviceDevice();
 }
+void Player::serviceDevice(){if(!backend_||!backend_->hasDeviceOutput())return;std::lock_guard<std::mutex> deviceLock(deviceMutex_);try{if(backend_)backend_->devicePlayback(base_+output_.consumed(),playing_,states(),master());}catch(const std::exception&e){output_.pause(true);playing_=false;std::lock_guard<std::mutex> lock(stateMutex_);error_=e.what();}}
 void Player::pause() {
     output_.pause(true);
     playing_ = false;
+    serviceDevice();
 }
 void Player::stop() {
     restart(track_, 0, false);
@@ -184,6 +189,7 @@ void Player::produce() {
         int length = tracks()[track_].lengthMs;
         backend_->continuousEnd(continueAfterLength_.load());
         while (!quit_) {
+            serviceDevice();
             const size_t target=output_.speed()!=1 || output_.pitch()!=1 ? 14336 : 8192;
             if (audio_.available() > target - 512) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));

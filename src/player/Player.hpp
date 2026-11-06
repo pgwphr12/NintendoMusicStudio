@@ -25,7 +25,8 @@ class Player {
     mutable std::mutex stateMutex_;
     std::vector<ChannelState> channelStates_;
     std::string error_;
-    bool playing_ = false;
+    std::atomic<bool> playing_{false};
+    std::mutex deviceMutex_;
     int track_ = 0;
     uint64_t base_ = 0;
     std::atomic<bool> atEnd_{false};
@@ -46,9 +47,10 @@ class Player {
     Player() : output_(audio_) {}
     ~Player();
     void open(const std::filesystem::path &path);
-    void openPrepared(std::unique_ptr<IMusicBackend> backend,Format format);
+    void openPrepared(std::unique_ptr<IMusicBackend> backend,Format format,uint64_t startFrame=0,const std::vector<ChannelState>& initialStates={});
     void select(int track);
     void play();
+    void serviceDevice();
     void pause();
     void releaseDevice(){pause();output_.releaseDevice();}
     void stop();

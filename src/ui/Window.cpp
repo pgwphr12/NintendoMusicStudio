@@ -1,6 +1,7 @@
 #include "Window.hpp"
 #include "ChannelLayout.hpp"
 #include "formats/Midi.hpp"
+#include "formats/MidiDevice.hpp"
 #include "app/WindowsIntegration.hpp"
 #include "visualizer/Envelope.hpp"
 #include <algorithm>
@@ -123,11 +124,11 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.5.11\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
                 L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
-                L"MIDI: MID · MIDI (format0/1), Windows 기본 DLS 또는 선택한 SF2/DLS · F8 음색 선택\r\n"
+                L"MIDI: MID · MIDI (format0/1), Windows 기본 MIDI 장치 또는 내부 합성(SF2/DLS) · F8 선택\r\n"
                 L"추가 VGM: YM2612 · YM3812 · MSM6295 · K051649 · ES5506 · AY8930\r\n"
                 L"ES5506: 32개 음성 및 BUS RESIDUAL · AY8930: 3채널. 모든 칩/조합의 지원 완료를 뜻하지 "
                 L"않습니다.\r\n\r\n"
@@ -136,6 +137,10 @@ void Window::showAbout() {
                 L"이 창을 열어 둔 상태에서도 본창의 재생·음량·채널 조작을 계속할 수 있습니다.",
                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 12,
                 12, 610, 260, h, reinterpret_cast<HMENU>(1), nullptr, nullptr);
+            if(auto resource=FindResourceW(GetModuleHandleW(nullptr),MAKEINTRESOURCEW(901),RT_RCDATA)){
+                auto data=LoadResource(GetModuleHandleW(nullptr),resource);auto bytes=SizeofResource(GetModuleHandleW(nullptr),resource);auto value=LockResource(data);
+                if(value&&bytes){SendMessageW(body,EM_SETLIMITTEXT,0x7ffffffe,0);int n=GetWindowTextLengthW(body);std::wstring contents(n+1,0);GetWindowTextW(body,contents.data(),n+1);contents.resize(n);contents+=L"\r\n\r\nEmbedded component notices / licenses:\r\n";contents+=wide(std::string(static_cast<const char*>(value),bytes));SetWindowTextW(body,contents.c_str());}
+            }
             SendMessageW(body, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
             HWND close =
                 CreateWindowW(L"BUTTON", L"닫기", WS_CHILD | WS_VISIBLE | WS_TABSTOP, 522, 285, 100,
@@ -186,9 +191,9 @@ struct ChangingScope {
 };
 // Only a separate, unpublished decoder is touched by this worker. The active
 // player and all HWND operations remain on the UI thread.
-static std::unique_ptr<IMusicBackend> prepareMusic(HWND window, const std::filesystem::path &path) {
+static std::unique_ptr<IMusicBackend> prepareMusic(HWND window, const std::filesystem::path &path, const std::filesystem::path &bank={},int seekMs=-1) {
     auto task =
-        std::async(std::launch::async, [path] { return makeBackend(readMusicFile(path), path); });
+        std::async(std::launch::async, [path,bank,seekMs] { auto core=bank.empty()?makeBackend(readMusicFile(path),path):makeMidiBackend(readMusicFile(path),path,bank);if(seekMs>=0)core->seek(seekMs);return core; });
     bool quit = false;
     int exitCode = 0;
     while (task.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) {
@@ -234,8 +239,9 @@ bool Window::open(const std::filesystem::path &p) {
         player_.openPrepared(std::move(prepared), format);
         restoreChannels();
         file_ = p;
+        virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.5.11 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening ordinary audio starts it; folder auto-advance is a separate option.
         if (format == Format::AudioFile || format == Format::Midi)
@@ -267,7 +273,7 @@ void Window::selectFolder(size_t index, bool play) {
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.5.11 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -340,24 +346,83 @@ void Window::tracksMenu() {
 }
 void Window::soundFontMenu() {
     if(changing_)return;
-    auto menu=CreatePopupMenu();auto old=midiSoundFont();bool committed=false;
-    AppendMenuW(menu,MF_STRING|(old.empty()?MF_CHECKED:0),1,L"Windows 기본 음색 (GMFilePath / DLS)");
-    AppendMenuW(menu,MF_STRING|(!old.empty()?MF_CHECKED:0),2,L"SF2 / DLS 파일 선택…");
-    POINT point;GetCursorPos(&point);auto choice=TrackPopupMenu(menu,TPM_RETURNCMD,point.x,point.y,0,hwnd_,nullptr);DestroyMenu(menu);
-    if(!choice)return;
+    auto menu=CreatePopupMenu();auto old=midiSoundFont();bool oldDevice=midiDeviceOutput(),committed=false,imported=false;
+    AppendMenuW(menu,MF_STRING|(followVirtualMidi_&&!oldDevice&&!old.empty()?MF_CHECKED:0),5,L"VirtualMIDISynth 사용 중인 SF2 가져오기…");
+    AppendMenuW(menu,MF_SEPARATOR,0,nullptr);
+    AppendMenuW(menu,MF_STRING|(!oldDevice&&old.empty()?MF_CHECKED:0),3,L"Windows 기본 음색 · 채널별 파형 / 효과");
+    AppendMenuW(menu,MF_STRING|(!old.empty()&&!followVirtualMidi_?MF_CHECKED:0),2,L"SF2 / DLS 파일 선택 · 채널별 파형 / 효과…");
+    AppendMenuW(menu,MF_STRING|(followVirtualMidi_?MF_CHECKED:0),6,L"VirtualMIDISynth 음색 변경 자동 반영");
+    AppendMenuW(menu,MF_SEPARATOR,0,nullptr);
+    AppendMenuW(menu,MF_STRING|(oldDevice&&old.empty()?MF_CHECKED:0),4,L"외부 MIDI 직접 출력 · 파형 없음");
+    POINT point;GetCursorPos(&point);auto choice=TrackPopupMenu(menu,TPM_RETURNCMD,point.x,point.y,0,hwnd_,nullptr);DestroyMenu(menu);if(!choice)return;
+    if(choice==6){followVirtualMidi_=!followVirtualMidi_;virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();if(preferencesEnabled_)preferences_.values["followVirtualMidi"]=followVirtualMidi_?1:0;return;}
     std::filesystem::path selected;
-    if(choice==2){wchar_t file[32768]{};OPENFILENAMEW d{};d.lStructSize=sizeof(d);d.hwndOwner=hwnd_;d.lpstrFilter=L"사운드폰트 / 음색 파일 (*.sf2;*.dls)\0*.sf2;*.dls\0\0";d.lpstrFile=file;d.nMaxFile=32768;d.Flags=OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;if(!GetOpenFileNameW(&d))return;selected=file;}
+    if(choice==5){
+        try{
+            auto fonts=virtualMidiFontsToImport();size_t index=0;
+            if(fonts.size()>1){
+                auto list=CreatePopupMenu();for(size_t i=0;i<fonts.size();i++)AppendMenuW(list,MF_STRING,100+i,fonts[i].filename().c_str());
+                POINT at;GetCursorPos(&at);auto item=TrackPopupMenu(list,TPM_RETURNCMD,at.x,at.y,0,hwnd_,nullptr);DestroyMenu(list);if(item<100||item>=100+fonts.size())return;index=item-100;
+            }
+            selected=fonts[index];choice=2;imported=true;
+        }catch(const std::exception&e){report(e);return;}
+    }
+    if(choice==2&&!imported){wchar_t file[32768]{};OPENFILENAMEW d{};d.lStructSize=sizeof(d);d.hwndOwner=hwnd_;d.lpstrFilter=L"사운드폰트 / 음색 파일 (*.sf2;*.dls)\0*.sf2;*.dls\0\0";d.lpstrFile=file;d.nMaxFile=32768;d.Flags=OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;if(!GetOpenFileNameW(&d))return;selected=file;}
     try{
-        validateMidiBank(selected);midiSoundFont(selected);
-        if(player_.loaded()&&!player_.tracks().empty()&&player_.tracks()[0].system=="MIDI"&&!open(file_)){midiSoundFont(old);return;}
+        if(choice!=4)validateMidiBank(selected);midiSoundFont(selected);midiSelectOutput(choice);
+        if(player_.loaded()&&!player_.tracks().empty()&&player_.tracks()[0].system=="MIDI"&&!open(file_)){midiSoundFont(old);midiDeviceOutput(oldDevice);return;}
         committed=true;
+        followVirtualMidi_=imported||choice==3;
+        virtualMidiSeen_=imported;virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         if(preferencesEnabled_){
-            auto path=desktop::Settings::path().parent_path()/L"midi-soundfont.txt";std::error_code ec;std::filesystem::create_directories(path.parent_path(),ec);
-            auto temp=path;temp+=L".tmp";std::ofstream out(temp,std::ios::binary|std::ios::trunc);out<<selected.u8string();out.flush();bool ok=bool(out);out.close();
-            if(!ok||!MoveFileExW(temp.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))throw std::runtime_error("Sound bank loaded, but cannot save the selection.");
+            preferences_.values["followVirtualMidi"]=followVirtualMidi_?1:0;
+            preferences_.values["midiDeviceOutput"]=choice==4?1:0;
+            preferences_.values["midiOutputRevision"]=15122;
+            saveMidiFontSelection(selected);
         }
-        message_=selected.empty()?L"Windows 기본 MIDI 음색":L"MIDI 음색: "+selected.filename().wstring();InvalidateRect(hwnd_,nullptr,FALSE);
-    }catch(const std::exception&e){if(!committed)midiSoundFont(old);report(e);}
+        message_=imported?L"VirtualMIDISynth SF2 가져옴: "+selected.filename().wstring():choice==4?L"Windows MIDI 장치 출력 · 내부 효과/파형 미적용":selected.empty()?L"Windows 기본 음색 · 채널별 파형":L"MIDI 음색: "+selected.filename().wstring();InvalidateRect(hwnd_,nullptr,FALSE);
+    }catch(const std::exception&e){if(!committed){midiSoundFont(old);midiDeviceOutput(oldDevice);}report(e);}
+}
+void Window::saveMidiFontSelection(const std::filesystem::path&selected){
+    if(!preferencesEnabled_)return;
+    auto path=desktop::Settings::path().parent_path()/L"midi-soundfont.txt";std::error_code ec;std::filesystem::create_directories(path.parent_path(),ec);
+    auto temp=path;temp+=L".tmp";std::ofstream out(temp,std::ios::binary|std::ios::trunc);out<<selected.u8string();out.flush();bool ok=bool(out);out.close();
+    if(!ok||!MoveFileExW(temp.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))throw std::runtime_error("Cannot save MIDI soundfont selection.");
+}
+void Window::checkVirtualMidi(){
+    if(changing_||!followVirtualMidi_||midiDeviceOutput()||!player_.loaded()||player_.tracks().empty()||player_.tracks()[0].system!="MIDI")return;
+    if(desktop::automatedSession()&&!GetEnvironmentVariableW(L"NGMV_TEST_VMS_CONFIG",nullptr,0))return;
+    auto now=GetTickCount64();if(now<virtualMidiNextCheck_)return;virtualMidiNextCheck_=now+500;
+    try{
+        auto fonts=virtualMidiFontsToImport();auto selected=midiSoundFont();std::filesystem::path next;
+        if(fonts.size()==1)next=fonts[0];else {for(auto&p:fonts){std::error_code ec;if(!selected.empty()&&std::filesystem::equivalent(p,selected,ec)&&!ec){next=p;break;}}if(next.empty())throw std::runtime_error("Multiple active VirtualMIDISynth fonts: choose one with F8.");}
+        auto key=next.wstring()+L"|"+std::to_wstring(std::filesystem::file_size(next))+L"|"+std::to_wstring(std::filesystem::last_write_time(next).time_since_epoch().count());
+        if(virtualMidiLoaded_.empty()){
+            std::error_code ec;bool same=!selected.empty()&&std::filesystem::equivalent(selected,next,ec)&&!ec;
+            if(same||(selected.empty()&&player_.tracks()[0].game==next.filename().u8string())){virtualMidiLoaded_=key;virtualMidiSeen_=true;virtualMidiError_.clear();return;}
+        }
+        virtualMidiSeen_=true;
+        if(key==virtualMidiLoaded_){virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();return;}
+        if(key==virtualMidiFailed_)return;
+        if(key!=virtualMidiPending_){virtualMidiPending_=key;return;}
+        // Confirm a stable selection on two polls before touching the player.
+        int at=int(player_.seconds()*1000);auto length=player_.tracks()[0].lengthMs;if(length>0&&at>=length)return;
+        bool wasPlaying=player_.playing();player_.pause();
+        try{
+            ChangingScope guard(changing_);rememberChannels();message_=L"VirtualMIDISynth 음색을 반영하는 중…";InvalidateRect(hwnd_,nullptr,FALSE);
+            auto prepared=prepareMusic(hwnd_,file_,next,at);if(!prepared){if(IsWindow(hwnd_)&&wasPlaying)player_.play();return;}
+            player_.openPrepared(std::move(prepared),Format::Midi,uint64_t(at)*InternalRate/1000,player_.states());restoreChannels();midiSoundFont(next);
+            virtualMidiLoaded_=key;virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();++virtualMidiReloads_;
+            if(wasPlaying)player_.play();
+            message_=L"VirtualMIDISynth 음색 적용: "+next.filename().wstring();
+            try{saveMidiFontSelection(next);}catch(const std::exception&e){message_+=L" · 저장 실패: "+wide(e.what());}
+            InvalidateRect(hwnd_,nullptr,FALSE);
+        }catch(const std::exception&e){virtualMidiFailed_=key;if(wasPlaying)player_.play();throw;}
+    }catch(const std::exception&e){
+        virtualMidiPending_.clear();
+        if(!virtualMidiSeen_)return;
+        auto text=wide(e.what());if(virtualMidiError_!=text){virtualMidiError_=text;message_=L"기존 음색 유지 · "+text;InvalidateRect(hwnd_,nullptr,FALSE);}
+    }
 }
 void Window::rateMenu() {
     auto menu = CreatePopupMenu();
@@ -375,7 +440,10 @@ void Window::rateMenu() {
 void Window::updatePlayback(){
     // Both display messages and the idle WM_TIMER fallback service transport.
     // UI-thread work only; never a paint/audio callback or concurrent restart.
-    if(changing_ || !player_.playing())return;
+    if(changing_)return;
+    checkVirtualMidi();
+    player_.serviceDevice();
+    if(!player_.playing())return;
     const bool scheduledEnd=player_.playbackBoundaryReached();
     const bool advance=player_.repeat() || (autoplay_ && playlist_.active() &&
                                           playlist_.current+1<playlist_.files.size());
@@ -415,7 +483,7 @@ std::vector<size_t> Window::visibleChannels() const {
 }
 void Window::paint(HDC dc, int width, int height) {
     segments_.clear();
-    overlayText_.clear();
+    overlayText_.clear();recordingLabelOverflow_=0;
     segments_.reserve(8 * 1576 * 2);
     fill(dc, {0, 0, width, height}, RGB(6, 9, 14));
     scale_ = std::min(width / 1920., height / 1080.);
@@ -491,7 +559,7 @@ void Window::paint(HDC dc, int width, int height) {
         button(dc, L"−", 642, 205, 70);
         button(dc, L"+", 722, 205, 70);
         button(dc, L"1.00", 802, 205, 80);
-        button(dc, L"MIDI 음색 (F8)", 1435, 1028, 230);
+        button(dc, midiDeviceOutput()&&midiSoundFont().empty()?L"외부 MIDI (F8)":followVirtualMidi_&&virtualMidiSeen_?L"VMS 음색 자동 (F8)":midiSoundFont().empty()?L"Windows 기본 (F8)":L"MIDI SF2/DLS (F8)", 1435, 1028, 230);
         button(dc, player_.reverb() ? L"반향 켜짐" : L"반향 꺼짐", 1240, 1028, 180,
                player_.reverb());
         button(dc, speedStep_ == 1 ? L"단위 0.01" : L"단위 0.10", 917, 205, 200);
@@ -520,7 +588,13 @@ void Window::paint(HDC dc, int width, int height) {
         text(dc,recording_?L"No channels used in this song":L"이 곡에서 사용하는 채널이 없습니다.",54,300,1750,45,24,RGB(118,136,158));
 
     auto labelText=[&](const std::wstring&s,int x,int y,int w,int h,int size,COLORREF color,bool bold=false){
-        if(recording_)overlayText_.push_back({s,x,y,w,h,size,color,bold});
+        if(recording_){
+            // Recording labels may use the whole channel cell. Fit the complete
+            // measured name instead of clipping it in the old narrow control column.
+            for(;size>1;--size){auto old=SelectObject(dc,drawing.font(size,bold));SIZE extent{};GetTextExtentPoint32W(dc,s.c_str(),int(s.size()),&extent);SelectObject(dc,old);if(extent.cx<=w&&extent.cy<=h)break;}
+            auto font=SelectObject(dc,drawing.font(size,bold));SIZE actual{};GetTextExtentPoint32W(dc,s.c_str(),int(s.size()),&actual);SelectObject(dc,font);if(actual.cx>w||actual.cy>h)recordingLabelOverflow_++;
+            overlayText_.push_back({s,x,y,w,h,size,color,bold});
+        }
         else text(dc,s,x,y,w,h,size,color,bold);
     };
     size_t count = visible.size();
@@ -547,7 +621,7 @@ void Window::paint(HDC dc, int width, int height) {
              y + (recording_ ? 2 : cell.compact ? 2
                   : lane < 100 ? 5
                                : 15),
-             cell.split ? 140 : 205,
+             recording_ ? cell.width-44 : cell.split ? 140 : 205,
              cell.compact ? 18
              : recording_ ? (lane < 100 ? 26 : 30)
              : lane < 100 ? 30
@@ -824,6 +898,16 @@ void Window::restoreChannels() {
             volume=preferences_.get(legacy+".volume",100,0,200);
             mute=preferences_.get(legacy+".mute",0,0,1);
         }
+        if(system=="MIDI"&&channels[i].name.rfind("Channel ",0)==0){
+            unsigned number=0;
+            if(std::sscanf(channels[i].name.c_str(),"Channel %u",&number)==1&&number>=1&&number<=16){
+                char oldName[40];std::snprintf(oldName,sizeof(oldName),"MIDI %02u%s",number,number==10?" DRUMS":"");
+                auto direct=desktop::Settings::channelKey(system,std::string(oldName)+" / MIDI OUT");
+                auto legacy=desktop::Settings::channelKey(system,oldName);
+                volume=preferences_.get(legacy+".volume",preferences_.get(direct+".volume",100,0,200),0,200);
+                mute=preferences_.get(legacy+".mute",preferences_.get(direct+".mute",0,0,1),0,1);
+            }
+        }
         state.volume = preferences_.get(key + ".volume", volume, 0, 200) / 100.f;
         state.mute = preferences_.get(key + ".mute", mute, 0, 1) != 0;
         player_.channel(i, state);
@@ -1060,6 +1144,10 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 17: return LRESULT(player_.channels().size());
             case 18: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?states[size_t(b)].mute:0;}
             case 19: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?LRESULT(std::lround(states[size_t(b)].volume*100)):-1;}
+            case 25: return virtualMidiReloads_;
+            case 26: return !virtualMidiError_.empty();
+            case 23: return midiDeviceOutput();
+            case 22: return recordingLabelOverflow_;
             case 20: return LRESULT(visibleChannels().size());
             case 21: {auto visible=visibleChannels();return b>=0&&size_t(b)<visible.size()?LRESULT(visible[size_t(b)]):-1;}
             case 12:
@@ -1281,8 +1369,10 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                            GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
     if (preferencesEnabled_) {
         preferences_.load(desktop::Settings::path());
+        midiDeviceOutput(preferences_.get("midiOutputRevision",0,0,99999)>=15122 && preferences_.get("midiDeviceOutput",0,0,1)!=0);
         { std::ifstream font(desktop::Settings::path().parent_path()/L"midi-soundfont.txt",std::ios::binary);
           std::string path;char data[32768]{};font.getline(data,32768);if(!font.fail())path=data;if(path.size()<32768 && path.find('\0')==std::string::npos)midiSoundFont(std::filesystem::u8path(path)); }
+        followVirtualMidi_=preferences_.get("followVirtualMidi",midiSoundFont().empty()?1:0,0,1)!=0;
         player_.master(preferences_.get("master", 100, 0, 100) / 100.f);
         player_.speed(preferences_.get("speed", 100, 50, 200) / 100.f);
         player_.pitch(preferences_.get("pitch", 100, 50, 200) / 100.f);
@@ -1318,7 +1408,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.5.11", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

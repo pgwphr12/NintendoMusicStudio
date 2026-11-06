@@ -1,9 +1,9 @@
 {
-  "date": "2026-11-05",
-  "version": "1.5.11",
+  "date": "2026-11-07",
+  "version": "1.6",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
-  "compiled_translation_units": 979,
+  "compiled_translation_units": 981,
   "unclassified_translation_units": [],
   "removed_VGM_framework_and_old_ES": true,
   "remaining_conflicting_N64_TUs": [],
@@ -21,7 +21,7 @@
       "path": "@gme/gme/Blip_Buffer.cpp",
       "SHA256": "f0d398443d21369520f5813167b686c8165926b7f21afe9398b0c24ce54c17f5",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -30,7 +30,7 @@
       "path": "@gme/gme/Classic_Emu.cpp",
       "SHA256": "9c415302593f90fc4a6174f6dc400e047a2148c8521143ecad0bb32e3dcb9b39",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -39,7 +39,7 @@
       "path": "@gme/gme/Data_Reader.cpp",
       "SHA256": "fc4725627ad96e5ca29bbb93a80ed381e7181797b77112b8dbc1f04f58d5f014",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -48,7 +48,7 @@
       "path": "@gme/gme/Dual_Resampler.cpp",
       "SHA256": "7b517c6c38940ec7de593f3d84cdfd81369686969c54ff4ef6ea0dc0e1d3d83a",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -57,7 +57,7 @@
       "path": "@gme/gme/Effects_Buffer.cpp",
       "SHA256": "878247fd7876412460a4afcf275f7d9b6b3b194e345c49b1af4b1b62361d95a4",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -66,7 +66,7 @@
       "path": "@gme/gme/ext/emu2413.c",
       "SHA256": "51bf77d324bb4bafcf05a28fa9957811ea4bc8686647db8fa45529fb7ed4e963",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "MIT",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -75,7 +75,7 @@
       "path": "@gme/gme/Fir_Resampler.cpp",
       "SHA256": "ff50f293a930f1160c013473acac61eb110c0f3264b5dc23f91711739667e5cf",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -84,7 +84,7 @@
       "path": "@gme/gme/Gb_Apu.cpp",
       "SHA256": "85b3bd6260b62ac5b70ffd1018db0c64fe09b4ec68db28f18761a60974d0e59a",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -93,7 +93,7 @@
       "path": "@gme/gme/Gb_Cpu.cpp",
       "SHA256": "050d09f7ce0953a123bebcaf47e142c447fd20ce22f79d20c6e1fb9b270f1e79",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -102,7 +102,7 @@
       "path": "@gme/gme/Gb_Oscs.cpp",
       "SHA256": "8ab988ca76abbdde2b0f9bfbd06a754fd3e4e09065da1a63ceb249f3ea3fcaa0",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -111,7 +111,7 @@
       "path": "@gme/gme/Gbs_Emu.cpp",
       "SHA256": "21b03fd6220a7ffa68cd0dee832a4e8a218eb614dda01159d87c22bb41f4b9e4",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -120,7 +120,7 @@
       "path": "@gme/gme/gme.cpp",
       "SHA256": "efb355d301a4ad2a91fed6fe22a5095a90f9575c44f8b361b569afe5835976df",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -129,7 +129,7 @@
       "path": "@gme/gme/Gme_File.cpp",
       "SHA256": "236488e3f4617d06103f09d03f662bf55491afbbc255f04133a3e6a83f4f7648",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -138,7 +138,7 @@
       "path": "@gme/gme/M3u_Playlist.cpp",
       "SHA256": "2f00dae2fb3f0607574f9481e9ac0e22a5b5773e794a73602637bc43d5e6feee",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -147,7 +147,7 @@
       "path": "@gme/gme/Multi_Buffer.cpp",
       "SHA256": "a6b8729f227dee723b784e0ade2e7d1a25a34e5a95348fd731ad40a7fc19cdea",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -156,7 +156,7 @@
       "path": "@gme/gme/Music_Emu.cpp",
       "SHA256": "aa8ab92f2860914022ad01ace2416da616bb15c30f0e8d5085c3e8dc3fa1396a",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -165,7 +165,7 @@
       "path": "@gme/gme/Nes_Apu.cpp",
       "SHA256": "bbbe11b99b542e780bc161803f05f4c77ff711998390711bfaaf1bbaeab4346a",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -174,7 +174,7 @@
       "path": "@gme/gme/Nes_Cpu.cpp",
       "SHA256": "fd8c98788f86a42ac75d2ad2fc2de07913e715e7bff87763cbe6166617e72542",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -183,7 +183,7 @@
       "path": "@gme/gme/Nes_Fds_Apu.cpp",
       "SHA256": "f9e906f62594c4303ae31e8447c9534ceda7d81abb702bed27b7926cbd4752b0",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -192,7 +192,7 @@
       "path": "@gme/gme/Nes_Fme7_Apu.cpp",
       "SHA256": "a29580d8431aa67e524bf5e12b661902c9dc7abddc8c5d496a581f6d3d1ef140",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -201,7 +201,7 @@
       "path": "@gme/gme/Nes_Namco_Apu.cpp",
       "SHA256": "767d89b8c858bcbd0238b009c0b4804eba97ff99721a7f951777a5375fdfd529",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -210,7 +210,7 @@
       "path": "@gme/gme/Nes_Oscs.cpp",
       "SHA256": "77d1695a02a30b52cbf015dc04df282b2e1c0c15a0b8f16bb26a2a796551363f",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -219,7 +219,7 @@
       "path": "@gme/gme/Nes_Vrc6_Apu.cpp",
       "SHA256": "bf0817bb1c840946e37da216030c016e47f873b87e3833d9c004108cc7ba79f6",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -228,7 +228,7 @@
       "path": "@gme/gme/Nes_Vrc7_Apu.cpp",
       "SHA256": "65cb80543dfcc42266ace51905ce279f9ae71a7a84e30099eef23284eabf0110",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -237,7 +237,7 @@
       "path": "@gme/gme/Nsf_Emu.cpp",
       "SHA256": "57bd27271429b60310f48251c040d1a71e1bf9f60ceef258dd4d77503b03cde6",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -246,7 +246,7 @@
       "path": "@gme/gme/Nsfe_Emu.cpp",
       "SHA256": "194abdfe6db44fae07bde7cbaf6066c56712c131acc2a36d7d1a497108053b65",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -255,7 +255,7 @@
       "path": "@gme/gme/Sms_Apu.cpp",
       "SHA256": "32ad7b3c29028587529758fdd1136d2cd3657877afdb726a246ffad518f657e8",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -264,7 +264,7 @@
       "path": "@gme/gme/Snes_Spc.cpp",
       "SHA256": "71734188f7946773bd76238418b1e56ce2577500f4e31b3ab1202b6b99b9eaae",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -273,7 +273,7 @@
       "path": "@gme/gme/Spc_Cpu.cpp",
       "SHA256": "c14d396e7f4c579047b7cc307b916fcb670f2d36980b185ab5b29616e2258bcc",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -282,7 +282,7 @@
       "path": "@gme/gme/Spc_Dsp.cpp",
       "SHA256": "f42be04184870f10be655be786c26f254c49dbdaa4604a6b75132abf934e5da2",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -291,7 +291,7 @@
       "path": "@gme/gme/Spc_Emu.cpp",
       "SHA256": "b6bd0bbed193825b04138abf29912d59f5032d8b8c4918dc3fe259299909f8de",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -300,7 +300,7 @@
       "path": "@gme/gme/Spc_Filter.cpp",
       "SHA256": "b4b471e79c92e2636484e59aa8d57101f17e538fcdd0d1ec52ec31a2ccff62c0",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -309,7 +309,7 @@
       "path": "@gme/gme/Vgm_Emu.cpp",
       "SHA256": "7aaf58de8834450034817f85ec3426a56a2bab6c37c0c95b031427703b716667",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -318,7 +318,7 @@
       "path": "@gme/gme/Vgm_Emu_Impl.cpp",
       "SHA256": "fb92721188e692c848fb717ded3193dfa70ca4c8e3cdd2aa31437626651a73fd",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -327,7 +327,7 @@
       "path": "@gme/gme/Ym2413_Emu.cpp",
       "SHA256": "c5bd8eddcddf87f3eed6ceab418e5fe8225880f39933cd5572ef2f149d3aae41",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -336,7 +336,7 @@
       "path": "@gme/gme/Ym2612_GENS.cpp",
       "SHA256": "e9bb8453f96dcaddbcf65105506d4346cd7acd6ec9b7470df07cff9fe129420b",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "Bundled0.6.5 source archive, LGPL/MIT notices and complete local patches"
@@ -1738,7 +1738,7 @@
     },
     {
       "path": "src/app/WindowsIntegration.cpp",
-      "SHA256": "6f9dbb2b762cff6a2a44f0dcb1fda40f83f508a2f35c706801ae9c7be422f9f8",
+      "SHA256": "1a8e76f6a4eba4c9650ec780cdfe27c06f5e7b07d5bfd87f6edb63f37ffa8161",
       "targets": [
         "viewer_desktop"
       ],
@@ -1783,7 +1783,7 @@
     },
     {
       "path": "src/formats/GmeBackend.cpp",
-      "SHA256": "492eb7fec53ebf211e1944ef852ff2e63232ee7ab2f950e9ec1cf04019ad6392",
+      "SHA256": "80edd4408ef2961a23403bb3b4bb1ad60c1923282586b29c78805ef0b5105155",
       "targets": [
         "viewer_core"
       ],
@@ -1800,8 +1800,26 @@
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
     },
     {
+      "path": "src/formats/MidiAutoBank.cpp",
+      "SHA256": "e026a201b54200303ff9c3b754664749aa99ebf00d5e685a3ffd83bd91145b34",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
       "path": "src/formats/MidiBackend.cpp",
-      "SHA256": "cbc38e7be7eb1aa4cae1209f8a7eedf987fc1a76f80699b765716bd351516601",
+      "SHA256": "1b616c046407f5e3975679a6bc458ff493ef6e5cfce3feb04b8051f575e86b69",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "src/formats/MidiDevice.cpp",
+      "SHA256": "c32dc491f6ab3e89b5d7ef19cbdbf5d8ced1195bfe66cd98bc15d870e3e789dd",
       "targets": [
         "viewer_core"
       ],
@@ -1810,7 +1828,7 @@
     },
     {
       "path": "src/formats/MidiParser.cpp",
-      "SHA256": "ca704d358f89e3504bfc54531d332a9f6f6d88afdc89d8bf0a6afc58408c27b3",
+      "SHA256": "d54ff2973f0299f3cc0406466596196d3d3805d3dc81acf8e86350b80c17afd7",
       "targets": [
         "viewer_core"
       ],
@@ -1819,9 +1837,9 @@
     },
     {
       "path": "src/formats/NsfInspect.cpp",
-      "SHA256": "9835becd884e5b40058b842f91e6b17d1d1d15c650a743887cb52ca48588b8a3",
+      "SHA256": "14ed2af60afa10555de12bd63e2af46508a0a4c4c065ff3a2d20e8610275eeba",
       "targets": [
-        "gme_shared"
+        "gme_static"
       ],
       "declared_terms": "LGPL-2.1-or-later",
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
@@ -1837,7 +1855,7 @@
     },
     {
       "path": "src/formats/Registry.cpp",
-      "SHA256": "bfef20e215113f236a32286763dfb069577c8a91df2ccd69b8b031cf28745ae8",
+      "SHA256": "11065bc5c11c3c28ea6a152eb6de94ec2ac1fe3e1ff5b68d72099ba994b41921",
       "targets": [
         "viewer_core"
       ],
@@ -1873,7 +1891,7 @@
     },
     {
       "path": "src/player/Player.cpp",
-      "SHA256": "f6f158eb7cca69ff7f95a363370796060301de0cc29d526dfa3769999fb25d28",
+      "SHA256": "2353a7822eedfa806e2cc14c7c70c1e71c6e00f6c36079058f176d7f0115ef91",
       "targets": [
         "viewer_core"
       ],
@@ -1882,7 +1900,7 @@
     },
     {
       "path": "src/ui/Window.cpp",
-      "SHA256": "1bad60c8431ec9facb22a12c6e3017255c53e95f9b5cfab07f98239089c7b643",
+      "SHA256": "b76ed569c3eb3e894dc7590d9cc9dd01cd179b284d0e8e88938ed2208fdaddd1",
       "targets": [
         "NintendoGameMusicViewer"
       ],

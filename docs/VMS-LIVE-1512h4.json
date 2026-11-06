@@ -1,0 +1,54 @@
+{
+  "version": "1.5.12h4",
+  "date": "2026-11-07",
+  "requests": [
+    "Explicit VMS enabled-SF2 import",
+    "Apply VMS soundfont changes while running"
+  ],
+  "implementation": {
+    "follow": "F8 import/Windows-auto enables following; manual custom file/direct MIDI disables it; F8 toggle/persistence.",
+    "detection": "Saved VMS config active-font set and chosen SF2 size/mtime,500ms polling/two stable observations; parse failures break debounce. Unsaved in-memory VMS UI changes not detectable.",
+    "swap": "Pause at consumed source position, prepare separate new decoder and seek on worker with UI message pumping, publish only after preparation. Prepared decoder starts at original source-frame base with saved initial channel states before prefill. Restore playing/paused state and persist selected path.",
+    "failure": "Missing/corrupt new bank leaves old decoder and resumes its prior playing state; suppress repeated unchanged failing fingerprint. No VMS settings or source-bank writes.",
+    "timing": "~1s detection plus loading/seek time. Brief audio pause possible, no seamless crossfade."
+  },
+  "tests": {
+    "full_CTest": {
+      "pass": 34,
+      "total": 34,
+      "seconds": 108.6,
+      "log_SHA256": "9c3bf772b57b7044de4f2f601c47288443e559e3e35b894ca63f61ea7703e1fd",
+      "scope": "Before final debounce reset and short mode label; affected final tests below"
+    },
+    "final_affected": {
+      "pass": 3,
+      "total": 3,
+      "seconds": 8.9,
+      "log_SHA256": "01f0943603ecf027e45b1c365eeaae5dcac7f95185c4105ea90d1f295d9cca8f"
+    },
+    "live_UI": {
+      "pass": true,
+      "playing_position_before_ms": 810,
+      "playing_position_after_ms": 1546,
+      "paused_position_ms": 3050,
+      "reloads": 4,
+      "pause_mute_gain_preserved": true,
+      "missing_bank_kept_old_decoder": true,
+      "corrupt_bank_kept_playing": true,
+      "recovery_and_same_path_change": true,
+      "audio": "dummy",
+      "only_owned_config_modified": true
+    },
+    "audio": "Dummy/owned config and banks only; no actual VMS/user config modifications or physical listening."
+  },
+  "limits": [
+    "Only saved Apply/OK config changes; one selected active font, not simultaneous layered banks or VMS mixer/effects.",
+    "Keeps current selected bank if still present in a multiple-enabled list; otherwise F8 selection is required.",
+    "Large SF2/dense MIDI seek can make the loading pause longer.",
+    "Existing metadata-end/past-tail playback is not re-seeked on font change; active-song switching tested.",
+    "Forced OOM/device loss and source write during initial load not injected."
+  ],
+  "user_assets_distributed": false,
+  "external_upload": false,
+  "binary_SHA256": "4425005e8e29b3b5c70d32586d438f30a8e139ad562cc4693d58742771122014"
+}

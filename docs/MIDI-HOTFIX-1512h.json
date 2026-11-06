@@ -1,0 +1,96 @@
+{
+  "version": "1.5.12h",
+  "date": "2026-11-06",
+  "user_choices": "Same SF2 using internal synthesis/per-MIDI-channel actual waveforms; do not capture or double-play VirtualMIDISynth output.",
+  "root_cause": "All3 provided dense MIDIs exceed old1M channel/tempo event cap. New16M bound and stable track-head heap merge preserve order;64MB/2h/malformed guards stay.",
+  "default_bank": "Single enabled SF2 from preferred VirtualMIDISynth #1 config, read-only. Manual SF2/DLS overrides automatic. Recheck next load/F8 auto mode. Migrate prior device default once; explicit hotfix device choice persists.",
+  "files": [
+    {
+      "file": "Armageddon to Archeopterix and Icaria.mid",
+      "bytes": 25951914,
+      "SHA256": "82395221059f592a734532f1580fcfe781a05e8ee9b32e147a570ddc7f8ae851",
+      "old_error": "MIDI event limit exceeded.",
+      "events_with_cleanup": 6487738,
+      "duration_ms_with_release": 92285,
+      "full_render_and_seek": "PASS",
+      "bank_bytes": 9943288,
+      "dummy_seconds": 26.6422,
+      "log_SHA256": "5bd3cb7501978a2f0c3645d404c8e6e35e4e4c603e95ae2e370a5fae0b21204d"
+    },
+    {
+      "file": "Armageddon to Archeopterix and Icaria 2.mid",
+      "bytes": 25056047,
+      "SHA256": "57925b8cd4cb31b1066ec5eb99a32ac7daf504be5afb0289f8ad07b76ad34224",
+      "old_error": "MIDI event limit exceeded.",
+      "events_with_cleanup": 6263892,
+      "duration_ms_with_release": 104678,
+      "full_render_and_seek": "PASS",
+      "bank_bytes": 9943288,
+      "dummy_seconds": 23.8191,
+      "log_SHA256": "f7980fc49c5b7185d28df2f8f3781c6eb02eac20d0e197c6b509cd1cfcabc9b0"
+    },
+    {
+      "file": "Armageddon to archeopterix and icaria 3.mid",
+      "bytes": 25574985,
+      "SHA256": "a38fe2b82c5b8ee7059383d1daf75f854d854ff6a13bf91323fcb9e4be57596b",
+      "old_error": "MIDI event limit exceeded.",
+      "events_with_cleanup": 6393452,
+      "duration_ms_with_release": 117428,
+      "full_render_and_seek": "PASS",
+      "bank_bytes": 9943288,
+      "dummy_seconds": 29.4632,
+      "log_SHA256": "70da3d495be4544b020e23334fca1df64cf440f708728460da8aacdf6f3eab48"
+    }
+  ],
+  "tests": {
+    "full_CTest": {
+      "pass": 33,
+      "total": 33,
+      "seconds": 102.68,
+      "stage": "Before latest SF2 sample-bound/inactive-loop compatibility changes, affected MIDI checks rerun below",
+      "log_SHA256": "a98db7ce2b64ae893a44cbd97d7e8ed81434548bfe51d76e80a991235fbdf5d8"
+    },
+    "final_MIDI_about": {
+      "pass": 6,
+      "total": 6,
+      "seconds": 12.97,
+      "log_SHA256": "73a8206805ba04524d4fb586674536b82e28f92b23989cc6694f02620741e0e0"
+    },
+    "actual_UI": {
+      "pass": true,
+      "cases": [
+        {
+          "bank": "configured",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            7,
+            11
+          ]
+        }
+      ],
+      "audio": "dummy",
+      "snapshot_forced_play": false
+    },
+    "Arachno_155MB": "Explicit source SF2 first10s/seek5s PASS, not merely automatic fallback",
+    "Arachno_log_SHA256": "5782e57ac13f98afc84759e9cbcd26e80425531f312d20ba930a7079a72034f0",
+    "audio": "Dummy; no external MIDI notes or physical listening",
+    "negative": "Malformed SF2/MIDI and lowered event-limit rejection retained; own >1M dense fixture, UTF8/UTF16 enabled config, disabled/multiple entries, empty loop fixture pass."
+  },
+  "limits": [
+    "Internal TinySoundFont is not VirtualMIDISynth/BASS audio/effects/filter identity. Only same SF2 samples.",
+    "Only preferred VirtualMIDISynth #1 / one enabled SF2 automatically; layers/bank remapping/device-specific routes not reproduced. F8 manual choice for other cases.",
+    "Existing256synth voices per MIDI channel can drop extreme polyphony; dense seek can take time. Entire real-time peak workload on all PCs is not certified.",
+    "SF2 file256MiB,PCM sample count134217728,decoded float memory can be about512MiB at the bound; active sample/loop range checks retained.",
+    "Inactive empty/reversed loop sentinels follow TinySoundFont no-loop rule; no active invalid loop dereference allowed."
+  ],
+  "failed_candidates": [
+    "First large SF2 rejected by old64M-sample count despite256MB file allowance; unified SF2 sample count with file bound.",
+    "An active bank changed during investigation; isolated regression process now uses own test session/system bank to avoid following user edits.",
+    "Harmless inactive loop endpoint was rejected; predicate now matches actual core loop activation.",
+    "First per-cell waveform test queried a closed owned window; move channel count query before close."
+  ],
+  "external_upload": false,
+  "user_settings_modified": false,
+  "user_assets_packaged": false,
+  "binary_SHA256": "bf53b77e249b81361ade3636dd285564d56370def7f981e3bcff0bb910013b1a"
+}

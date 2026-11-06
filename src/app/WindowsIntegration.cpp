@@ -179,7 +179,7 @@ InstanceGate::~InstanceGate() {
     if (mutex_) CloseHandle(mutex_);
 }
 bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
-    std::wstring name = L"Local\\NintendoMusicStudio.Studio1511." + userIdentity();
+    std::wstring name = L"Local\\NintendoMusicStudio.Studio1512." + userIdentity();
     mutex_ = CreateMutexW(nullptr, TRUE, name.c_str());
     DWORD error = GetLastError();
     if (!mutex_) throw std::runtime_error("Cannot initialize the single-instance player.");

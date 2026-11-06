@@ -1,3 +1,7 @@
+##1.5.12 distribution update
+
+GME LGPL2.1+ is statically linked into the GPL2+ application. Complete corresponding app/library source, marked patches and reproducible relinking build scripts are delivered in the same release source ZIP; component notices are retained in docs and embedded executable resources. No MIDI driver/system DLS/user sound bank is redistributed. This does not claim rights to bundled music (none included) or blanket legal certification.
+
 ##1.5.10 chip additions
 
 The AY8930 emulation files each explicitly declare BSD-3-Clause and Couriersud copyright in the official pinned Furnace tree; unmodified files, full notice and hashes supplied. ES5506 sidecar observation changes are locally marked and preserve the zlib notices. No new music/sample/ROM redistribution is included.

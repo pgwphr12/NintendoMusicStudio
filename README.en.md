@@ -1,4 +1,22 @@
-# Nintendo Music Studio1.5.11
+# Nintendo Music Studio 1.6
+
+## 1.6 consolidated release
+
+Includes all work after the public1.5.11 baseline: standalone statically linked EXE with embedded notices; large/compatible MIDI and SF2 handling; explicit enabled VirtualMIDISynth SF2 import; live saved-bank changes with position/pause/gain/mute preservation and old-bank rollback; clear internal waveform vs external MIDI output modes; fitted recording labels. MIDI labels are simplified to Channel 1..16, retaining original MIDI channel numbers; legacy gains/mutes migrate and new-name preferences take priority. See RELEASE-NOTES-1.6.md for the consolidated log. Internal synthesis uses the same SF2 samples, not captured/identical VMS/BASS output. Saved Apply/OK changes take ~1s to detect plus bank loading/seek time, with a possible playback pause. Existing format/event/memory/polyphony limits remain; no music/ROM/banks included. Historical hotfix details follow.
+
+1.5.12h4: follow saved VirtualMIDISynth enabled-bank changes while the app is open. Import enables following; F8 toggles it, manual custom banks disable it. Poll500ms and require two stable observations (~1s detection); VMS Apply/OK must save its config. Preserve source position, playing/paused state, master and channel gain/mute. Pause briefly during background load/seek preparation; not a seamless crossfade. Missing/corrupt new fonts retain the old decoder; file size/mtime detects same-path edits. With multiple active fonts keep the currently selected one if still enabled, otherwise ask selection via F8. No layer mixing or reproduction of other VMS effect/mixer settings. Large banks/dense MIDI seek may take longer.
+
+1.5.12h3: F8 explicitly imports an enabled SF2 from VirtualMIDISynth. Choose one if several are enabled; disabled entries are excluded. Validate/select it for internal per-channel synthesis and persist its path, without copying/moving the font or editing VMS config. Reload current MIDI from the start. Show imported filename. Missing config/enabled entries/files fail visibly with no DLS substitution. Reimport after changing VMS banks. Multi-bank layering and identical BASS/VirtualMIDISynth synthesis are not claimed.
+
+1.5.12h2: F8 Windows default bank now explicitly uses internal synthesis with per-channel waves/effects; external MIDI direct output is a separate no-waveform option. A present VirtualMIDISynth config takes priority over the mapper preferred-ID query, preventing silent GS/DLS fallback. Only absence of VMS config falls back to system DLS; ambiguous/missing enabled fonts raise a visible error. Display the actual selected bank filename in the track-info line. Reopen/reselect for bank changes; no VMS config/sample modifications or audio identity claims. Prior large-MIDI and standalone fixes retained.
+
+1.5.12h hotfix: default to internal MIDI synthesis for actual per-channel waveform/effects. One-time migrate the prior route default; subsequent explicit F8 device choice persists. Auto bank selection detects preferred VirtualMIDISynth #1 and reads its single enabled SF2, without modifying its config/bank. Custom selected banks take precedence. Recheck on file load/F8 auto bank. This is local synthesis using the same samples, not captured VirtualMIDISynth audio or identical BASS effects/filter/mixer behavior. Multiple layered banks/device IDs/remapping are not reproduced; select a bank manually with F8 when automatic selection is unsupported.
+
+Raise bounded MIDI event capacity from1M to16M and merge already ordered tracks with a small track-head heap instead of a large stable-sort temporary allocation. Provided3files each6.26M..6.49M events fully render with the actual active bank;64MB input/2h duration/malformed-data guards remain. Existing256voices per MIDI channel is a synthesis limit; extreme polyphony may omit voices. No supplied MIDI/SF2 files are redistributed. Single EXE retained.
+
+1.5.12: statically linked standalone EXE, no sidecar gme.dll or temporary extraction. Embedded component notices are available in About. Windows system libraries, a MIDI device and user/system banks remain external. Default MIDI mode sends events to Windows MIDI_MAPPER; a changed preferred device reopens at current transport state. F8 selects device output or internal system/SF2/DLS synthesis (restarts current file). Device output has silent waveform lanes and bypasses internal reverb/pitch; it is not loopback capture. Tempo, channel/master gain and mute use MIDI timing/controllers. A tool must actually update Windows' preferred output, not only private settings. Third-party driver audio/latency is not certified.
+
+Compatibility adds bounded RIFF/RMID SMF unwrap, complete track boundaries without EOT, metadata-crossing running status and internal GM/first-preset fallback for absent banks/programs. Device mode forwards vendor SysEx. Recording labels use the cell width and measured font fitting. The user's failing file has not yet been supplied, so its specific fix is unconfirmed. SMF2, damaged/truncated tracks and >2h files still reject.
 
 1.5.11: decide the whole-song channel list before playback and keep it fixed through pause, mute, zero gain, seek and repeat. Base NES4/GB4 and other console base channels remain visible, including GBA PSG and PCM. MIDI retains its song-wide note channel list; ordinary mono/stereo lanes remain. Extended VGM scans the entire command stream for ES voices/residual, SCC/OKI and auxiliary OPL2/AY8930; late voices appear from the start. Primary chip lanes remain fixed. This is programmed channel use, not inferred instrument separation or proof of non-silent sample contents. Audio synthesis and mix are unchanged.
 
@@ -22,11 +40,11 @@ Open/drop MP3, WAV, Ogg Vorbis or FLAC and see live waveforms in the existing pl
 
 Files are decoded as needed; no whole-track PCM preload and no external codec/FFmpeg installation. More than2 source channels are downmixed to stereo (up to8 input channels). These are output lanes, not vocal/instrument separation. Ogg Opus and M4A/AAC are unsupported;24-hour duration limit. Existing game formats and1.5.3 ES interpolation preserved. No original music/settings overwritten.
 
-## Run
+# # Run
 
-Extract the ZIP to a new folder on Windows10/11 x64 and launch **NintendoMusicStudio.exe**. Keep **gme.dll** beside it. No Python, FFmpeg, Visual Studio or installation is needed to run. Supply your own music and keep required companion music libraries in their original directory layout. The executable is not digitally signed. This is an unofficial project, not affiliated with or endorsed by Nintendo.
+Extract the ZIP to a new folder on Windows10/11 x64 and launch **NintendoMusicStudio.exe**. No sidecar DLL is required. No Python, FFmpeg, Visual Studio or installation is needed to run. Supply your own music and keep required companion music libraries in their original directory layout. The executable is not digitally signed. This is an unofficial project, not affiliated with or endorsed by Nintendo.
 
-## Playback
+# # Playback
 
 Supported inputs: NSF/NSFE, SPC, GBS, GSF/MINIGSF,2SF/MINI2SF, USF/MINIUSF, BCSTM/BCWAV, VGM/VGZ, MP3/WAV/OGG(Vorbis)/FLAC. VGM uses the SMS/Mega Drive path and an additional YM2612/YM3812/MSM6295/K051649/ES5506 path. All chips/combinations are not supported; unsupported combinations return errors. ES5506 is a whole-chip MIX lane. Composition/editing, project saving and WAV export are not included.
 
@@ -34,14 +52,14 @@ Open/drop files; select internal tracks; use previous/next, folder autoplay and 
 
 GBA PCM VOICE lanes are live engine slots, not permanent instruments/MIDI tracks; not every driver has separate-voice support. Unsupported/inactive PSG visibility depends on actual supported observation. Waveforms represent decoder signals; large pitch/tempo adjustments may change transients/timbre.
 
-## Keys
+# # Keys
 
 Ctrl+O: open. Space: play/pause. Left/right: track change. Click channel names: mute. F1: modeless information. F9: recording view. F10: optional default-app registration/settings. F11/Esc: fullscreen/restore. Plus/minus: waveform time scale. A: folder autoplay.
 
-## Upgrade/settings
+# # Upgrade/settings
 
 Extract to a separate folder; older running apps are not terminated/replaced. For compatibility, preferences remain at `%LOCALAPPDATA%/GameMusicPlayer/settings.ini`; this legacy storage name preserves existing gains/pitch/speed. The public display name/executable are Nintendo Music Studio/NintendoMusicStudio.exe. Original music and older Studio settings are not converted/deleted. Default-app registration requires choosing the prompt/F10 action; Windows remains responsible for changing the default choice.
 
-## Distribution and source
+# # Distribution and source
 
 Distribute the **matching runtime ZIP and complete source ZIP together**, preserving LICENSE, THIRD_PARTY_NOTICES.md and licenses/. Components have GPL/LGPL/BSD/zlib/MIT terms; full source and relinking instructions are in SOURCE.md. Software licensing does not grant music/ROM/sample rights. No user music, ROMs or sample banks are included. Identified ambiguous/noncommercial dependencies were replaced; N64 and the1.4.15-reference VGM sound fixes remain enabled. See LICENSE-REVIEW.md and LICENSE-INVENTORY.json for evidence, VALIDATION.md for test scope and CHANGELOG.md for changes. No all-games/all-chip or physical-hardware fidelity certification is implied.

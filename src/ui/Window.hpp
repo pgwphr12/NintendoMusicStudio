@@ -22,6 +22,7 @@ class Window {
     unsigned long *bufferPixels_ = nullptr;
     struct OverlayText {std::wstring value;int x,y,w,h,size;COLORREF color;bool bold;};
     std::vector<OverlayText> overlayText_;
+    int recordingLabelOverflow_=0;
     void drawOverlayText(HDC);
     void drawWaves();
     void releaseBuffer();
@@ -63,6 +64,13 @@ class Window {
     void rateMenu();
     void soundFontMenu();
     void updatePlayback();
+    bool followVirtualMidi_=true,virtualMidiSeen_=false;
+    ULONGLONG virtualMidiNextCheck_=0;
+    unsigned virtualMidiReloads_=0;
+    std::wstring virtualMidiLoaded_,virtualMidiPending_,virtualMidiFailed_,virtualMidiError_;
+    void checkVirtualMidi();
+    void saveMidiFontSelection(const std::filesystem::path&);
+
     void toggleFullscreen();
     void report(const std::exception &e);
     void capture();

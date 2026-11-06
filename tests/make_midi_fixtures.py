@@ -51,3 +51,21 @@ print('Own MIDI/SF2/DLS fixtures generated')
 
 sixteen=[(0,bytes([0x90+c,48+c,90])) for c in range(16)]+[(480 if c==0 else 0,bytes([0x80+c,48+c,0])) for c in range(16)]+[(0,b"\xff\x2f\0")]
 (out/"sixteen.mid").write_bytes(smf([ev(sixteen)],0))
+
+# Complete tracks with optional EOT omitted; RMID wrappers with harmless extra chunks.
+(out/'no-eot.mid').write_bytes(smf([ev([(0,b"\x90\x3c\x64"),(480,b"\x80\x3c\0")])],0))
+(out/'wrapped.mid').write_bytes(chunk(b'RIFF',b'RMID'+chunk(b'JUNK',b'x')+chunk(b'data',song)))
+(out/'bank-fallback.mid').write_bytes(smf([ev([(0,b"\xb0\0\x7f"),(0,b"\xb0\x20\x7f"),(0,b"\xc0\x7f"),(0,b"\x90\x3c\x64"),(480,b"\x80\x3c\0"),(0,b"\xff\x2f\0")])],0))
+(out/'running-meta.mid').write_bytes(smf([ev([(0,b"\x90\x3c\x64"),(0,b"\xff\x01\x01X"),(480,b"\x3c\0"),(0,b"\xff\x2f\0")])],0))
+(out/'sysex.mid').write_bytes(smf([ev([(0,b"\xf0\x05\x7d\x01\x02\x03\xf7"),(0,b"\x90\x3c\x64"),(480,b"\x80\x3c\0"),(0,b"\xff\x2f\0")])],0))
+
+(out/'virtual-midi.conf').write_text('[General]\nVersion=2.14\n[SoundFonts]\nsf1=missing.sf2\nsf2=own.sf2\nsf2.enabled=1\nsf2.volume=500\nsf3=own.dls\nsf3.enabled=0\n',encoding='utf-8')
+(out/'virtual-midi-utf16.conf').write_text('[SoundFonts]\nsf2=own.sf2\nsf2.enabled=1\n',encoding='utf-16')
+(out/'virtual-midi-multiple.conf').write_text('[SoundFonts]\nsf1=own.sf2\nsf1.enabled=1\nsf2=own.dls\nsf2.enabled=1\n',encoding='utf-8')
+# >1M valid events with tiny synth duration, generated wholly from own notes.
+(out/'million.mid').write_bytes(smf([b'\0\x90\x3c\x40'+b'\0\x3c\0\0\x3c\x40'*500001+b'\0\xff\x2f\0'],0))
+
+empty_loop=bytearray(sf);at=empty_loop.index(b'shdr')+8;struct.pack_into('<II',empty_loop,at+28,0,0);(out/'empty-loop.sf2').write_bytes(empty_loop)
+
+(out/'live.mid').write_bytes(smf([ev([(0,b"\x90\x3c\x64"),(0,b"\x91\x43\x64"),(24000,b"\x80\x3c\0"),(0,b"\x81\x43\0"),(0,b"\xff\x2f\0")])],0))
+alt=bytearray(sf);at=alt.index(b'smpl')+8;alt[at:at+count*2]=struct.pack('<'+'h'*count,*sample2);(out/'alternate.sf2').write_bytes(alt)

@@ -1,0 +1,39 @@
+{
+  "version": "1.5.12h3",
+  "date": "2026-11-07",
+  "request": "Explicitly import currently used VirtualMIDISynth soundfont",
+  "implementation": [
+    "F8 enabled-font list from VMS config; one selects directly, several require a menu choice.",
+    "Validate chosen local font then shared custom-bank/internal synthesis selection; existing persistence stores its path and MIDI reloads from start.",
+    "Missing config/active font/file errors have no DLS fallback; disabled entries excluded.",
+    "No SF2 copying/moving, config edits, device output/capture, or assets in release."
+  ],
+  "tests": {
+    "targeted_CTest": {
+      "pass": 6,
+      "total": 6,
+      "seconds": 13.33,
+      "log_SHA256": "3a78211773514cc41787c2569d573e745655835a0d15137960ab4f97d2d52df6"
+    },
+    "actual_import": {
+      "file": "8bit.sf2",
+      "bank_bytes": 6744228,
+      "provided_MIDI": "Basics In Behaviour (Midi Fixing.2).mid",
+      "events": 10695,
+      "duration_ms": 239898,
+      "render10s_energy": 36971.1,
+      "seek5s_energy": 367.705,
+      "log_SHA256": "5ac312164dd82cb08a433ffd0e3136c9ef9c6fbf8341ff3a4d9118cf54f11025"
+    },
+    "scope": "Dummy/internal render; no physical listening or user UI/app operated. Full33/33 from h2 unchanged paths retained; affected MIDI/About tests fresh."
+  },
+  "limits": [
+    "One chosen enabled bank, not multi-bank layering.",
+    "Same samples via internal TinySoundFont; not identical VirtualMIDISynth/BASS audio.",
+    "Reimport if VMS active file changes."
+  ],
+  "binary_SHA256": "5fe2870743124f57baa79d5d09bad8a3495bb551cbf91a7a1e38fbbfca3711fe",
+  "user_assets_distributed": false,
+  "user_config_modified": false,
+  "external_upload": false
+}

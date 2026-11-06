@@ -12,7 +12,7 @@
 namespace ngmv {
 std::unique_ptr<IMusicBackend> makeAudioFileBackend(const std::filesystem::path&);
 Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path) {
-    if(b.size()>=4 && !memcmp(b.data(),"MThd",4))return Format::Midi;
+    if((b.size()>=4 && !memcmp(b.data(),"MThd",4))||(b.size()>=12&&!memcmp(b.data(),"RIFF",4)&&!memcmp(b.data()+8,"RMID",4)))return Format::Midi;
     if((b.size()>=12 && (!memcmp(b.data(),"RIFF",4)||!memcmp(b.data(),"RF64",4)) && !memcmp(b.data()+8,"WAVE",4)) ||
        (b.size()>=4 && (!memcmp(b.data(),"OggS",4)||!memcmp(b.data(),"fLaC",4))) ||
        (b.size()>=3 && !memcmp(b.data(),"ID3",3)) ||

@@ -1,0 +1,205 @@
+{
+  "version": "1.5.12",
+  "date": "2026-11-06",
+  "requests": [
+    "MIDI compatibility",
+    "Complete recording labels",
+    "Windows default MIDI output with internal synthesis option",
+    "Single EXE without sidecar DLL"
+  ],
+  "implementation": {
+    "MIDI": "Windows MIDI_MAPPER direct event output is default; preferred ID queried, reopen/chase programs/controllers/held notes on change. Player serializes services and uses consumed frames from producer cadence plus display/timer fallback; no render-ahead event emission.",
+    "internal": "F8 system/custom SF2/DLS synthesis retained; unavailable bank/program fallback to GM program then first preset.",
+    "compatibility": [
+      "Bounded RIFF/RMID wrapping",
+      "Complete declared track without EOT",
+      "Running status across metadata",
+      "Device vendor SysEx forwarding"
+    ],
+    "labels": "Full cell width and measured font fit, overlay and column bounds retained.",
+    "static": "GME static library, static MSVC runtime and SDL/other cores, Windows system DLL imports only. Component notices embedded in About; full source relinking scripts supplied."
+  },
+  "limits": [
+    "User failing MIDI file still unspecified; specific reproduction unresolved.",
+    "Device output is not captured back into waveform/effects. Lanes silent; internal reverb/pitch bypass device sound. Select internal synthesis for actual synthesized waveforms/effects.",
+    "Default preference must actually change in Windows MIDI Mapper; arbitrary tool-private routing is not monitored. Third-party hardware audio/latency untested.",
+    "Format2, truncated/invalid events, >2h files still reject; bank fallback can change timbre.",
+    "Native SysEx outstanding queue64,1MiB per message; driver reset failure retains uncertain buffers for process lifetime rather than freeing driver-owned memory. Forced driver-error/physical device loss not tested."
+  ],
+  "validation": {
+    "full_CTest": {
+      "passed": 33,
+      "total": 33,
+      "seconds": 100.76,
+      "log_SHA256": "5cd8e0e07412a032a82efa20ea1b778119a4ab559c67d7d4aa14b4adb14270c7",
+      "scope": "Before final GM-reset gain preservation; native affected tests subsequently passed"
+    },
+    "final_MIDI_visibility": {
+      "passed": 7,
+      "total": 7,
+      "log_SHA256": "7b6ed6276b72d965e30413bec230fd1b7948f41067c053530144c69183a446e3",
+      "note": "About assertion initially used wrong cross-process text API; separate corrected test below."
+    },
+    "final_notices_and_transport": {
+      "passed": 3,
+      "total": 3,
+      "seconds": 5.3,
+      "log_SHA256": "e93b3454d3ce5abaf0aa6ddb75130f88c6a937812030beb69d3525039172358a"
+    },
+    "native_query": {
+      "native_output_devices": 4,
+      "preferred_query_result": 0,
+      "preferred_id": 0,
+      "audio_notes_sent": 0,
+      "changed_system_settings": false,
+      "note": "Read-only mapper query only; actual switched third-party synth audio remains unverified."
+    },
+    "native_port": "Owned fake port tests event timing, no prefetch notes, pause/resume/seek, preferred switch, mute/master and GM reset. No hardware notes sent.",
+    "FD_piano": "Prior provided read-only MIDI:2channels263200ms;10s energy825.477,seek5s PASS; internal dummy path.",
+    "recording": {
+      "pass": true,
+      "cases": [
+        {
+          "file": "channels.nsfe",
+          "visible": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "dmc-late.nsfe",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "chips/es-late.vgm",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            38
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "chips/es-many.vgm",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "chips/ay-own.vgm",
+          "visible": [
+            0,
+            1,
+            2
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "chips/es-direct-bus.vgm",
+          "visible": [
+            32
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "channels.minigsf",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "fixed_before_first_note": true
+        },
+        {
+          "file": "channels.mini2sf",
+          "visible": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "fixed_before_first_note": true
+        }
+      ],
+      "audio": "dummy"
+    },
+    "failed_candidates": [
+      "First native fake assertion changed master gain while expecting last raw note-off; state chase was valid, corrected assertion keeps gain constant.",
+      "Cross-process GetWindowText on EDIT control returned no text; use marshalled WM_GETTEXT, embedded full notices validated."
+    ],
+    "license_audit": {
+      "runtime_projects": 13,
+      "translation_units": 980,
+      "unclassified": 0
+    }
+  },
+  "sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/mmeapi/nf-mmeapi-midioutopen",
+    "https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/accessing-the-preferred-device-id"
+  ],
+  "binary_SHA256": "818700e479f61924b9e4718a13935925a4c24f5c66d6f941cb0062bf3bcf5dde",
+  "assets_distributed": false,
+  "external_upload": false
+}

@@ -63,7 +63,7 @@ def send(h, msg, a=0, b=0):
 
 
 results=[]
-for name,wanted in [('channels.nsfe',4),('dmc-late.nsfe',5),('chips/es-late.vgm',8),('chips/es-many.vgm',32),('chips/ay-own.vgm',3),('channels.minigsf',6),('channels.mini2sf',16)]:
+for name,wanted in [('channels.nsfe',4),('dmc-late.nsfe',5),('chips/es-late.vgm',8),('chips/es-many.vgm',32),('chips/ay-own.vgm',3),('chips/es-direct-bus.vgm',1),('channels.minigsf',6),('channels.mini2sf',16)]:
  folder=out/Path(name).stem;folder.mkdir(exist_ok=True);settings=folder/'settings.ini';settings.write_text('repeat=0\nautoplay=0\n')
  env=dict(os.environ,SDL_AUDIODRIVER='dummy',NGMV_TEST_SESSION='visibility1511-'+Path(name).stem,NGMV_SETTINGS_TEST_FILE=str(settings),NGMV_TEST_SNAPSHOT_MS='20000')
  p=subprocess.Popen([str(exe),'--snapshot',str(fixture/name),str(folder/'view.bmp'),'--size=1920x1080'],env=env,creationflags=subprocess.CREATE_NO_WINDOW)
@@ -74,7 +74,7 @@ for name,wanted in [('channels.nsfe',4),('dmc-late.nsfe',5),('chips/es-late.vgm'
   if name=='chips/es-late.vgm':assert 38 in first and state(2)<800,'ES only appeared at first note'
   time.sleep(1.1 if 'late' in name else .08);assert [state(21,i) for i in range(state(20))]==first,'Channel list changed during playback'
   send(main,0x100,0x20);assert [state(21,i) for i in range(state(20))]==first,'Pause changed list'
-  send(main,0x100,0x78);assert [state(21,i) for i in range(state(20))]==first,'Recording changed list'
+  send(main,0x100,0x78);time.sleep(.1);assert state(22)==0,'Recording channel name clipped';assert [state(21,i) for i in range(state(20))]==first,'Recording changed list'
   assert not state(13);send(main,0x113,2);assert p.wait(timeout=10)==0
   results.append({'file':name,'visible':first,'fixed_before_first_note':True})
  finally:

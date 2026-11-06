@@ -1,3 +1,7 @@
+## Standalone linkage1.5.12
+
+GME is now statically linked. Its LGPL2.1+ and the application GPL2+ notices and complete modified sources/build scripts remain supplied. The corresponding source archive rebuilds/relinks the full application against a modified GME. No sidecar DLL or extraction is required. All component license texts are also embedded in the executable About window. Windows MIDI APIs use the OS winmm component; no third-party mapper/driver is redistributed.
+
 ## AY8930 and ES observations (1.5.10)
 
 AY8910/AY8930 standalone core: copyright Couriersud, explicit BSD-3-Clause in both source files, from official Furnace commit592e7fd387e7bb5f0c908452c60632c8d37cdc39/src/engine/platform/sound/ay8910.cpp and ay8910.h. Unmodified source, hashes, provenance and full BSD3 notice in third_party/furnace-ay8930 and licenses/AY8930-BSD-3-Clause.txt. No Furnace tracker code is linked.

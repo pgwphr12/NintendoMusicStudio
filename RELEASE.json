@@ -1,15 +1,23 @@
 {
   "product": "Nintendo Music Studio",
-  "version": "1.5.11",
-  "file_version": "1.5.11.0",
-  "release_date": "2026-11-05",
+  "version": "1.6",
+  "file_version": "1.6.0.0",
+  "release_date": "2026-11-07",
   "platform": "Windows x64",
   "entrypoint": "NintendoMusicStudio.exe",
-  "runtime_library": "gme.dll",
-  "corresponding_source": "NintendoMusicStudio-1.5.11-Source.zip",
+  "runtime_library": "Statically linked GME; Windows system DLLs only",
+  "corresponding_source": "NintendoMusicStudio-1.6-Source.zip",
   "license_notices": "THIRD_PARTY_NOTICES.md",
   "contains_user_music": false,
   "digital_signature": false,
   "uploaded": false,
-  "release_type": "whole-song-channel-visibility"
+  "release_type": "public-consolidated-release",
+  "previous_public_version": "1.5.11",
+  "consolidated_from": [
+    "1.5.12",
+    "1.5.12h",
+    "1.5.12h2",
+    "1.5.12h3",
+    "1.5.12h4"
+  ]
 }

@@ -20,7 +20,7 @@ static const BankChunk& requireChunk(const BankChunk&c,const char*id,size_t mini
 static void requireTable(const BankChunk&c,size_t stride,size_t minimum){if(c.n%stride||c.n/stride<minimum||c.n/stride>65535)throw std::runtime_error("Invalid SF2 table size.");}
 static size_t validateSf2(const std::vector<uint8_t>&b,const BankChunk&root){
     const auto&sd=requireChunk(root,"LIST",0,"sdta");const auto&sm=requireChunk(sd,"smpl",4);
-    if(sm.n%2||sm.n/2>64000000)throw std::runtime_error("Unsupported SF2 sample data.");
+    if(sm.n%2||sm.n/2>134217728)throw std::runtime_error("Unsupported SF2 sample data.");
     const auto&pd=requireChunk(root,"LIST",0,"pdta");
     const auto&ph=requireChunk(pd,"phdr"),&pb=requireChunk(pd,"pbag"),&pm=requireChunk(pd,"pmod"),&pg=requireChunk(pd,"pgen");
     const auto&in=requireChunk(pd,"inst"),&ib=requireChunk(pd,"ibag"),&im=requireChunk(pd,"imod"),&ig=requireChunk(pd,"igen"),&sh=requireChunk(pd,"shdr");

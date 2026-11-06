@@ -1,0 +1,62 @@
+{
+  "version": "1.6",
+  "numeric_version": "1.6.0.0",
+  "date": "2026-11-07",
+  "previous_public_version": "1.5.11",
+  "baseline_source": "User supplied latest GitHub release version",
+  "consolidates": [
+    "1.5.12",
+    "1.5.12h",
+    "1.5.12h2",
+    "1.5.12h3",
+    "1.5.12h4"
+  ],
+  "changes": [
+    "Standalone EXE/static GME and embedded notices",
+    "MIDI RMID/EOT/running-status/program-bank/SF2 compatibility,16M event ordered-track merge",
+    "Explicit VirtualMIDISynth enabled-SF2 import and live saved-bank updates with state preservation and failure rollback",
+    "Windows-default internal synthesis/actual channel waves and separate external direct mode",
+    "Recording label fitting",
+    "MIDI labels Channel 1..16 with actual MIDI numbering and old MIDI-name preference fallback; new-name settings win"
+  ],
+  "tests": {
+    "full_CTest": {
+      "passed": 34,
+      "total": 34,
+      "seconds": 110.67,
+      "scope": "Before final Channel N labels/migration only",
+      "log_SHA256": "bb2102251735c709fd3c702ef53c94f8432789eac6f639d00466e4b7a4c4d0d2"
+    },
+    "final_affected_CTest": {
+      "passed": 9,
+      "total": 9,
+      "seconds": 29.3,
+      "log_SHA256": "5df0a604d005011baa0a833c64c705c3435900937c5922800aaa3305c2254d66"
+    },
+    "live_bank": {
+      "pass": true,
+      "playing_position_before_ms": 821,
+      "playing_position_after_ms": 1536,
+      "paused_position_ms": 3018,
+      "reloads": 4,
+      "pause_mute_gain_preserved": true,
+      "missing_bank_kept_old_decoder": true,
+      "corrupt_bank_kept_playing": true,
+      "recovery_and_same_path_change": true,
+      "audio": "dummy",
+      "only_owned_config_modified": true
+    },
+    "MIDI_label_tests": "All16 names and drum Channel10, sound retained; native legacy preference migration/live state and new-key precedence PASS",
+    "audio": "Dummy/offscreen owned tests; no physical listening or user app operated"
+  },
+  "known_limits": [
+    "Internal SF2 synthesis is not captured/identical VMS/BASS audio/effects/layers.",
+    "VMS Apply/OK must save config, ~1s detection plus loading/seek time; brief playback pause possible.",
+    "One chosen active bank, ambiguous active fonts require selection.",
+    "Existing64MB MIDI/16M events/2h MIDI/256MB sound-bank/256 voices per MIDI-channel and per-format limitations retained."
+  ],
+  "user_assets_included": false,
+  "external_upload": false,
+  "digitally_signed": false,
+  "binary_SHA256": "f7680009637a74ce4215d7922907ca6976b3a1f4a311052eb3cc44682b5ec07b"
+}

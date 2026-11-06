@@ -38,6 +38,8 @@ class IMusicBackend {
     // Compressed headers may overstate duration. This does not infer silence.
     virtual bool decodedEndFrame(uint64_t&) const {return false;}
     virtual void continuousEnd(bool) {}
+    virtual bool hasDeviceOutput()const {return false;}
+    virtual void devicePlayback(uint64_t,bool,const std::vector<ChannelState>&,float) {}
 };
 Format identify(const std::vector<uint8_t> &bytes, const std::filesystem::path &path = {});
 std::vector<uint8_t> readMusicFile(const std::filesystem::path &path);

@@ -138,6 +138,11 @@ for entry in ['F1', 'button', 'recording-F1']:
 
         # Escape from the child control is handled through the modeless loop.
         body = u.GetDlgItem(about, 1)
+        notices = ctypes.create_unicode_buffer(524288)
+        text_result = ctypes.c_size_t()
+        assert u.SendMessageTimeoutW(body, 0x000D, len(notices), ctypes.addressof(notices), 2, 2000, ctypes.byref(text_result)), "About text query timed out"
+        assert 'Embedded component notices' in notices.value and 'GNU GENERAL PUBLIC LICENSE' in notices.value, 'Standalone EXE notices missing'
+
         u.PostMessageW(body, 0x100, 0x1b, 0)
         wait_for(lambda: not u.IsWindow(about), 'Escape did not close About')
         about = open_info()
