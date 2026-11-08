@@ -24,4 +24,4 @@ ROM 직접 재생은 GBA13개 검증 프로필 및 SMB1 계열 NES NROM32 프로
 
 [LICENSE](LICENSE), [구성요소 고지](THIRD_PARTY_NOTICES.md), [대응 소스·빌드 방법](SOURCE.md), [검증 범위](VALIDATION.md)를 확인하세요. 실행본과 같은 릴리스의 **NintendoMusicStudio-1.6.2-Source.zip**에 수정본과 전체 대응 소스를 제공합니다. 게임 음원·ROM·BIOS·사용자 사운드폰트·설정은 포함하지 않습니다. 디지털 서명은 없습니다.
 
-이전 테스트 기록은 docs/PRE-RELEASE-162-README.md 및 각 릴리스 노트에 보존했습니다. 앞으로 테스트본 표기는 **1.6.3-1 beta** 형식입니다.
+이전 테스트 기록은 docs/PRE-RELEASE-162-README.md 및 각 릴리스 노트에 보존했습니다. 앞으로 테스트본 표기는 **1.6.3-beta 1** 형식입니다.
