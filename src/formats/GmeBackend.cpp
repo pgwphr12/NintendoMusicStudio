@@ -33,7 +33,7 @@ GmeBackend::GmeBackend(const std::vector<uint8_t> &b, Format format):format_(for
         check(gme_track_info(full_.get(), &raw, i));
         std::unique_ptr<gme_info_t, decltype(&gme_free_info)> info(raw, gme_free_info);
         tracks_.push_back(
-            {info->song, info->game, info->author, info->system, info->comment, info->length});
+            {info->song, info->game, info->author, format==Format::Gbs ? "Game Boy / Color · GBA compatibility APU" : info->system, info->comment, info->length});
         int64_t duration=info->length;
         if(duration>0&&info->fade_length>0)duration+=info->fade_length;
         usageDurationMs_.push_back(duration>0&&duration<=3600000?int(duration):-1);

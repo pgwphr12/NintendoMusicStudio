@@ -1,0 +1,187 @@
+{
+  "version": "1.6.2-11",
+  "date": "2026-11-08",
+  "request": "Reference9841.mp4 is a16:9 composition recorded as4:3; add two stacked horizontally scrolling frequency-time displays, without images",
+  "implemented": {
+    "style": 3,
+    "label": "가로흐름",
+    "time_axis": "newest right, history slides left",
+    "frequency_axis": "20Hz..20kHz logarithmic, low bottom/high top;4096FFT resolution limits apply",
+    "intensity": "actual final internal stereo output;256vertical bins; no speculative notes/instruments",
+    "history_columns": 640,
+    "column_ms": 20,
+    "window_ms": 12800,
+    "stereo": "Left above Right",
+    "pause": "preserve history and freeze time; exclude paused wall time on resume",
+    "source_change_seek": "clear via existing output epoch",
+    "long_gap": "blank missing intervals, clear after full window; short<=100ms intervals interpolate",
+    "audio_thread": "unchanged bounded atomic tap; no FFT/history allocation in callback",
+    "image_feature": false
+  },
+  "fresh_tests": {
+    "unit": {
+      "pass": true,
+      "checks": 3509,
+      "coverage": "6rates/stereo/anti-phase/NaN/tap concurrency/motion/original72bands/detail-frequency/history bounded/rollback/gaps/quantization"
+    },
+    "native_ui": {
+      "pass": true,
+      "cases": [
+        {
+          "style": 0,
+          "name": "bars",
+          "two_rows": true,
+          "pause_resume": true,
+          "persistence": true,
+          "benchmark": {
+            "width": "1920",
+            "height": "1080",
+            "frames": "120",
+            "mean_ms": "4.35186",
+            "p95_ms": "5.4323",
+            "gdi_before": "153",
+            "gdi_after": "153"
+          }
+        },
+        {
+          "style": 1,
+          "name": "lines",
+          "two_rows": true,
+          "pause_resume": true,
+          "persistence": true,
+          "benchmark": {
+            "width": "1920",
+            "height": "1080",
+            "frames": "120",
+            "mean_ms": "4.6231",
+            "p95_ms": "5.9754",
+            "gdi_before": "144",
+            "gdi_after": "144"
+          }
+        },
+        {
+          "style": 2,
+          "name": "waterfall",
+          "two_rows": true,
+          "pause_resume": true,
+          "persistence": true,
+          "benchmark": {
+            "width": "1920",
+            "height": "1080",
+            "frames": "120",
+            "mean_ms": "5.88748",
+            "p95_ms": "7.5801",
+            "gdi_before": "152",
+            "gdi_after": "152"
+          }
+        },
+        {
+          "style": 3,
+          "name": "scrolling",
+          "two_rows": true,
+          "pause_resume": true,
+          "persistence": true,
+          "benchmark": {
+            "width": "1920",
+            "height": "1080",
+            "frames": "120",
+            "mean_ms": "8.51159",
+            "p95_ms": "10.8218",
+            "gdi_before": "149",
+            "gdi_after": "149"
+          }
+        }
+      ],
+      "audio": "dummy",
+      "only_owned_processes_settings_media": true,
+      "image_feature_removed": true
+    },
+    "fullscreen_repeat": {
+      "pass": true,
+      "cases": [
+        {
+          "phase": "fullscreen",
+          "wrap": true,
+          "maximum_ms": 981,
+          "fullscreen": true,
+          "recording": false
+        },
+        {
+          "phase": "fullscreen-recording",
+          "wrap": true,
+          "maximum_ms": 1013,
+          "fullscreen": true,
+          "recording": true
+        },
+        {
+          "phase": "fullscreen-normal-again",
+          "wrap": true,
+          "maximum_ms": 992,
+          "fullscreen": true,
+          "recording": false
+        },
+        {
+          "phase": "windowed",
+          "wrap": true,
+          "maximum_ms": 992,
+          "fullscreen": false,
+          "recording": false
+        },
+        {
+          "phase": "fullscreen-again",
+          "wrap": true,
+          "maximum_ms": 992,
+          "fullscreen": true,
+          "recording": false
+        }
+      ],
+      "timer1_delivery": "disabled in own snapshot loop",
+      "audio": "dummy"
+    },
+    "visual_review": "1920x1080 normal and recording captures checked; two vertically stacked right-to-left histories; no controls overdraw"
+  },
+  "reused_evidence": {
+    "from": "1.6.2-10 corresponding source ZIP",
+    "unchanged_sha256": {
+      "src/audio/SdlOutput.cpp": {
+        "unchanged": true,
+        "SHA256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38"
+      },
+      "src/audio/SdlOutput.hpp": {
+        "unchanged": true,
+        "SHA256": "96a4c00dedb5c6e0201ff0ca1e23b42e229e967ccb2f2cd00e8a638c2e017d6b"
+      },
+      "src/visualizer/AudioTap.hpp": {
+        "unchanged": true,
+        "SHA256": "170f435dfe52a260179707ce1e88840e2c6ebb2c897a3e556572c900473d89b5"
+      },
+      "src/audio/GraphicEqualizer.cpp": {
+        "unchanged": true,
+        "SHA256": "6afc53785af4c02cb18e73c7d4b78b8076a53b0383646f6315e62419a92e083c"
+      },
+      "src/audio/GraphicEqualizer.hpp": {
+        "unchanged": true,
+        "SHA256": "061e59a674e711fbd37d672d7640d6fd0fee0511b78c83f16639cdbe53a71cc5"
+      },
+      "src/formats/GbaRom.cpp": {
+        "unchanged": true,
+        "SHA256": "036b10859a8900313c150c3c16b620b92a3e265d598dc865834dbb8e88bdb286"
+      },
+      "src/player/Player.cpp": {
+        "unchanged": true,
+        "SHA256": "dec761f842c828467ba662761f336534f36f16346cf651135d40e5bac2155603"
+      }
+    },
+    "scope": "Prior decoder/ROM/EQ matrices retained as historical evidence, not freshly rerun. New detailed analyzer/history and UI tests are fresh."
+  },
+  "limitations": [
+    "No physical monitor/VRR or listening certification",
+    "External MIDI device direct output is not captured by existing internal output tap",
+    "Analysis updates at most about60Hz; history columns20ms, between-column position follows existing monitor-paced paint",
+    "FFT4096 limits low-frequency resolution; grayscale log-frequency display is not an original score or lossless audio archive"
+  ],
+  "failed_candidates": [],
+  "reference_media_packaged": false,
+  "new_thirdparty_dependencies": false,
+  "external_upload": false
+}

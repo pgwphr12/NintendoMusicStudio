@@ -1,0 +1,131 @@
+{
+  "version": "1.6.2-6",
+  "channel": "test",
+  "target_release": "1.6.2",
+  "test_iteration": 6,
+  "date": "2026-11-07",
+  "common_volume": {
+    "storage": "allChannelVolume integer0..200",
+    "priority": "Applied before first prefill, across files/backends, each restart/subsong/seek; saved individual volume cannot override it. No migration guess for historical group actions lacking a key.",
+    "current_individual_adjustments": "Allowed temporarily; common wins on next restart. Mutes and master independent.",
+    "save": "Memory immediately; mouse release/capture change persists; existing periodic/exit save retained.",
+    "first_buffer_test": "Own decoders inspect actual Player states during first render for four format categories; layout growth/shrink/rewind/mutes/clamps/NaN pass",
+    "native_persistence": {
+      "pass": true,
+      "audio": "dummy",
+      "only_owned_windows_and_isolated_settings": true,
+      "cases": [
+        {
+          "group_saved_immediately": true,
+          "group_buttons_use_common_not_first_channel": true,
+          "subsong_prioritizes_common": true,
+          "mute_preserved": true
+        },
+        {
+          "file": "channels.gbs",
+          "channels": 4,
+          "common_overrides_stale_individual_values": true
+        },
+        {
+          "file": "audio/tone.wav",
+          "channels": 2,
+          "common_overrides_stale_individual_values": true
+        },
+        {
+          "file": "channels.spc",
+          "channels": 8,
+          "common_overrides_stale_individual_values": true
+        }
+      ]
+    }
+  },
+  "remote": {
+    "type": "Separate owned nonmodal tool window; main remains enabled",
+    "controls": [
+      "clock/song",
+      "previous/next",
+      "play/pause/stop",
+      "repeat",
+      "saved common gain",
+      "master",
+      "20bandEQ",
+      "leave recording"
+    ],
+    "F9": "Creates/reuses remote; exit hides; close hides remote without leaving recording; startup recording preference supported"
+  },
+  "equalizer": {
+    "frequencies_Hz": [
+      40,
+      56,
+      80,
+      113,
+      160,
+      225,
+      320,
+      450,
+      600,
+      750,
+      1000,
+      2000,
+      3000,
+      4000,
+      5000,
+      6000,
+      7000,
+      10000,
+      12500,
+      15000
+    ],
+    "range_dB": [
+      -15,
+      15
+    ],
+    "step_dB": 0.1,
+    "default": "off,0dB",
+    "DSP": "Owned peaking biquad implementations, Q2, independent stereo histories, fixed InternalRate48000; per-block atomic controls and0.5dB/block transitions; existing OutputLevel limiter after EQ",
+    "math_reference": "https://www.w3.org/TR/audio-eq-cookbook/",
+    "third_party_code_added": false,
+    "scope": "Internal decoder/synthesized mixed PCM only. External MIDI device route and pre-effects channel visualizations are unchanged.",
+    "validation": "20center sine6dB measured within0.025dB, exact zero/off PCM bypass, stereo isolation,stress finite/limiter,off ramp settles"
+  },
+  "native_remote_EQ": {
+    "pass": true,
+    "audio": "dummy",
+    "only_owned_processes_and_settings": true,
+    "cases": [
+      {
+        "session": 0,
+        "remote_transport_master_common": true,
+        "20band_controls": true,
+        "EQ_persist_or_reset": true,
+        "modeless_main_responsive": true,
+        "F9_return": true
+      },
+      {
+        "session": 1,
+        "remote_transport_master_common": true,
+        "20band_controls": true,
+        "EQ_persist_or_reset": true,
+        "modeless_main_responsive": true,
+        "F9_return": true
+      }
+    ]
+  },
+  "focused_tests": "3/3PASS0.41s",
+  "baseline_reuse": "Earlier ROM/GBS/other decoder regressions reused. Current Player restart regression rebuilt/rerun. Common4formatUI executed before popup-only rendering changes; common-gain logic unchanged afterward. No full unrelated GUI suite rerun.",
+  "failed_candidates": [
+    "First popup link omitted regenerated CMake source list; explicit regeneration included ExtraWindows.cpp and final build succeeded",
+    "Offscreen WM_PRINT capture initially black/partial; tool-client print support added. Native offscreen control raster captures may retain theme background artifacts; scalar control behavior and layout inspected separately. No physical desktop capture/listening certification."
+  ],
+  "logs_sha256": {
+    "unit-final.log": "4e70db9686d27b7afb4fc98ecd2c0e66b870146ea71a2a7d8de8bbe1467663a9",
+    "ui.log": "ba610711f101b9f95dd38d34ae86f7387cc3a75eb5ea45bd7d2cf10be35e325a",
+    "eq-test.log": "e07cd2b4ceff66b740479590d005df452be980c7aaacabd8f240d9814b1ef7f0",
+    "targeted-final.log": "b326005c79dc4a0f7412719017626fc92ea031b8515caec1f91404f38dbbdf99",
+    "remote-ui-final-build.log": "37cb610cbcf5d4f769ad739832fd6cb6a6248ccff76c94fb5a86498c13af5fdc",
+    "build-remote.log": "dfd61db9262fa00c5727056fffeb28786d1929e49c2c29377c9782bb00db281f"
+  },
+  "exe_sha256": "f13682e8b4798680cb2af14a2a263e53c8476fc1883d110ab7ed2b6bcf215ee7",
+  "user_settings_or_assets_changed": false,
+  "uploaded": false
+}

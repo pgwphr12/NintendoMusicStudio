@@ -1,6 +1,8 @@
 #pragma once
 #include "PitchTempo.hpp"
 #include "PresentationClock.hpp"
+#include "visualizer/AudioTap.hpp"
+#include "visualizer/Spectrum.hpp"
 #include <SDL.h>
 #include <atomic>
 #include <cmath>
@@ -16,6 +18,8 @@ class SdlOutput {
     int rate_ = 96000;
     bool paused_ = true;
     PresentationClock visualClock_;double frozenVisual_=0;
+    AudioTap analysis_;
+    std::atomic<uint64_t> analysisEpoch_{0};
     static void callback(void *self, Uint8 *out, int bytes);
     SDL_AudioDeviceID create(int rate);
 
@@ -29,6 +33,8 @@ class SdlOutput {
     int rate() const {
         return rate_;
     }
+    uint64_t spectrumSamples(SpectrumAnalyzer::Samples& out)const{return analysis_.snapshot<SpectrumAnalyzer::Frames>(out);}
+    uint64_t spectrumEpoch()const{return analysisEpoch_.load();}
     double visualConsumed()const{return paused_?frozenVisual_:visualClock_.position(PresentationClock::now());}
     uint64_t consumed() const {
         return consumed_.load();

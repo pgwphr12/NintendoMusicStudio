@@ -1,0 +1,76 @@
+{
+  "version": "1.6.2-4",
+  "channel": "test",
+  "target_release": "1.6.2",
+  "test_iteration": 4,
+  "date": "2026-11-07",
+  "user_corrections": [
+    "GBA ROM PCM channels must use individual slots, not mixed A/B",
+    "GB music should use GBA GB-compatible hardware behavior, not merely recolor/relabel or an arbitrary timbre effect"
+  ],
+  "fix": "Removed directRom exclusion from GSF-format mixer detection. Original authoritative full mix retained; per-slot existing GbaMixerTap/NintendoMixerTap projections plus residual. Unsupported/no-known-mixer return-only fixture remains6hardware lanes.",
+  "gba_rom": {
+    "actual_files_tested": 19,
+    "registered_unique_profiles": 13,
+    "seconds_each": 8,
+    "SMA1_PCM_slots": 6,
+    "SMA2_3_4_PCM_slots": 7,
+    "max_original_mix_sample_error": 0,
+    "max_reconstruction_error": 0,
+    "max_residual_energy_ratio": 0.0147226,
+    "checks": "finite slots/active slot energy/fullmix exact/reconstruction/initial replay/exact500ms seek/individual and all mute/other song slot layout/original source readback equality",
+    "original_ROM_not_modified": true,
+    "limitations": "PCM slots are dynamic polyphony, not permanent instrument/sequence tracks. Original RAM kernel evidence required; residual preserves effects/nonlinear summation. Extra emulator instances cost CPU/RAM."
+  },
+  "gbs": {
+    "core": "Existing GME GB CPU/banking/timer + bundled LGPL Gb_Snd_Emu0.2.0 AGB hardware mode, native GBA wave extension=false",
+    "actual_local_files": 11,
+    "own_fixture_files": 1,
+    "total_cases": 12,
+    "channels": 4,
+    "wave_RAM_bytes_accessible": 16,
+    "native_GBA_FIFO_added": false,
+    "runtime_mode_query": "ngmv_gbs_agb_mode verifies actual APU model and native wave flag, including restart",
+    "checks": "own CGB-vs-AGB DAC-off waveform distinction; finite output, deterministic replay, exact500ms seek, mute, subsong, source preservation",
+    "limitations": [
+      "Not native ARM execution, BIOS boot or a full GBA/GB ROM core replacement",
+      "GSF remains native GBA; GBS remains GB instruction execution as required by GB compatibility",
+      "No physical listening or complete hardware/cycle/analog fidelity certification; only tested files and limited passages"
+    ]
+  },
+  "new_UI": {
+    "pass": true,
+    "entries": 48,
+    "exposed_channels": 12,
+    "auto_start": true,
+    "previous_next_pause_recording": true,
+    "pcm_waves": true,
+    "audio": "dummy",
+    "original_rom_read_only": true
+  },
+  "focused_ctest": "gba_rom_bootstrap + gbs_agb_compatibility2/2 PASS0.15s; player_nintendo_structure1/1 PASS0.02s",
+  "source_reproducibility": "Original pinned GME archive plus overlay; clean application then second idempotent application, six overlay file hashes match built input. Original upstream zip unchanged.",
+  "failed_candidates": [
+    "Initial CMake insertion had wrong indentation; target missing; corrected and built real target",
+    "First new APU build failed unqualified max; explicit std::max with algorithm fixed",
+    "First AGB-vs-CGB test held active wave throughout, yielding identical samples; DAC-off transition specifically exercises observed model difference; test stimulus corrected, synthesis unaltered",
+    "First UI pixel check expected formerly mixed PCM1/2 to be active at Song1 snapshot; actual screenshot has PCM3/5/6 active. Check now targets active PCM5/6 rows; no decoder or gain changed to force success"
+  ],
+  "logs_sha256": {
+    "actual-first.log": "47f2f97cc99838e3c1f60a9a6e98b68303141fe4331e17b6f46928d1eee1de06",
+    "actual-regions.log": "3269dcdc13070afb01ad191f9efd574e04c5f09bfdc6fbb1903bc546d6dff2a0",
+    "gbs-agb-first.log": "dc6e06f38de1965cef7fa96228815d16ed3b0c2c7900daeb13f06cc7a994f474",
+    "gbs-agb.log": "227c9d0f7f1e725f9ae729a3f07be1701d79c02da0817ca43d0552c49bbe1c16",
+    "gbs-agb-final.log": "459d4186fcb7257a882b235cb48a1b86f65c28c6149121c5916cd5d624337001",
+    "targeted.log": "aa9e4219221430e86fa076525f4aea581702b622f72fcd710d680855db058a21",
+    "mixer-unit.log": "58533def78b3f6b713500abe719363ed53217a7f3b82e8319c412ef6c5a864c4",
+    "ui-first.log": "5720b7423aa03110fa882f160358e650a8265f6ecd33f9c0cad580d64843b784",
+    "ui-final.log": "dcef3783c0f2dbfab6e0e0a93b9111f22e94404f396d457cb23d04060d3e4268",
+    "reproducibility.json": "71448dec099ebb437ef8ee1cc73ba23afd2d11a1a8ef52a76c6b3c96d2c64994",
+    "build-agb-first.log": "c36951d2f57225fe666db65023d8a9bff34a618392ebf63e40c47e36b6a17d3d",
+    "license.log": "c88b44f930eb7ae8b1c69772943bc8aafa9228e1915f34807759f8abf5853150"
+  },
+  "exe_sha256": "1af32133c494fd95844d1c65388f8df8cde192dd6cd77dda9f9c59fc3af3792b",
+  "baseline_reuse": "GBA split actual checks precede GBS-only APU changes; Psf/GbaRom final logic identical. NES and all unrelated formats retain prior iteration evidence; no full suite rerun. New final native UI validates12slot layout.",
+  "assets": "Only owned code/test text, licensed source and metadata. No user ROM/GSB/GSF/music/bank/BIOS or private path/inventory included. No external upload."
+}

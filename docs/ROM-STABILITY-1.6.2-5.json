@@ -1,0 +1,63 @@
+{
+  "version": "1.6.2-5",
+  "channel": "test",
+  "target_release": "1.6.2",
+  "test_iteration": 5,
+  "date": "2026-11-07",
+  "user_report": "GBA ROM unstable; particular songs crash app; Super Mario Advance1",
+  "root_cause": "Probe required more than32 PCM writes even in verified direct ROMs. Sparse entries exposed6mixed lanes instead of11slots. Player retained previous channel states across selection; volume mixing/paint could index old states/voices out of range.",
+  "before": {
+    "actual_player": "JapanSMA1 Song199 after nonunity volume ->0xC0000005",
+    "synthetic_player": "12->6channel shrink ->0xC0000005",
+    "baseline_catalog": "SMA1 Japan319entries produced20layout transitions; SMA2/3/4 representatives had0",
+    "exit_evidence": "actual_old_exit=-1073741819"
+  },
+  "changes": [
+    "Direct verified ROM with valid initialized m4a RAM identity/count/rate retains genuine PCM slots without requiring currently audible PCM writes; hardware-only diagnostic override preserved",
+    "Player restart rebuilds channel state by actual new names/count, preserves matching settings, initializes newly introduced channels",
+    "Producer checks mix/voice count/frame sizes before history or state mixing; bad output becomes caught runtime error, no truncation/unchecked access"
+  ],
+  "fresh_validation": {
+    "own_transition": "16shrink-grow cycles; settings preserved/new defaults; malformed decoder rejected safely",
+    "actual_Player": "Song199/200/235/237/247/248/1/170 select+seek100ms+stop withvolume0.75;11lanes/state11/errornone",
+    "catalog": [
+      "AMAE321commands/0layout_changes/0errors",
+      "AMZE321commands/0layout_changes/0errors",
+      "AMAJ319commands/0layout_changes/0errors"
+    ],
+    "scope": "Each catalog command renders first512samples plus bounded native probe; not full-track validation",
+    "sparse_mix": "Song199/200/235/237/247/248:50x512frames each raw6lane vs split11lane original_mix_error0; original source readback unchanged",
+    "focused_ctest": "rom_channel_transition_stability/core_audio_channels plus fixture dependency3/3PASS11.47s",
+    "native_UI": {
+      "pass": true,
+      "next_transitions": 30,
+      "previous_transitions": 4,
+      "fixed_PCM_layout": 11,
+      "recording_view": true,
+      "only_owned_process_and_settings": true,
+      "audio": "dummy"
+    }
+  },
+  "logs_sha256": {
+    "before-real-exit.txt": "7804b72782743f7770517b9dea1e07595c8f868f4291537f3650fb54f4325800",
+    "before-real.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "catalog-before.log": "362a4c37d1093e3c71d513ec62110ce2a9642639f53fafe08326d33801715cf3",
+    "fixed-unit.log": "baf0d0e76de71cfc79b0dfabc1b6373b67ef864fad2cb639dae6cbe4233eb65b",
+    "fixed-real.log": "70ca40db501e5161422bc9280102a3a2a9d419167f7ad0e0beb8529e5f9830c5",
+    "catalog-fixed.log": "6ee71f062a8d9eb8fceac85f3a1ff67c31aa2355f36d269abbb030efb426f3e3",
+    "catalog-fixed-japan.log": "96e474018d3b507a3346e6df7c9852d2ba6b785773c135af54cb6e5a7d32f190",
+    "sparse-mix.log": "73015579e73835d2f01e8e8f685bf3ed448cb6687af754c1e6134c68d93e6328",
+    "targeted.log": "61ff310963eebeac41930c704d54b06d44a70480c7a98447ff9514add9a1a592",
+    "ui.log": "932a8f883d70ea7ffd270e966434eec81fd4c32fb8ab36f2697d112eda34d80c"
+  },
+  "exe_sha256": "e7816750709822157f50e2608068ee4772029eb80e2179269314037896b5dd82",
+  "baseline_reuse": "Unchanged GBA full-mix/PCM quality and GBS AGB tests from1.6.2-4 retained. Current changes target sparse layouts and Player restart, so focused core audio and new crash regressions run. No full existing UI suite repeated.",
+  "limits": [
+    "No user exact song ID supplied; actual SMA1Song199 crash independently reproduced and fixed",
+    "No guarantee all possible ROMs/drivers/long full-song playback is stable",
+    "PCM slots remain dynamic polyphony; no invented permanent instrument identities",
+    "Separate emulation instances still cost CPU/RAM; memory-pressure/forced-OOM behavior not validated"
+  ],
+  "uploaded": false,
+  "user_assets_or_settings_bundled": false
+}

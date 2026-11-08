@@ -1,0 +1,348 @@
+{
+  "version": "1.6.2-3",
+  "channel": "test",
+  "target_release": "1.6.2",
+  "test_iteration": 3,
+  "date": "2026-11-07",
+  "new_support": "NES SMB1-family NROM32 music-only playback;49 registered whole32KiB PRG fingerprints,14 area/event queue commands each",
+  "discovery": {
+    "read_only_headers_valid_iNES": 8016,
+    "NROM32_candidates": 725,
+    "matching_music_region_files": 76,
+    "distinct_programs_registered": 49,
+    "cadence_families": {
+      "NTSC": 47,
+      "PAL": 2
+    },
+    "method": "Exact common sound-block hashes selected candidates only. Acceptance uses whole PRG size/CRC, not short patterns/filename/sound region alone. A region-only control-flow analysis attempt was not complete and is not used."
+  },
+  "profiles": [
+    {
+      "prg_crc32": "231db228",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "967a605f",
+      "entry": "0xf2d1",
+      "PAL": true
+    },
+    {
+      "prg_crc32": "5cf548d3",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "8ea913f6",
+      "entry": "0xf2d1",
+      "PAL": true
+    },
+    {
+      "prg_crc32": "b2361309",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "c04fde5d",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "4c5d712d",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "c04dbdbc",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "95e71ea9",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "a4b1ab6d",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "7fa38b8b",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "cdb19c19",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "0b97b2af",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "73d425ca",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "efec7237",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "08d0d8f5",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "6d64fb38",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "2b80d722",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "5ca40ee5",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "5e291429",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "4e1b5436",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "8a18ef1e",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "35554f4e",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "ed56a731",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "8c7f2e09",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "cf32ae98",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "5b99b520",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "66343d4c",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "779a36dc",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "09c94313",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "2922cab7",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "e4514ad6",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "62ac7160",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "59477834",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "cf97a00a",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "4e2e4d66",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "15d2911a",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "818fc29d",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "3a060144",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "6b3f7437",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "8a1df780",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "34d1fcee",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "24eabb61",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "53572499",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "4c9e8ec6",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "5ff2abef",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "2343c182",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "1bfc74ba",
+      "entry": "0xf2d0",
+      "PAL": false
+    },
+    {
+      "prg_crc32": "08905193",
+      "entry": "0xf2d0",
+      "PAL": false
+    }
+  ],
+  "implementation": {
+    "adapter": "Own in-memory NSF header/6502 startup shim executes original SoundEngine using existing static GME",
+    "memory": "Only private startup shim/queue tables in first256PRG bytes; original music code/data preserved. CHR graphics not used. Original file/trainer/save not written; no reset/NMI/PPU/game boot. No extracted NSF saved by application.",
+    "selection": "Area masks01/02/04/08/10/20/40 and corresponding event masks,14 entries including aliases/jingles. Stop80 excluded. No claim of14 unique compositions.",
+    "channels": "Four base NES lanes always visible; first two area entries retain original4011 DAC in DMC lane, not a DPCM sample extraction claim. Mask is known before playback and stable per selection.",
+    "cadence": "Registered NTSC/PAL reference-family speed16639/19997us. Full game transient/context/alternate-region behavior is not reproduced.",
+    "seek": "Short positions up to1000ms replay exact state; longer positions use unchanged GME fast seek to target-1000ms and render up to1000ms warmup. Existing NSF/GBA backends unchanged.",
+    "association": "New .nes option,22 extension registration plan; OS defaults not forced"
+  },
+  "validation": {
+    "own_fixtures": "Independent6502 APU generator observes both queues; invalid/truncated/header/mapper/trainer/NES2/unknown program reject, source/image preservation and PAL fields pass",
+    "actual_programs": {
+      "programs": 49,
+      "commands_each": 14,
+      "total_two_second_starts": 686,
+      "frames_each": 96256,
+      "distinct_first_two_second_outputs_each": 14,
+      "checks": "Finite positive output, stable usage masks, deterministic replay, exact500ms seek(delta0), all-voice mute, graphics-only mutation identical output, driver mutation rejected, original file readback unchanged",
+      "log_sha256": "023c0318f49641af90082920ae8e9f7ce8c8c73710024586e2e8c7c49db2fa2c",
+      "scope": "Beginnings only; not full-song physical listening"
+    },
+    "long_seek": {
+      "regions": [
+        "NTSC",
+        "PAL"
+      ],
+      "target_ms": 60000,
+      "checks": "Original looping driver remains audible, rewind succeeds",
+      "log_sha256": "389ee320b7f207880dd88041abaf58a889513f29fc853138a23638eaf95ab0cd",
+      "wall_seconds_observed": [
+        0.0387911,
+        0.0353544
+      ],
+      "timing_guarantee": false
+    },
+    "targeted_CTest": {
+      "passed": 2,
+      "failed": 0,
+      "seconds": 0.08,
+      "tests": [
+        "nes_rom_adapter",
+        "windows_registration"
+      ],
+      "log_sha256": "17a07ef281b6ad51d46429eb7065ad341572ce1ad74e64d18e2c59f2605f2f80"
+    },
+    "native_new_NES": {
+      "pass": true,
+      "entries": 14,
+      "source_apu_channels": 5,
+      "fixed_visible_by_track": [
+        5,
+        5,
+        4
+      ],
+      "auto_start": true,
+      "next_previous_pause_recording": true,
+      "nonflat_base_apu_lanes": 1,
+      "audio": "dummy",
+      "only_owned_window_and_settings": true
+    },
+    "native_log_sha256": "7a97c71da047ddc88a820992f523a2014c14e4fe67c96fd53d8d14db44b1a3eb",
+    "screenshot": "Own recording view visually inspected: Underground, four base lanes and nonflat original APU signals. Ran before final seek/error-text refinement; those changes do not alter layout/navigation.",
+    "failure_fixed": "First new adapter delegated seek directly to existing GME, which did not preserve sample-identical filter history. ROM-only bounded replay/warmup added; original NSF code untouched. Initial failure log retained privately.",
+    "baseline": "User-confirmed existing features reused; no full baseline suite or packaged GUI rerun. Targeted new NES/registration checks only.",
+    "audio": "Offline/dummy, own test process only; no hardware listening",
+    "exe_sha256": "2fbd15c292d780dd4a91e5f7a7c692897215b2dc7488cd5fe392d06ab0eebe01"
+  },
+  "references": [
+    "https://github.com/Xkeeper0/smb1/blob/master/src/music-engine.asm",
+    "https://github.com/Xkeeper0/smb1/blob/master/src/ram.asm",
+    "https://github.com/Xkeeper0/smb1/blob/master/src/defs.asm",
+    "https://github.com/Xkeeper0/smb1/blob/master/src/music-data.asm"
+  ],
+  "limits": [
+    "Other NES music engines/mappers, NES2.0 and trainer images remain unsupported",
+    "Unknown PRG variants reject even if a short sound-code pattern matches",
+    "No full-game adaptive music/input context, durations or universal loop-boundary detection",
+    "Default cadence comes from known reference family, not a universal regional inference engine",
+    "49program fingerprints/76candidate files are not49 distinct game soundtracks;14 commands include aliases",
+    "Existing GBA13profiles retained without repetitive baseline checks; all-ROM goal remains incomplete"
+  ],
+  "assets": "No ROM/PRG/CHR/music/sample/GSF or temporary prototype NSF bundled. Only fingerprints/owned shim code; no new library or external posting."
+}

@@ -1,6 +1,8 @@
 #include "GmeBackend.hpp"
 #include "Midi.hpp"
 #include "PsfBackend.hpp"
+#include "GbaRom.hpp"
+#include "NesRom.hpp"
 #include "StreamBackend.hpp"
 #include <array>
 #include <cstring>
@@ -12,6 +14,9 @@
 namespace ngmv {
 std::unique_ptr<IMusicBackend> makeAudioFileBackend(const std::filesystem::path&);
 Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path) {
+    auto romExt=path.extension().wstring();std::transform(romExt.begin(),romExt.end(),romExt.begin(),[](wchar_t c){return std::towlower(c);});
+    if(romExt==L".gba")return Format::GbaRom;
+    if(romExt==L".nes"||(b.size()>=4&&!memcmp(b.data(),"NES\x1a",4)))return Format::NesRom;
     if((b.size()>=4 && !memcmp(b.data(),"MThd",4))||(b.size()>=12&&!memcmp(b.data(),"RIFF",4)&&!memcmp(b.data()+8,"RMID",4)))return Format::Midi;
     if((b.size()>=12 && (!memcmp(b.data(),"RIFF",4)||!memcmp(b.data(),"RF64",4)) && !memcmp(b.data()+8,"WAVE",4)) ||
        (b.size()>=4 && (!memcmp(b.data(),"OggS",4)||!memcmp(b.data(),"fLaC",4))) ||
@@ -46,7 +51,7 @@ Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path
     if(ext==L".mp3"||ext==L".wav"||ext==L".ogg"||ext==L".flac")return Format::AudioFile;
     throw std::runtime_error("Unsupported or truncated music file. Open NSF / NSFE / SPC / GBS / "
                              "GSF / 2SF / USF / BCSTM / BCWAV / VGM / VGZ; "
-                             "MIDI format0/1 / MP3 / WAV / OGG Vorbis / FLAC; game ROMs are not supported.");
+                             "MIDI format0/1 / MP3 / WAV / OGG Vorbis / FLAC; verified GBA / NES ROM profiles only.");
 }
 std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
     std::ifstream f(p, std::ios::binary | std::ios::ate);
@@ -101,6 +106,10 @@ std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
 std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &b,
                                            const std::filesystem::path &path) {
     switch (identify(b,path)) {
+    case Format::NesRom:
+        return makeNesRomBackend(b);
+    case Format::GbaRom:
+        return makeGbaRomBackend(b);
     case Format::Midi:
         return makeMidiBackend(b,path);
     case Format::AudioFile:

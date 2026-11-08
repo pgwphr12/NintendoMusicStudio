@@ -1,0 +1,24 @@
+{
+  "version": "1.6.2-7",
+  "channel": "test",
+  "target_release": "1.6.2",
+  "test_iteration": 7,
+  "date": "2026-11-07",
+  "cause": "New EQ was painted over existing reverb footer button at1240. The earlier hitbox also intercepted its left half.",
+  "fix": "Move EQ to1680x1028,width180; paint and click share EqualizerButtonX/Width constants. Existing reverb1240..1420 and MIDI1435..1665 retained.",
+  "UI": {
+    "pass": true,
+    "reverb_button_unchanged": true,
+    "EQ_separate_right_hitbox": true,
+    "main_responsive": true,
+    "audio": "dummy",
+    "only_owned_process_settings": true
+  },
+  "visual": "Footer screenshot confirms three separate tiles: reverb / Windows or MIDI bank / EQ settings.",
+  "ui_log_sha256": "92897bdb2e19bf707177b0555892a0ced65c760c14f34b4e419df4eb5a88645d",
+  "footer_sha256": "e78ea5eb3b3201890b80bb38670685ccc7c365656632a890789eb084f46f68ed",
+  "exe_sha256": "bd4ad3e6fc131fa9f67f91ace5c5e14b171e7945cca4ecb2769ff8548bfe30e4",
+  "baseline_reuse": "Only footer layout/hitbox and version metadata changed. Audio/PCM/GBS/common-gain/remote/EQ-DSP evidence reused from1.6.2-6; no full repeated suite.",
+  "uploaded": false,
+  "user_assets_or_settings_modified": false
+}

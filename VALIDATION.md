@@ -1,3 +1,45 @@
+# Nintendo Music Studio1.6.2 — release validation
+
+Fresh focused mixed-gain regression includes old failure and fixed actual internal PCM comparisons; native UI checks stop/play/seek/new-song priority. Stable identity/standalone/choice/About smoke checks and package CRC/SHA/license/asset exclusions are documented in docs/RELEASE-1.6.2.json. Earlier unchanged decoder and spectrum evidence is reused explicitly. Dummy audio/offscreen tests are not physical listening/VRR certification. Historical records follow.
+
+
+## Test1.6.2-12 changed-path validation
+
+Fresh spectrum utility tests and own offscreen native UI verify direct selection/default/persistence/legacy migration/main and remote entry points/nonblocking playback/resource reuse. See docs/SPECTRUM-CHOICES-1.6.2-12.json. Earlier unchanged FFT/audio/decoder and fullscreen repeat evidence is reused from11; not rerun or claimed fresh. Dummy audio, no physical listening certification.
+
+
+## Test1.6.2-11 changed-path validation
+
+See docs/SCROLLING-SPECTROGRAM-1.6.2-11.json for fresh analyzer/history/native UI/fullscreen repeat tests and measured rendering. Automated UI uses own generated audio and dummy output. Earlier decoder/content matrices below are retained evidence, not newly rerun. No physical listening or all-monitor timing certification.
+
+
+## Test1.6.2-8 — pinned MesenCE EQ compatibility
+Upstream commit4b8a196: unmodified orfanidis_eq.h/Equalizer.cpp/.h Git blob identity checked.199680stereo frames at48kHz,24gain profiles plus cache/update/bypass/re-enable: exact PCM16 error0. Native EQ2sessions check range±20/integer1/page5/direct entries/clamping/blank/reset/disabled and persistence; remote2sessions pass. Focused3/3PASS0.61s includes common-volume and ROM crash state regression. Fresh user assets or all old decoder suites not claimed. See docs/MESENCE-EQ-1.6.2-8.json.
+
+## Test1.6.2-7 — footer overlap
+Fresh own-process native UI: reverb click does not open EQ, right-hand EQ opens independently, saved reverb remains enabled, main responsive. Footer screenshot visually checked. Audio graph unchanged; previous1.6.2-6 tests reused, not repeated. See docs/FOOTER-1.6.2-7.json.
+
+## Test1.6.2-6 — common gain / recording remote /20band EQ
+Fresh focused3/3PASS0.41s (graphic_equalizer_audio/common_channel_volume_priority/rom_channel_transition_stability).20independent center sine responses +6dB each, exact flat/off bypass, stereo isolation/stress/limiter. Common-volume first-render/backend-transition test and own native4-format persistence test. Modeless remote/EQ2process restart controls/pass; settings isolated, SDL dummy, no physical listening. Details docs/COMMON-VOLUME-1.6.2-6.json. Unchanged ROM/GBS content matrices retain prior checkpoint evidence.
+
+## Test1.6.2-5 — SMA1 sparse-entry crash
+Actual old Player Song199 exit0xC0000005; fixed8song transitions/seek/stop PASS. Japan319+two revisions321each=961short starts with0layout changes/0decoder errors. Six affected commands compare to raw hardware mix with exact0error. Changing12/6/12slot own fixture16cycles and malformed layout rejection PASS. Focused3/3 (including fixture generation and core_audio_channels)11.47s. Native34transitions/recording view PASS(dummy). See docs/ROM-STABILITY-1.6.2-5.json. No whole-song/physical-hardware/all-file guarantee.
+
+## Test1.6.2-4 — GBA ROM slot separation and GBS AGB-compatible APU
+See docs/GBA-GB-1.6.2-4.json for fresh changed-path evidence, baseline reuse, initial failures and limitations. Real ROMs19files/13profiles, 8seconds each with fullmix error0; GBS12cases (1own+11local), four lanes and AGB mode checks; new native UI12lanes. No physical listening certification or repeated full baseline suite.
+
+# Nintendo Music Studio test1.6.2-3 validation
+
+New NES path:49 actual NROM32 PRG fingerprints,14 commands each(686 starts,96256frames/2.005s each),all finite/positive with14 distinct output fingerprints per program; aliases not asserted unique compositions. Replay,500ms seek(delta0),mute,graphics independence,driver mutation rejection and original readback PASS. Initial raw-GME seek/filter-history mismatch resolved only in new ROM adapter with short replay/long fast-seek+bounded warmup. NTSC/PAL60000ms seek/looping+rewind PASS; no timing guarantee. Focused own adapter/22-extension registration2/2 PASS0.08s. New own dummy/offscreen NES UI verifies auto-start,14entries,5source lanes,per-track visible5/5/4,next/previous/pause/F9 and real nonflat APU waveform; screenshot inspected. Full existing/user-confirmed suite and packaged GUI deliberately not repeated. Final UI changes after that snapshot are seek/error text only. No physical listening, universal mapper support or full-game-context claim. Details: docs/NES-ROM-1.6.2-3.json.
+
+# Nintendo Music Studio test1.6.2-2 validation
+
+Nine new actual ROM profiles PASS distinct songs0/1, replay/exact500ms seek/mute/invalid-ID/original-readback checks. SMA2/3/4 US catalog sweeps48+40+57=145 entries: first2seconds finite and nonconstant after removing mean/excluding first85ms (minimum AC energy65.7248/16.1138/219.136), not just idle DC and not full-song listening. Final runtime35/35 CTest PASS109.76s; subsequent test-only AC metric improvement ran the actual sweeps without player changes. Initial incorrect flag mask rejected valid original data; corrected per-profile allowed flag sets, originals preserved. Prior/user-confirmed ROM frontend reused; no fresh per-ROM GUI or packaged GUI rerun. Package --skip-ui is explicit in manifest. Physical audio, arbitrary ROMs, auxiliary banks and individual PCM instruments remain unverified/unsupported. See docs/ROM-MUSIC-1.6.2-2.json.
+
+# Nintendo Music Studio 1.6.2-1 validation test build
+
+Full35/35 CTest PASS108.97s before final ROM-only auto-start addition; final affected6/6 PASS17.94s. Own return-only emulated driver checks private bootstrap/body preservation and revision/ID errors. Four actual SMA1 ROM profiles list319/321 real IDs; songs170/171 produce distinct finite nonzero PCM, deterministic replay, exact500ms seek and all-channel mute; original buffers/file readback equal. Native own offscreen/dummy test verifies auto-start,321entries,6hardware lanes, previous/next/pause/recording and nonflat PCM A/B; screenshot visually inspected. Initial native no-autostart failure preserved and fixed. No claim that all entries were auditioned or other ROMs work. Details/limits: docs/ROM-MUSIC-1.6.2.json.
+
 # Nintendo Music Studio 1.6.1h validation
 
 Full34/34 CTest PASS112.02s on final build. Isolated absent-VMS case ignores stale custom-bank/native-output selection, renders the Windows default bank and shows waveforms; existing-style gray Windows 기본 button and F8 are inert. Installed cases retain SF2/DLS controls and live bank reload. Detection is at startup; actual MIDI device or installed executable required, not stale configuration alone. Tests use own generated inputs, simulated presence and dummy audio; no host uninstall, user configuration change or physical listening. Initial unpublished About-initialization placement failed two UI tests; fixed main-run initialization before full rerun. Details: docs/NO-VMS-1.6.1h.json.
@@ -51,3 +93,13 @@ Fresh targeted CTest 5/5 PASS (24.91s): fixture generation, core audio/channel g
 Fresh24/24CTest PASS80.63s. Existing decoder/game/MP3/EOF repeat and recording controls retained. New tests use own offscreen3840x2160 popup windows driven by the actual F11/F9 handlers, with idle timer1 delivery deliberately disabled. Repeat succeeds in fullscreen -> fullscreen recording -> fullscreen normal -> windowed -> fullscreen again. DS auto advances01->02->10 while fullscreen under the same timer block. Diagnostic timer-only build stops at5002ms without a wrap; current build wraps near2005ms. Unmodified155's ordinary4K trial did wrap once on this machine: exact user hardware symptom is not claimed reproduced solely by resolution. Windows documents WM_TIMER as idle-priority; the fault injection isolates that dependency. Primary source: https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-timer
 
 Recording image verifies left name-area overlap and right-edge pixels only in recording mode. Normal view preserved. Shared decoder/audio/third-party C/C++ sources hash-identical to155. No original music/settings changed, display mode switched, or user process operated. Dummy audio and own native UI testing; no physical listening/high-refresh hardware certification. Details: docs/FULLSCREEN-156.json. Older151..155 evidence remains historical.
+
+
+## 1.6.2-9 spectrum stabilization
+
+See `docs/SPECTRUM-1.6.2-9.json`:682FFT/tap/motion checks,4current core tests,4native spectrum sessions,5fullscreen repeat phases,3modeless About entries and2remote/EQ sessions. All use owned fixtures/processes, isolated settings and dummy audio.64image replacements show bounded first-use GDI growth and no further batch growth;120frame1920x1080 rendering checks record stable GDI counts. Earlier full ROM/music matrices are reused, not newly certified.
+
+
+## 1.6.2-10 spectrum styles / image removal
+
+1698unit checks PASS;3owned stereo UI sessions cover allstyles,60stylechanges,recording remote,pause/resume,persistence and stable GDIover120frames.5fullscreen/recording repeat phases PASS. Eight audio/FFT files are byte-identical to1.6.2-9source ZIP; earlier audio/EQ/ROM checks reused explicitly. Image loader/setting access and extra system image links removed. See docs/SPECTRUM-STYLES-1.6.2-10.json.

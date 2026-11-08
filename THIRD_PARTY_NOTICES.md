@@ -115,3 +115,9 @@ Own GPL2+ ChipInterpolator.hpp replaces ES5506 sub48kHz host linear interpolatio
 ##1.5.4 ordinary audio decoding
 
 miniaudio0.11.23 (David Reid and contributors), chosen MIT option; unmodified miniaudio.h and original dual-license text retained. Builtin dr_wav/dr_mp3/dr_flac notices remain in the header. stb_vorbis (Sean Barrett and contributors), chosen MIT option; unmodified upstream extras/stb_vorbis.c includes original terms. Source/hash provenance: third_party/miniaudio/UPSTREAM.json. Runtime notices: licenses/miniaudio-MIT.txt and licenses/stb-vorbis-MIT.txt. Own decoder-only adapter and Unicode Vorbis pull hookup are project GPL2+ code; SDL remains device owner. No music assets included.
+
+### GBS AGB compatibility overlay (1.6.2-4)
+The bundled Gb_Snd_Emu0.2.0 from viogsf is also adapted into the GME GBS APU. Copyright2003–2007 Shay Green; LGPL2.1-or-later, original notices preserved. Namespace/type/include/API adaptations and AGB reset with GB wave features are local modifications; GB CPU remains GME. Corresponding source: third_party/gme-agb-patch and apply_gme_fds.cmake. No new ROM, BIOS or external binary dependency.
+
+### MesenCE equalizer / Orfanidis filter bank (1.6.2-8)
+GPL-3.0 as distributed by nesdev-org/MesenCE, commit4b8a196e299b3de297b204fd1208d2981562c89b. Attribution: Mesen/Sour and MesenCE contributors; original repository README and LICENSE preserved. Runtime uses the unmodified Utilities/Audio/orfanidis_eq.h; Equalizer.cpp/.h are unmodified test-only reference sources. Full corresponding component source/provenance: third_party/mesence-eq. Own native GUI/integration implements MesenCE control semantics. Full terms: licenses/MesenCE-GPL-3.0.txt. No new audio driver/DLL or music assets.

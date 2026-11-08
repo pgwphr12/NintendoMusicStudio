@@ -7,7 +7,7 @@ constexpr int InternalRate = 48000;
 struct Stereo {
     float l = 0, r = 0;
 };
-enum class Format { Nsf, Nsfe, Spc, Gbs, Gsf, TwoSf, Usf, Bcstm, Bcwav, Vgm, SampledSong, AudioFile, Midi };
+enum class Format { Nsf, Nsfe, Spc, Gbs, Gsf, TwoSf, Usf, Bcstm, Bcwav, Vgm, SampledSong, AudioFile, Midi, GbaRom, NesRom };
 struct TrackInfo {
     std::string title, game, author, system, comment;
     int lengthMs = -1;

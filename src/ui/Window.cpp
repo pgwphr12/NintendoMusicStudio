@@ -89,6 +89,7 @@ static std::wstring time(double s) {
     swprintf_s(b, L"%02d:%02d", n / 60, n % 60);
     return b;
 }
+static constexpr int EqualizerButtonX=1680, EqualizerButtonWidth=180;
 static void button(HDC dc, const wchar_t *s, int x, int y, int w, bool active = false,bool enabled=true) {
     fill(dc, {x, y, x + w, y + 50}, active ? RGB(31, 76, 76) : RGB(28, 34, 46));
     text(dc, s, x + 16, y, w - 28, 50, 20, !enabled?RGB(118,136,158):active ? RGB(101, 237, 204) : RGB(214, 220, 235));
@@ -124,10 +125,13 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6.1h\r\n\r\n재생 · 파형 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.2\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
                 L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
+                L"F6 파형/스펙트럼 · F7 스펙트럼 종류 선택 · F9 녹화뷰\r\n"
+                L"NES ROM: 검증된 Super Mario Bros. NROM32 프로그램의 음악 선택(.nes)\r\n"
+                L"GBA ROM: 검증된 Super Mario Advance 1–4 판본의 곡 선택 재생(.gba). 그 외 ROM은 미지원\r\n"
                 L"MIDI: MID · MIDI (format0/1), Windows 기본 MIDI 장치 또는 내부 합성(SF2/DLS) · F8 선택\r\n"
                 L"추가 VGM: YM2612 · YM3812 · MSM6295 · K051649 · ES5506 · AY8930\r\n"
                 L"ES5506: 32개 음성 및 BUS RESIDUAL · AY8930: 3채널. 모든 칩/조합의 지원 완료를 뜻하지 "
@@ -241,10 +245,10 @@ bool Window::open(const std::filesystem::path &p) {
         file_ = p;
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.6.1h — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6.2 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
-        // Opening ordinary audio starts it; folder auto-advance is a separate option.
-        if (format == Format::AudioFile || format == Format::Midi)
+        // Opening audio/MIDI/a supported ROM starts it; folder advance is separate.
+        if (format == Format::AudioFile || format == Format::Midi || format == Format::GbaRom || format == Format::NesRom)
             player_.play();
 
         drag_ = -1;
@@ -273,7 +277,7 @@ void Window::selectFolder(size_t index, bool play) {
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.1h — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.2 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -304,8 +308,8 @@ void Window::openDialog() {
     d.lpstrFilter =
         L"음악 파일 "
         L"(*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*.usf;*.miniusf;*."
-        L"bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi)\0*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*."
-        L"usf;*.miniusf;*.bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi\0모든 파일\0*.*\0";
+        L"bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi;*.gba;*.nes)\0*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*."
+        L"usf;*.miniusf;*.bcstm;*.bcwav;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi;*.gba;*.nes\0모든 파일\0*.*\0";
     d.lpstrFile = path;
     d.nMaxFile = 32768;
     d.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
@@ -508,9 +512,12 @@ void Window::paint(HDC dc, int width, int height) {
         player_.loaded() ? (info.title.empty() ? L"Track " + std::to_wstring(player_.track() + 1)
                                                : wide(info.title))
                          : (recording_ ? L"Open a music file" : L"음악 파일을 열어 주세요");
-    text(dc, title, 42, 22, recording_ ? 1810 : 1400, 62, 46, RGB(235, 240, 249), true);
-    if (!recording_)
+    text(dc, title, 42, 22, recording_ ? 1810 : 1000, 62, 46, RGB(235, 240, 249), true);
+    if (!recording_){
+        button(dc,spectrumMode_?L"스펙트럼 (F6)":L"파형 (F6)",1080,22,190,spectrumMode_);
+        button(dc,spectrumStyle_==0?L"막대형 ▾ (F7)":spectrumStyle_==1?L"선형 ▾ (F7)":L"가로흐름 ▾ (F7)",1285,22,195,spectrumMode_);
         button(dc, L"플레이어 정보 (F1)", 1495, 22, 375);
+    }
     std::wstring game =
         info.game.empty()
             ? (file_.empty()
@@ -577,6 +584,8 @@ void Window::paint(HDC dc, int width, int height) {
         text(dc, decay, 1745, 205, 75, 50, 20, RGB(196, 208, 225));
         volumeButton(dc, L"+", 1830, 215);
     }
+    const auto spectrumStates=player_.states();
+    if(!spectrumMode_){
     const auto &channels = player_.channels();
     auto waves = player_.waveforms();
     auto states = player_.states();
@@ -675,15 +684,19 @@ void Window::paint(HDC dc, int width, int height) {
             previous = mid;
         }
     }
+    }else{paintSpectrum(dc);}
+    const auto& states=spectrumStates;
     if (info.lengthMs > 0 && !recording_) {
         int x = 42 + int(std::clamp(player_.seconds() * 1000 / info.lengthMs, 0., 1.) * 1840);
         line(dc, 42, 1016, 1882, 1016, RGB(42, 52, 69), 5);
         line(dc, 42, 1016, x, 1016, RGB(74, 196, 173), 5);
     }
     if (!recording_) {
-        float group = states.empty() ? 1.f : states.front().volume;
+        const float common=player_.commonChannelVolume();
+        float group = common>=0?common:(states.empty() ? 1.f : states.front().volume);
         bool mixed = std::any_of(states.begin(), states.end(),
-                                 [&](const auto &v) { return std::abs(v.volume - group) > .001f; });
+                                 [&](const auto &v) { return std::abs(v.volume - states.front().volume) > .001f; });
+        if(!mixed&&!states.empty())group=states.front().volume;
         text(dc, L"모든 채널 음량", 42, 1034, 175, 40, 20, RGB(154, 168, 190));
         volumeButton(dc, L"−", 222, 1038);
         line(dc, 264, 1054, 468, 1054, RGB(48, 59, 77), 5);
@@ -691,6 +704,7 @@ void Window::paint(HDC dc, int width, int height) {
         volumeButton(dc, L"+", 480, 1038);
         text(dc, mixed ? L"혼합" : std::to_wstring(int(std::lround(group * 100))) + L"%", 530, 1034,
              95, 40, 20, RGB(196, 208, 225));
+        button(dc,L"EQ 설정",EqualizerButtonX,1028,EqualizerButtonWidth,player_.equalizerEnabled());
         text(dc, L"F1 정보 · F9 녹화뷰 · F11 전체 화면", 660, 1034, 565, 40, 18,
              RGB(112, 130, 153));
     }
@@ -706,7 +720,7 @@ void Window::mouseMove(int x, int y) {
     if (recording_)
         return;
     if (drag_ == 102)
-        player_.channelVolumes(std::clamp(2.f * (lx - 264) / 204.f, 0.f, 2.f));
+        setAllChannelVolume(std::clamp(2.f * (lx - 264) / 204.f, 0.f, 2.f));
     else if (drag_ == 100)
         player_.master(std::clamp((lx - 1594) / 204.f, 0.f, 1.f));
     else if (drag_ == 101)
@@ -732,6 +746,8 @@ void Window::click(int x, int y) {
         return;
     int lx = int((x - offsetX_) / scale_), ly = int((y - offsetY_) / scale_);
     try {
+        if(!recording_ && ly>=22 && ly<72 && lx>=1080 && lx<1270){toggleSpectrum();return;}
+        if(!recording_ && ly>=22 && ly<72 && lx>=1285 && lx<1480){showSpectrumChoices();return;}
         if (!recording_ && ly >= 22 && ly < 72 && lx >= 1495 && lx < 1870) {
             showAbout();
             return;
@@ -751,16 +767,19 @@ void Window::click(int x, int y) {
         }
         if (!recording_ && ly >= 1028 && ly < 1078) {
             auto states = player_.states();
-            float value = states.empty() ? 1.f : states.front().volume;
+            float value = player_.commonChannelVolume();
+            if(value<0)value=states.empty()?1.f:states.front().volume;
             if (lx >= 222 && lx < 254)
-                player_.channelVolumes((std::lround(value * 100) - 5) / 100.f);
+                setAllChannelVolume((std::lround(value * 100) - 5) / 100.f);
             else if (lx >= 480 && lx < 512)
-                player_.channelVolumes((std::lround(value * 100) + 5) / 100.f);
+                setAllChannelVolume((std::lround(value * 100) + 5) / 100.f);
             else if (lx >= 264 && lx <= 468) {
                 drag_ = 102;
                 SetCapture(hwnd_);
                 mouseMove(x, y);
-            } else if (lx >= 1435 && lx < 1665)
+            } else if (lx>=EqualizerButtonX && lx<EqualizerButtonX+EqualizerButtonWidth)
+                showEqualizer();
+            else if (lx >= 1435 && lx < 1665)
                 soundFontMenu();
             else if (lx >= 1240 && lx < 1420)
                 player_.reverb(!player_.reverb());
@@ -819,7 +838,7 @@ void Window::click(int x, int y) {
             else if (lx >= 937 && lx < 1052)
                 player_.repeat(!player_.repeat());
             else if (lx >= 1067 && lx < 1182)
-                recording_ = true;
+                setRecording(true);
             else if (lx >= 1197 && lx < 1357)
                 autoplay_ = !autoplay_;
             else if (lx >= 1372 && lx < 1519)
@@ -832,6 +851,7 @@ void Window::click(int x, int y) {
                 player_.seek(int(std::clamp((lx - 42) / 1840., 0., 1.) * t.lengthMs));
             return;
         }
+        if(spectrumMode_)return;
         auto states = player_.states();
         auto visible = visibleChannels();
         for (size_t slot = 0; slot < visible.size(); ++slot) {
@@ -872,6 +892,12 @@ Window::~Window() {
     framePacer_.stop();
     releaseBuffer();
 }
+void Window::setAllChannelVolume(float volume) {
+    const int percent=int(std::lround(std::clamp(volume,0.f,2.f)*100));
+    preferences_.values["allChannelVolume"]=percent;
+    player_.channelVolumes(percent/100.f);
+    allVolumeDirty_=true;
+}
 void Window::rememberChannels() {
     if (!preferencesEnabled_ || !player_.loaded())
         return;
@@ -908,7 +934,8 @@ void Window::restoreChannels() {
                 mute=preferences_.get(legacy+".mute",preferences_.get(direct+".mute",0,0,1),0,1);
             }
         }
-        state.volume = preferences_.get(key + ".volume", volume, 0, 200) / 100.f;
+        const int common=preferences_.get("allChannelVolume",-1,0,200);
+        state.volume = (common>=0?common:preferences_.get(key + ".volume", volume, 0, 200)) / 100.f;
         state.mute = preferences_.get(key + ".mute", mute, 0, 1) != 0;
         player_.channel(i, state);
     }
@@ -918,6 +945,8 @@ void Window::savePreferences() {
         return;
     rememberChannels();
     auto &v = preferences_.values;
+    v["eqEnabled"]=player_.equalizerEnabled();
+    for(size_t band=0;band<20;band++)v["eqBand"+std::to_string(band)]=player_.equalizerGain(band);
     v["controlsRevision"] = 1415;
     v["master"] = int(std::lround(player_.master() * 100));
     v["speed"] = int(std::lround(player_.speed() * 100));
@@ -931,6 +960,8 @@ void Window::savePreferences() {
     v["autoplay"] = autoplay_;
     v["recording"] = recording_;
     v["windowSamples"] = windowSamples_;
+    v["spectrumView"]=spectrumMode_;
+    v["spectrumStyle"]=spectrumStyle_;
     if (!fullscreen_ && !IsIconic(hwnd_) && !IsZoomed(hwnd_)) {
         RECT rect{};
         GetClientRect(hwnd_, &rect);
@@ -1145,6 +1176,16 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 18: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?states[size_t(b)].mute:0;}
             case 19: {auto states=player_.states();return b>=0 && size_t(b)<states.size()?LRESULT(std::lround(states[size_t(b)].volume*100)):-1;}
             case 27: return virtualMidiAvailable_;
+            case 28: return LRESULT(player_.tracks().size());
+            case 29: return player_.track();
+            case 30:return spectrumMode_;
+            case 31:return spectrumStyle_;
+            case 32:return LRESULT(spectrumPeak_*1000);
+            case 33:return 0; // Retired history diagnostic.
+            case 34:return GetGuiResources(GetCurrentProcess(),GR_GDIOBJECTS);
+            case 35:return spectrogram_.size();
+            case 36:return spectrogramTimeMs_;
+            case 37:return spectrumChoiceWindow_&&IsWindowVisible(spectrumChoiceWindow_);
             case 25: return virtualMidiReloads_;
             case 26: return !virtualMidiError_.empty();
             case 23: return midiDeviceOutput();
@@ -1177,7 +1218,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
 #ifndef NGMV_TEST_TIMER_ONLY_BASELINE
         updatePlayback();
 #endif
-        if (!IsIconic(hwnd_) && (player_.playing() || changing_))
+        if (!IsIconic(hwnd_) && (player_.playing() || changing_ || (spectrumMode_ && spectrumPeak_>.001f)))
             InvalidateRect(hwnd_, nullptr, FALSE);
         return 0;
     case WM_COPYDATA: {
@@ -1197,10 +1238,12 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         if (!pendingFiles_.empty()) {
             auto path = std::move(pendingFiles_.front());
             pendingFiles_.pop_front();
+            if(screenshot_.empty()){
             ShowWindow(hwnd_, IsIconic(hwnd_) ? SW_RESTORE : SW_SHOW);
             if (!SetForegroundWindow(hwnd_)) {
                 FLASHWINFO flash{sizeof(FLASHWINFO), hwnd_, FLASHW_TRAY, 3, 0};
                 FlashWindowEx(&flash);
+            }
             }
             try {
                 if (!path.empty() && open(path) && !player_.playing())
@@ -1281,10 +1324,12 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         mouseMove(GET_X_LPARAM(b), GET_Y_LPARAM(b));
         return 0;
     case WM_LBUTTONUP:
+        if(allVolumeDirty_){savePreferences();allVolumeDirty_=false;}
         drag_ = -1;
         ReleaseCapture();
         return 0;
     case WM_CAPTURECHANGED:
+        if(allVolumeDirty_){savePreferences();allVolumeDirty_=false;}
         drag_ = -1;
         return 0;
     case WM_DROPFILES: {
@@ -1310,10 +1355,12 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
                     player_.play();
             } else if (a == 'A')
                 autoplay_ = !autoplay_;
+            else if(a==VK_F6)toggleSpectrum();
+            else if(a==VK_F7)showSpectrumChoices();
             else if (a == VK_F8)
                 soundFontMenu();
             else if (a == VK_F9) {
-                recording_ = !recording_;
+                setRecording(!recording_);
                 drag_ = -1;
                 ReleaseCapture();
                 ModifyMenuW(GetSystemMenu(hwnd_, FALSE), desktop::DefaultAppsCommand,
@@ -1348,6 +1395,8 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         DestroyWindow(hwnd_);
         return 0;
     case WM_DESTROY:
+        if(remoteWindow_&&IsWindow(remoteWindow_))DestroyWindow(remoteWindow_);
+        if(equalizerWindow_&&IsWindow(equalizerWindow_))DestroyWindow(equalizerWindow_);
         if (aboutWindow_ && IsWindow(aboutWindow_))
             DestroyWindow(aboutWindow_);
         framePacer_.stop();
@@ -1370,6 +1419,10 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                            GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
     if (preferencesEnabled_) {
         preferences_.load(desktop::Settings::path());
+        player_.equalizerEnabled(preferences_.get("eqEnabled",0,0,1)!=0);
+        for(size_t band=0;band<20;band++)player_.equalizerGain(band,preferences_.get("eqBand"+std::to_string(band),0,-200,200));
+        const int common=preferences_.get("allChannelVolume",-1,0,200);
+        if(common>=0)player_.channelVolumes(common/100.f);
         midiDeviceOutput(preferences_.get("midiOutputRevision",0,0,99999)>=15122 && preferences_.get("midiDeviceOutput",0,0,1)!=0);
         { std::ifstream font(desktop::Settings::path().parent_path()/L"midi-soundfont.txt",std::ios::binary);
           std::string path;char data[32768]{};font.getline(data,32768);if(!font.fail())path=data;if(path.size()<32768 && path.find('\0')==std::string::npos)midiSoundFont(std::filesystem::u8path(path)); }
@@ -1398,6 +1451,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
         } catch (const std::exception &) { /* Keep the output's existing default. */
         }
     }
+    loadVisualPreferences();
     virtualMidiAvailable_=virtualMidiInstalled();
     if(!virtualMidiAvailable_){midiSoundFont({});midiDeviceOutput(false);followVirtualMidi_=false;}
     WNDCLASSW wc{};
@@ -1411,7 +1465,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.1h", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.2", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);
@@ -1463,11 +1517,21 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     }
     const bool dropPlaybackTimer=!screenshot_.empty() && desktop::automatedSession() &&
         GetEnvironmentVariableW(L"NGMV_TEST_DISABLE_PLAYBACK_TIMER",nullptr,0)>0;
+    syncRemote();
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
         // Fault-injection only in explicitly isolated snapshot tests: verify
         // transport still advances with no idle timer delivery at all.
         if(dropPlaybackTimer && msg.hwnd==hwnd_ && msg.message==WM_TIMER && msg.wParam==1)continue;
+        if(remoteWindow_&&(msg.hwnd==remoteWindow_||IsChild(remoteWindow_,msg.hwnd))){
+            if(msg.message==WM_KEYDOWN&&(msg.wParam==VK_F9||msg.wParam==VK_F6||msg.wParam==VK_F7)){PostMessageW(hwnd_,WM_KEYDOWN,msg.wParam,0);continue;}
+            if(IsDialogMessageW(remoteWindow_,&msg))continue;
+        }
+        if(spectrumChoiceWindow_&&(msg.hwnd==spectrumChoiceWindow_||IsChild(spectrumChoiceWindow_,msg.hwnd))){
+            if(msg.message==WM_KEYDOWN&&(msg.wParam==VK_F7||msg.wParam==VK_F6||msg.wParam==VK_F9)){PostMessageW(hwnd_,WM_KEYDOWN,msg.wParam,0);continue;}
+            if(IsDialogMessageW(spectrumChoiceWindow_,&msg))continue;
+        }
+        if(equalizerWindow_&&(msg.hwnd==equalizerWindow_||IsChild(equalizerWindow_,msg.hwnd))&&IsDialogMessageW(equalizerWindow_,&msg))continue;
         if (aboutWindow_ && (msg.hwnd == aboutWindow_ || IsChild(aboutWindow_, msg.hwnd))) {
             if (msg.message == WM_KEYDOWN && msg.wParam == VK_F1) {
                 showAbout();

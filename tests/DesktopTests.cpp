@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
     try {
         const std::filesystem::path exe = L"C:\\음악 프로그램\\NintendoMusicStudio.exe";
         auto extensions = supportedExtensions();
-        check(extensions.size() == 20 && std::set<std::wstring>(extensions.begin(), extensions.end()).size() == 20, "20 unique extensions required");
-        for(auto ext:{L".mp3",L".wav",L".ogg",L".flac",L".mid",L".midi"})check(std::find(extensions.begin(),extensions.end(),ext)!=extensions.end(),"Audio/MIDI registration missing");
+        check(extensions.size() == 22 && std::set<std::wstring>(extensions.begin(), extensions.end()).size() == 22, "22 unique extensions required");
+        for(auto ext:{L".mp3",L".wav",L".ogg",L".flac",L".mid",L".midi",L".gba",L".nes"})check(std::find(extensions.begin(),extensions.end(),ext)!=extensions.end(),"Audio/MIDI registration missing");
         auto entries = registrationPlan(exe);
         for (const auto &entry : entries) {
             check(entry.key.find(L"UserChoice") == std::wstring::npos, "Never overwrite UserChoice");
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         wchar_t empty[] = L""; request.cbData = sizeof empty; request.lpData = empty;
         check(decodeRequest(&request,out) && out.empty(), "Activation-only request");
         check(!decodeRequest(nullptr,out), "Reject absent request");
-        std::cout << "20 file types, quoted Unicode commands, isolated registry, preservation of defaults, IPC validation: PASS\n";
+        std::cout << "22 file types, quoted Unicode commands, isolated registry, preservation of defaults, IPC validation: PASS\n";
         return 0;
     } catch (const std::exception &e) {
         RegOverridePredefKey(HKEY_CURRENT_USER, nullptr);

@@ -1,0 +1,171 @@
+{
+  "version": "1.6.2-10",
+  "date": "2026-11-08",
+  "type": "test toward official1.6.2",
+  "user_correction": "Remove image feature; retain new styles and waveform mode",
+  "styles": {
+    "0": "existing72-band bars",
+    "1": "smooth bounded interpolated current FFT curve",
+    "2": "blue-grey perspective waterfall of real FFT history"
+  },
+  "layout": "Left above Right; both horizontal; no image/background import",
+  "controls": "F6 waveform/spectrum,F7 style cycle; header and recording remote buttons",
+  "history": {
+    "maximum_records": 32,
+    "minimum_interval_ms": 50,
+    "visible_lifetime_ms": 1600,
+    "updates": "only new real output FFT data; not paint count",
+    "movement": "elapsed-time depth/fade using existing monitor pacing",
+    "source_epoch": "clear history/current motion on restart/seek/track change",
+    "interpolation": "bounded cubic between72 real band values; not original sequencer notes"
+  },
+  "removed": [
+    "VisualImage.cpp/.hpp",
+    "image dialog/drop/IPC dispatch",
+    "image setting path access",
+    "WIC and msimg32 link dependencies"
+  ],
+  "existing_image_files_settings_deleted": false,
+  "unit_tests": "1698PASS including prior stereo/tap6rates checks plus history ring bounds/throttle/expiry/reversed clock/reset/curve bounds",
+  "native_UI": {
+    "pass": true,
+    "cases": [
+      {
+        "style": 0,
+        "name": "bars",
+        "two_rows": true,
+        "pause_resume": true,
+        "persistence": true,
+        "benchmark": {
+          "width": "1920",
+          "height": "1080",
+          "frames": "120",
+          "mean_ms": "4.82176",
+          "p95_ms": "5.7512",
+          "gdi_before": "153",
+          "gdi_after": "153"
+        }
+      },
+      {
+        "style": 1,
+        "name": "lines",
+        "two_rows": true,
+        "pause_resume": true,
+        "persistence": true,
+        "benchmark": {
+          "width": "1920",
+          "height": "1080",
+          "frames": "120",
+          "mean_ms": "4.89484",
+          "p95_ms": "5.5894",
+          "gdi_before": "144",
+          "gdi_after": "144"
+        }
+      },
+      {
+        "style": 2,
+        "name": "waterfall",
+        "two_rows": true,
+        "pause_resume": true,
+        "persistence": true,
+        "benchmark": {
+          "width": "1920",
+          "height": "1080",
+          "frames": "120",
+          "mean_ms": "6.68449",
+          "p95_ms": "8.3673",
+          "gdi_before": "153",
+          "gdi_after": "153"
+        }
+      }
+    ],
+    "audio": "dummy",
+    "only_owned_processes_settings_media": true,
+    "image_feature_removed": true
+  },
+  "fullscreen_waterfall_repeat": {
+    "pass": true,
+    "cases": [
+      {
+        "phase": "fullscreen",
+        "wrap": true,
+        "maximum_ms": 992,
+        "fullscreen": true,
+        "recording": false
+      },
+      {
+        "phase": "fullscreen-recording",
+        "wrap": true,
+        "maximum_ms": 1002,
+        "fullscreen": true,
+        "recording": true
+      },
+      {
+        "phase": "fullscreen-normal-again",
+        "wrap": true,
+        "maximum_ms": 1002,
+        "fullscreen": true,
+        "recording": false
+      },
+      {
+        "phase": "windowed",
+        "wrap": true,
+        "maximum_ms": 992,
+        "fullscreen": false,
+        "recording": false
+      },
+      {
+        "phase": "fullscreen-again",
+        "wrap": true,
+        "maximum_ms": 992,
+        "fullscreen": true,
+        "recording": false
+      }
+    ],
+    "timer1_delivery": "disabled in own snapshot loop",
+    "audio": "dummy"
+  },
+  "audio_and_FFT_files_byte_identical_to_previous_source_ZIP": [
+    {
+      "file": "src/audio/SdlOutput.hpp",
+      "sha256": "96a4c00dedb5c6e0201ff0ca1e23b42e229e967ccb2f2cd00e8a638c2e017d6b"
+    },
+    {
+      "file": "src/audio/SdlOutput.cpp",
+      "sha256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38"
+    },
+    {
+      "file": "src/player/Player.hpp",
+      "sha256": "088ce15f1e283825be09d3e536bbd7075d80a6363bf7287b1fcc7779388b24fc"
+    },
+    {
+      "file": "src/player/Player.cpp",
+      "sha256": "dec761f842c828467ba662761f336534f36f16346cf651135d40e5bac2155603"
+    },
+    {
+      "file": "src/audio/GraphicEqualizer.cpp",
+      "sha256": "6afc53785af4c02cb18e73c7d4b78b8076a53b0383646f6315e62419a92e083c"
+    },
+    {
+      "file": "src/audio/GraphicEqualizer.hpp",
+      "sha256": "061e59a674e711fbd37d672d7640d6fd0fee0511b78c83f16639cdbe53a71cc5"
+    },
+    {
+      "file": "src/visualizer/AudioTap.hpp",
+      "sha256": "170f435dfe52a260179707ce1e88840e2c6ebb2c897a3e556572c900473d89b5"
+    },
+    {
+      "file": "src/visualizer/Spectrum.hpp",
+      "sha256": "405a99b2648e7be34091a142447df80e7e2e299622a9f2fd9fab3586c7977961"
+    }
+  ],
+  "reused_evidence": "1.6.2-9 current EQ/common gain/ROM core tests and broad original decoder matrices; no fresh full music catalogue test claimed",
+  "limits": [
+    "offscreen/dummy tests, no physical listening/VRR certification",
+    "sample monitor CPU render figures are not guaranteed presentationFPS",
+    "32frame/1.6s trace history; not a full-file spectrogram or export",
+    "Direct external MIDI devices bypass internal audio PCM"
+  ],
+  "external_upload": false,
+  "user_images_music_bundled": false
+}

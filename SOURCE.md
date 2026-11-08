@@ -1,4 +1,40 @@
-# Nintendo Music Studio 1.6.1h — complete corresponding source
+# Nintendo Music Studio1.6.2 — stable corresponding source
+
+Same source tree as test12 plus current-song mixed-gain retention and release identity/docs. Complete dependencies, notices, owned tests and build scripts are included. Test labels going forward must include beta; see docs/VERSIONING.md. Historical build instructions/records follow.
+
+
+## Test1.6.2-12 corresponding source
+
+Owned native choice window in ExtraWindows.cpp replaces type cycling. Perspective-history storage/rendering removed; SpectrumCurve.hpp retains only the bounded line interpolation helper. Existing spectrum type IDs0/1/3 stay compatible; retired2 migrates to3. No audio/decoder/FFT/history backend changes. Full sources, tests and notices included; no new third-party dependencies or user assets.
+
+
+## Test1.6.2-11 corresponding source
+
+Owned SpectrogramHistory.hpp and SpectrumView.cpp implement the bounded scrolling display. Spectrum.hpp adds a256bin log-frequency projection of the same FFT; original72band mapping and audio callback/decoder code remain unchanged. No video, reference frames, user music, ROM, bank or settings are included. New test/evidence files are bundled; no additional third-party dependency.
+
+
+## 현재 테스트본 1.6.2-8
+EQ를 MesenCE의 실제 필터·정수 조절·직접 숫자 입력 방식으로 맞췄습니다. 동일48kHz PCM 입력에서 원본 기준과 출력 샘플 차이0을 확인했습니다. [변경 사항](RELEASE-NOTES-1.6.2-8.md)에 비교 범위·원본 특성·라이선스를 정리했습니다. 아래는 이전 기록입니다.
+
+## 현재 테스트본 1.6.2-7
+하단 EQ/반향 버튼 겹침을 수정하고 표시·클릭 영역을 분리했습니다. [변경 사항](RELEASE-NOTES-1.6.2-7.md). 아래 이전 기능 기록은 보존합니다.
+
+## 현재 테스트본 1.6.2-6
+모든 채널 음량의 공통 저장·우선 적용, F9 별도 리모컨,40Hz~15kHz20밴드 EQ를 추가했습니다. [변경 사항](RELEASE-NOTES-1.6.2-6.md)에 사용법과 검사 범위를 정리했습니다. 아래는 이전 기록입니다.
+
+## 현재 테스트본 1.6.2-5
+마리오 어드밴스 1의 특정 곡 선택 시 종료되는 문제를 수정했습니다. 확인된 PCM 슬롯을 고정 유지하고 곡 전환 시 채널 설정과 버퍼 범위를 검사합니다. 자세한 내용은 [변경 사항](RELEASE-NOTES-1.6.2-5.md)을 참고하세요. 아래는 이전 기록입니다.
+
+## 현재 테스트본 1.6.2-4
+GBA ROM 개별 PCM 음성 분리 누락 수정 및 GBS의 GBA GB 호환 음원 모드를 추가했습니다. 상세 범위와 한계는 [변경 사항](RELEASE-NOTES-1.6.2-4.md)을 참고하세요. 이전 버전 기록은 아래에 보존합니다.
+
+# Nintendo Music Studio 1.6.2-3 — complete corresponding source test build
+
+NES ROM adapter: src/formats/NesRom.cpp/.hpp and NesRomProfiles.hpp contain only owned shim code and program fingerprints. Original PRG/audio/CHR are read from local user ROMs and never shipped. Internal NSF memory images use the existing static GME; no new dependency or sidecar library. tests/NesRomTests.cpp generates its own6502 signal fixture; optional real-ROM arguments remain read-only.
+
+Nintendo-driver profiles in GbaRom.cpp extend original-driver execution to SMA2/3/4; all drivers/data remain in user ROMs, with no additional library. Optional per-frame game music update executes before the original PCM mixer; m4a branch unchanged.
+
+ROM music support uses own src/formats/GbaRom.cpp bootstrap and existing viogsf; no additional core/library or game driver is bundled. Supported ROM revisions are identified by full size/CRC; unsupported revisions fail explicitly.
 
 Windows x64, C++17, Visual Studio2022 Desktop development with C++, CMake3.24+ and Python3. Dependencies are bundled as pinned source archives/trees with notices; no proprietary music is required. Composition/editor sources are absent. Python/Pillow are used only for build/test/package workflows, not runtime.
 
@@ -51,3 +87,13 @@ Additional VGM playback uses own bounded scheduling/minimal core declarations, e
 1.5.12h: own MidiAutoBank.cpp reads only the selected device configuration and local SF2; no CoolSoft executable/DLL/code is linked or redistributed. Dense parser uses O(events log tracks) track-head merge with16M-event/64MB/2h bounds. Hotfix evidence: docs/MIDI-HOTFIX-1512h.json.
 
 1.6 is the public consolidation after1.5.11, with complete current sources and historical evidence retained. Numeric CMake version1.6.0, PE version1.6.0.0, public label1.6. No external publishing is performed by the packaging tool.
+
+
+## 1.6.2-9 spectrum source
+
+Owned implementation: `src/visualizer/AudioTap.hpp`, `Spectrum.hpp`, `src/ui/SpectrumView.cpp` and `VisualImage.cpp/.hpp`. Windows Imaging Component and GDI are system APIs; no new bundled dependency. FFT and image lifetime checks live in `tests/SpectrumTests.cpp`, `tests/ui_spectrum.py`. Package excludes user image/music assets and local settings.
+
+
+## 1.6.2-10 current spectrum source
+
+`VisualImage.cpp/.hpp` and WIC/msimg32 dependencies were removed. `SpectrumView.cpp` now renders two rows in3styles; `SpectrumTrail.hpp` contains the bounded UI-owned history and curve interpolation. Image paths are no longer read or written. Prior1.6.2-9 description above is historical.

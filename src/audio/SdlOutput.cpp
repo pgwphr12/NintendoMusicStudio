@@ -39,6 +39,7 @@ void SdlOutput::callback(void *self, Uint8 *out, int bytes) {
     a.resampler_.pull(a.ring_, reinterpret_cast<float *>(out), size_t(bytes) / sizeof(float) / 2,
                       a.master_.load(), a.speed_.load(), a.pitch_.load(), a.finished_.load());
     a.drained_=a.resampler_.drained(a.ring_,a.finished_.load());
+    a.analysis_.push(reinterpret_cast<const float*>(out),size_t(bytes)/8);
     a.consumed_.store(a.resampler_.consumed);
     a.visualClock_.publish(before,a.resampler_.consumed,tick,uint64_t(bytes/8)*1000000000ull/uint64_t(a.rate_));
     a.underruns_.store(a.resampler_.underruns);
@@ -94,6 +95,8 @@ void SdlOutput::reset() {
     if (!paused_)
         throw std::runtime_error("Audio reset requires a paused device.");
     resampler_.reset();
+    analysis_.reset();
+    ++analysisEpoch_;
     finished_=drained_=false;
     consumed_ = 0;frozenVisual_=0;visualClock_.publish(0,0,PresentationClock::now(),1);
     underruns_ = 0;

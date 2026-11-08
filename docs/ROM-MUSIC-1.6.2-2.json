@@ -1,0 +1,124 @@
+{
+  "version": "1.6.2-2",
+  "channel": "test",
+  "target_release": "1.6.2",
+  "test_iteration": 2,
+  "date": "2026-11-07",
+  "scope": "Nine additional verified SMA2/3/4 profiles; thirteen total with unchanged SMA1 profiles; not universal ROM support",
+  "profiles_added": [
+    {
+      "crc32": "fcfef343",
+      "code": "AA2P",
+      "bytes": 4194304,
+      "ids": 48
+    },
+    {
+      "crc32": "5206880a",
+      "code": "AA2E",
+      "bytes": 4194304,
+      "ids": 48
+    },
+    {
+      "crc32": "639e9d3b",
+      "code": "A3AP",
+      "bytes": 8388608,
+      "ids": 40
+    },
+    {
+      "crc32": "40a48276",
+      "code": "A3AE",
+      "bytes": 4194304,
+      "ids": 40
+    },
+    {
+      "crc32": "edebea60",
+      "code": "AX4E",
+      "bytes": 8388608,
+      "ids": 57
+    },
+    {
+      "crc32": "f3c87306",
+      "code": "AX4J",
+      "bytes": 4194304,
+      "ids": 57
+    },
+    {
+      "crc32": "37141f32",
+      "code": "AX4P",
+      "bytes": 8388608,
+      "ids": 57
+    },
+    {
+      "crc32": "a44ba79f",
+      "code": "AX4E",
+      "bytes": 4194304,
+      "ids": 57
+    },
+    {
+      "crc32": "88dab27f",
+      "code": "AX4E",
+      "bytes": 4194304,
+      "ids": 57
+    }
+  ],
+  "implementation": {
+    "driver": "Original Nintendo music initialization/select/frame-update/PCM-mixer routines in user ROM",
+    "bootstrap": "Own ARM emitter: existing VCOUNT-edge scheduler with optional original per-frame game-music update; original source bytes unchanged except reset branch in private memory copy; no game boot/save/BIOS/ROM writes",
+    "catalog": "Original bounded music-ID mapping:48/40/57 for SMA2/3/4, includes aliases/jingles. Original upper playback flags retained; no zeroing as some local GSF rips did. No inferred sequencer track count; zero field means unavailable, not silent. Initial ID0.",
+    "identity": "Full size+CRC matching only, not authenticity/security certification",
+    "channels": "Six hardware channels4PSG+PCM A/B; per-instrument split and auxiliary bank discovery not implemented; existing GSF voice path unchanged"
+  },
+  "tests": {
+    "full_ctest": {
+      "passed": 35,
+      "failed": 0,
+      "seconds": 109.76,
+      "log_sha256": "1cfa9ca52539e8b45efad2a05ee6bdc9a7cfe4d49d9f9ef68abb12c7fa7f7d61",
+      "scope": "Final runtime logic. Later test-runner-only AC metric enhancement did not change player binary."
+    },
+    "actual_regional": {
+      "profiles": 9,
+      "songs_each": [
+        0,
+        1
+      ],
+      "checks": "Distinct positive finite output, deterministic replay/exact500ms seek/all-channel mute/ID rejection/original bytes readback equality",
+      "log_sha256": "7e05f7b99d1d07f05ed4928f527fdb869db19cf13e305df31dda32a437a01585"
+    },
+    "sweep": {
+      "profiles": "SMA2/3/4 US representatives",
+      "IDs": [
+        48,
+        40,
+        57
+      ],
+      "total": 145,
+      "seconds_per_start": 2.0053333333,
+      "finite_starts": 145,
+      "nonconstant_after_first85ms": 145,
+      "minimum_centered_energy_by_game": [
+        65.7248,
+        16.1138,
+        219.136
+      ],
+      "checks": "Subtract per-side mean and exclude first4096frames; idle DC not counted as musical variation",
+      "log_sha256": "65b14e5e533532a7d019e364b9f6b0a8a01b5f308d6646644d38b8c3a14a3f02",
+      "not_full_song_or_hardware_listening": true
+    },
+    "initial_failure": "First descriptor flag mask rejected valid original high-byte flags1/3. Corrected allowed original flag sets per verified profile, not source music/driver patch. Failure log preserved privately.",
+    "native_ROM_GUI": "Prior test1 frontend/user confirmation reused. No new per-ROM GUI run in this iteration; only data/routine profiles and existing menu path changed.",
+    "packaged_UI": "Do not repeat user-confirmed functionality; --skip-ui records no fresh packaged UI checks. PE/import/CRC/source/assets checks remain.",
+    "exe_sha256": "aa946c4b4dba4681b49417ed8817066d764249148a1cfbd11f1858a09e1ceb33"
+  },
+  "limitations": [
+    "Only13 exact profiles; arbitrary GBA/other-console ROMs unsupported",
+    "No original song titles/durations or universal loop detection",
+    "Each145USentry tested at beginning only; regional variants two representative songs each, not all full songs",
+    "Auxiliary music engines/banks in a ROM are not automatically enumerated",
+    "Six hardware buses, not instrument decomposition",
+    "Original in-game transient context/physical-console fidelity not established"
+  ],
+  "user_policy": "Default to tests unless explicit 배포본. Keep base1.6.2 and increment trailing test number. User-confirmed baseline should not be repeatedly retested; focus on unsupported-ROM implementation.",
+  "assets": "All supplied ROM/GSF/sample bytes and temporary prototype GSFs remain private outside source/package; original files read-only. No new third-party dependency.",
+  "next": "Broaden music-driver recognition for other GBA titles and separate auxiliary banks, then add other-console ROM execution; do not pretend signature matching alone establishes playback."
+}

@@ -1,9 +1,9 @@
 {
-  "date": "2026-11-07",
-  "version": "1.6.1h",
+  "date": "2026-11-08",
+  "version": "1.6.2",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
-  "compiled_translation_units": 981,
+  "compiled_translation_units": 986,
   "unclassified_translation_units": [],
   "removed_VGM_framework_and_old_ES": true,
   "remaining_conflicting_N64_TUs": [],
@@ -13,6 +13,7 @@
   "legal_certification": false,
   "N64_user_instruction": "Keep N64; research only, no public posting/contact. Licensed replacement retained N64.",
   "included_header_components": [
+    "MesenCE Orfanidis EQ GPL-3.0; pinned unmodified header, upstream test reference, root README/LICENSE, UPSTREAM.json and licenses/MesenCE-GPL-3.0.txt",
     "TinySoundFont MIT; pinned/marked tsf.h, UPSTREAM.json, licenses/TinySoundFont-MIT.txt",
     "miniaudio/stb MIT options and original notices retained"
   ],
@@ -82,7 +83,7 @@
     },
     {
       "path": "@gme/gme/Gb_Apu.cpp",
-      "SHA256": "85b3bd6260b62ac5b70ffd1018db0c64fe09b4ec68db28f18761a60974d0e59a",
+      "SHA256": "e4b2bf9e8fc690cc50ca917127f49890bf2fe1b350bf1f488aaf4fe26a528aa9",
       "targets": [
         "gme_static"
       ],
@@ -100,7 +101,7 @@
     },
     {
       "path": "@gme/gme/Gb_Oscs.cpp",
-      "SHA256": "8ab988ca76abbdde2b0f9bfbd06a754fd3e4e09065da1a63ceb249f3ea3fcaa0",
+      "SHA256": "7a1645716d8ca2bd7195d802e8beb638085c2c83bbef43a6a5ed62e2ed3e45aa",
       "targets": [
         "gme_static"
       ],
@@ -109,7 +110,7 @@
     },
     {
       "path": "@gme/gme/Gbs_Emu.cpp",
-      "SHA256": "21b03fd6220a7ffa68cd0dee832a4e8a218eb614dda01159d87c22bb41f4b9e4",
+      "SHA256": "c0f8e92970cee25b1d2d571da996625553187832eb15017abe7c0bb51bd4e5fe",
       "targets": [
         "gme_static"
       ],
@@ -1738,9 +1739,18 @@
     },
     {
       "path": "src/app/WindowsIntegration.cpp",
-      "SHA256": "1a8e76f6a4eba4c9650ec780cdfe27c06f5e7b07d5bfd87f6edb63f37ffa8161",
+      "SHA256": "916b78627c89b60439034e3379623d3a1e10502c542b0b69a1adf277142733b5",
       "targets": [
         "viewer_desktop"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "src/audio/GraphicEqualizer.cpp",
+      "SHA256": "6afc53785af4c02cb18e73c7d4b78b8076a53b0383646f6315e62419a92e083c",
+      "targets": [
+        "viewer_core"
       ],
       "declared_terms": "GPL-2.0-or-later",
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
@@ -1756,7 +1766,7 @@
     },
     {
       "path": "src/audio/SdlOutput.cpp",
-      "SHA256": "19126de890a2d40b756409794d4f3e19ca661ca89d16d1d888261a5b5a96cd02",
+      "SHA256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38",
       "targets": [
         "viewer_core"
       ],
@@ -1782,8 +1792,17 @@
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
     },
     {
+      "path": "src/formats/GbaRom.cpp",
+      "SHA256": "036b10859a8900313c150c3c16b620b92a3e265d598dc865834dbb8e88bdb286",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
       "path": "src/formats/GmeBackend.cpp",
-      "SHA256": "80edd4408ef2961a23403bb3b4bb1ad60c1923282586b29c78805ef0b5105155",
+      "SHA256": "4f52659a6d4e1eb4a342eebe0de85b6085456da0d96166fbab6bb83ef633ab50",
       "targets": [
         "viewer_core"
       ],
@@ -1836,6 +1855,15 @@
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
     },
     {
+      "path": "src/formats/NesRom.cpp",
+      "SHA256": "b630346fb4833e1985d58f30724e75ce3b0d0a6544b6f352ac9305d78f9f2bbd",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
       "path": "src/formats/NsfInspect.cpp",
       "SHA256": "14ed2af60afa10555de12bd63e2af46508a0a4c4c065ff3a2d20e8610275eeba",
       "targets": [
@@ -1846,7 +1874,7 @@
     },
     {
       "path": "src/formats/PsfBackend.cpp",
-      "SHA256": "2be20ebbbcc5b7e84c40bd0939fe6bfb0696907da9dc43671fed6abaa521e90e",
+      "SHA256": "780bb9ac2d7d7544a0a8c436a19e3c68c2420f85c79741dc4661bf2065ed366c",
       "targets": [
         "viewer_core"
       ],
@@ -1855,7 +1883,7 @@
     },
     {
       "path": "src/formats/Registry.cpp",
-      "SHA256": "11065bc5c11c3c28ea6a152eb6de94ec2ac1fe3e1ff5b68d72099ba994b41921",
+      "SHA256": "4a137d60eff8895587ae36afd42443aeff6d31d38e05d36746f6b9a90eb2906a",
       "targets": [
         "viewer_core"
       ],
@@ -1882,7 +1910,7 @@
     },
     {
       "path": "src/player/FolderPlaylist.cpp",
-      "SHA256": "90cdde37c031782bda929557d31e0456c7ce5087dd7b82037d192c6df835288e",
+      "SHA256": "233edd7c0744cedafcedf352712f8c363c4a3838fc7714b4ae8b321784dd489b",
       "targets": [
         "viewer_core"
       ],
@@ -1891,7 +1919,7 @@
     },
     {
       "path": "src/player/Player.cpp",
-      "SHA256": "2353a7822eedfa806e2cc14c7c70c1e71c6e00f6c36079058f176d7f0115ef91",
+      "SHA256": "914b3334a04b601fed93542e9c4cf7138cc90e6c155b470c5a86e4dc82040246",
       "targets": [
         "viewer_core"
       ],
@@ -1899,8 +1927,26 @@
       "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
     },
     {
+      "path": "src/ui/ExtraWindows.cpp",
+      "SHA256": "e608751c3369ae63c0afc1ced66a0a104094441eddab5f719aa2d7bd29e1f145",
+      "targets": [
+        "NintendoGameMusicViewer"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "src/ui/SpectrumView.cpp",
+      "SHA256": "8c06db49091fe42d58b7a6779b9e2579526fa16789d22436f4f9ec528d4cb86c",
+      "targets": [
+        "NintendoGameMusicViewer"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
       "path": "src/ui/Window.cpp",
-      "SHA256": "380c95bff78863de67fa187b4dc7ae1405a6bc281fbab97beef9a440f5b730d5",
+      "SHA256": "40df45d2cbed03e6f070a53c7c99e54677f363465b53b97413551c64d07cdeb0",
       "targets": [
         "NintendoGameMusicViewer"
       ],

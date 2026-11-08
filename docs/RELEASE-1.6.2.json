@@ -1,0 +1,158 @@
+{
+  "version": "1.6.2",
+  "date": "2026-11-08",
+  "channel": "stable",
+  "requested_distribution": true,
+  "consolidates": "test1.6.2-1..12",
+  "new_patch": {
+    "root_cause": "Player.restart reapplied commonChannelVolume unconditionally after preserving per-channel state, overwriting current mixed edits on stop/seek",
+    "fix": "Current-track restart preserves matched channel states; newly introduced channels inherit common gain; different-track restart still reapplies common. Footer/remote mixed indicator no longer suppressed by stored common gain",
+    "baseline": "Updated standalone common gain regression on previous backend fails: Same-song restart overwrote mixed gains",
+    "fixed_unit": "PASS3stop/play/seek cycles, actual internal output last512frames .025L/.15R tolerance .0002, mute preserved; different-song common priority and old4format/group checks retained",
+    "focused_ctest": "2/2 PASS0.88s: common_channel_volume_priority + rom_channel_transition_stability"
+  },
+  "fresh_native_tests": {
+    "mixed_native4formats": {
+      "pass": true,
+      "audio": "dummy",
+      "only_owned_windows_and_isolated_settings": true,
+      "cases": [
+        {
+          "mixed_stop_play_seek_retained": true,
+          "group_saved_immediately": true,
+          "group_buttons_use_common_not_first_channel": true,
+          "subsong_prioritizes_common": true,
+          "mute_preserved": true
+        },
+        {
+          "file": "channels.gbs",
+          "channels": 4,
+          "common_overrides_stale_individual_values": true
+        },
+        {
+          "file": "audio/tone.wav",
+          "channels": 2,
+          "common_overrides_stale_individual_values": true
+        },
+        {
+          "file": "channels.spc",
+          "channels": 8,
+          "common_overrides_stale_individual_values": true
+        }
+      ]
+    },
+    "release_identity": {
+      "pass": true,
+      "name_version": true,
+      "legacy_editor_CLI_rejected": true,
+      "F2_F3_no_editor_windows": true,
+      "offscreen_player_snapshot": "C:\\Users\\pgwph\\Documents\\Codex\\2026-10-05\\referenced-chatgpt-conversation-this-is-an\\work\\release162-private\\identity\\player.bmp",
+      "audio": "dummy",
+      "user_app_operated": false
+    },
+    "modeless_spectrum_choices": {
+      "pass": true,
+      "legacy2_to_scrolling3": true,
+      "checked_radio": true,
+      "native_arrow_selection": true,
+      "Escape_hides": true,
+      "close_reopen_reuses_window": true,
+      "saved3": true,
+      "only_owned_offscreen_windows": true,
+      "audio": "dummy"
+    },
+    "about3entrypoints": {
+      "pass": true,
+      "audio": "dummy",
+      "offscreen": true,
+      "user_app_operated": false,
+      "cases": [
+        {
+          "entry": "F1",
+          "pass": true,
+          "duplicate_windows": 0,
+          "playback_continued": true,
+          "owner_clicks_worked": true,
+          "escape_close_reopen_owner_cleanup": true
+        },
+        {
+          "entry": "button",
+          "pass": true,
+          "duplicate_windows": 0,
+          "playback_continued": true,
+          "owner_clicks_worked": true,
+          "escape_close_reopen_owner_cleanup": true
+        },
+        {
+          "entry": "recording-F1",
+          "pass": true,
+          "duplicate_windows": 0,
+          "playback_continued": true,
+          "owner_clicks_worked": true,
+          "escape_close_reopen_owner_cleanup": true
+        }
+      ]
+    }
+  },
+  "identity": {
+    "title": "Nintendo Music Studio1.6.2",
+    "FileVersion": "1.6.2",
+    "ProductVersion": "1.6.2",
+    "numeric_version": "1.6.2.0",
+    "test_suffix_removed": true
+  },
+  "reused": {
+    "source": "test12 full sourceZIP",
+    "verified_files": {
+      "src/audio/SdlOutput.cpp": {
+        "unchanged": true,
+        "SHA256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38"
+      },
+      "src/audio/SdlOutput.hpp": {
+        "unchanged": true,
+        "SHA256": "96a4c00dedb5c6e0201ff0ca1e23b42e229e967ccb2f2cd00e8a638c2e017d6b"
+      },
+      "src/visualizer/AudioTap.hpp": {
+        "unchanged": true,
+        "SHA256": "170f435dfe52a260179707ce1e88840e2c6ebb2c897a3e556572c900473d89b5"
+      },
+      "src/visualizer/Spectrum.hpp": {
+        "unchanged": true,
+        "SHA256": "d52d2de0233a344f3864fc4b40110e82aef579ae11b7614637dcd6f755813a29"
+      },
+      "src/visualizer/SpectrogramHistory.hpp": {
+        "unchanged": true,
+        "SHA256": "bbf72ee368683c138094b4e5423524b482fcd712e1d63191f6eca3699010b337"
+      },
+      "src/audio/GraphicEqualizer.cpp": {
+        "unchanged": true,
+        "SHA256": "6afc53785af4c02cb18e73c7d4b78b8076a53b0383646f6315e62419a92e083c"
+      },
+      "src/formats/GbaRom.cpp": {
+        "unchanged": true,
+        "SHA256": "036b10859a8900313c150c3c16b620b92a3e265d598dc865834dbb8e88bdb286"
+      },
+      "src/formats/NesRom.cpp": {
+        "unchanged": true,
+        "SHA256": "b630346fb4833e1985d58f30724e75ce3b0d0a6544b6f352ac9305d78f9f2bbd"
+      }
+    },
+    "scope": "Unchanged decoder/ROM content matrices, spectrum3style/fullscreen-repeat and EQ fidelity evidence retained from prior checkpoints; not freshly rerun"
+  },
+  "version_policy": {
+    "stable": "X.Y.Z",
+    "test_display": "X.Y.Z-N beta",
+    "test_filename": "X.Y.Z-N-beta",
+    "guard": "package_player rejects test channel versions without beta",
+    "old_artifacts_preserved": true
+  },
+  "limits": [
+    "Not universal ROM or chip support",
+    "Native tests use dummy audio/offscreen own children; no physical listening/monitor/VRR certification",
+    "Current mixed gains survive same-song transport; valid saved common still has priority for a different song and new file",
+    "Unsigned executable"
+  ],
+  "license": "Prior audited replacements and full corresponding sources/notices retained; no new third-party dependency or user media redistribution",
+  "external_upload": false,
+  "music_ROM_BIOS_banks_settings_packaged": false
+}

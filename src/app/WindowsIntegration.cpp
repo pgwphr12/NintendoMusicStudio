@@ -46,7 +46,7 @@ std::filesystem::path executablePath() {
 }
 std::vector<std::wstring> supportedExtensions() {
     return {L".nsf", L".nsfe", L".spc", L".gbs", L".gsf", L".minigsf", L".2sf",
-            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".vgm", L".vgz", L".mp3", L".wav", L".ogg", L".flac", L".mid", L".midi"};
+            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".vgm", L".vgz", L".mp3", L".wav", L".ogg", L".flac", L".mid", L".midi", L".gba", L".nes"};
 }
 bool decodeRequest(const COPYDATASTRUCT *data, std::wstring &result) {
     if (!data || data->dwData != CopyDataTag || !data->lpData ||

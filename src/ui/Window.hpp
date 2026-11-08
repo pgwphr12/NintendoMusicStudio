@@ -3,6 +3,8 @@
 #include "player/FolderPlaylist.hpp"
 #include "player/Player.hpp"
 #include "DisplayPacer.hpp"
+#include "visualizer/SpectrumCurve.hpp"
+#include "visualizer/SpectrogramHistory.hpp"
 #include <filesystem>
 #include <deque>
 #include <windows.h>
@@ -10,6 +12,14 @@ namespace ngmv {
 class Window {
     HWND hwnd_ = nullptr;
     HWND aboutWindow_ = nullptr;
+    HWND spectrumChoiceWindow_ = nullptr;
+    HWND remoteWindow_ = nullptr, equalizerWindow_ = nullptr;
+    void syncRemote();
+    void updateRemote();
+    void showEqualizer();
+    bool equalizerSync_=false;
+    void updateEqualizer(bool force=false);
+    void setRecording(bool);
     HDC bufferDC_ = nullptr;
     HBITMAP bufferBitmap_ = nullptr;
     HGDIOBJ bufferOld_ = nullptr;
@@ -35,12 +45,33 @@ class Window {
     void selectFolder(size_t index, bool play);
     void nextTrack(int direction, bool automatic = false);
     bool recording_ = false, fullscreen_ = false;
+    bool spectrumMode_=false;
+    int spectrumStyle_=3;
+    SpectrogramHistory spectrogram_;
+    uint64_t spectrogramTimeMs_=0;
+    bool spectrogramWasPlaying_=false;
+    std::vector<uint32_t> spectrogramRaster_;
+    SpectrumAnalyzer spectrum_;
+    SpectrumMotion spectrumMotion_;
+    SpectrumAnalyzer::Samples spectrumSamples_{};
+    ULONGLONG spectrumLastAnalysis_=0,spectrumLastPaint_=0,spectrumLastAudio_=0;
+    uint64_t spectrumLastSample_=0;
+    uint64_t spectrumEpoch_=0;
+    float spectrumPeak_=0;
+    void paintSpectrum(HDC);
+    void paintScrollingSpectrum(HDC,int,int);
+    void showSpectrumChoices();
+    void setSpectrumStyle(int);
+    void loadVisualPreferences();
+    void toggleSpectrum();
     bool autoplay_ = true;
     int windowSamples_ = 2048;
     int speedStep_ = 1;
     desktop::Settings preferences_;
     bool preferencesEnabled_ = false;
     std::string savedPreferences_;
+    bool allVolumeDirty_ = false;
+    void setAllChannelVolume(float volume);
     void rememberChannels();
     void restoreChannels();
     void savePreferences();

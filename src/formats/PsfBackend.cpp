@@ -477,9 +477,10 @@ class PsfBackend final : public IMusicBackend {
         const auto&g=gba_[0]->system;
         return copyGbaRomSample(g.rom,g.romSize>0?size_t(g.romSize):0,info,out,error);
     }
-    PsfBackend(const std::filesystem::path &path, Format format) : image_{format} {
-        need(!path.empty(), "GSF/2SF/USF requires a file path to resolve music libraries.");
-        image_.load(path);
+    PsfBackend(const std::filesystem::path &path, Format format,std::vector<uint8_t> direct={},const std::string&title={}) : image_{format} {
+        bool directRom=!direct.empty();
+        if(directRom){image_.rom=std::move(direct);image_.entry=0x08000000;image_.entrySet=true;image_.tags["title"]=title;}
+        else {need(!path.empty(), "GSF/2SF/USF requires a file path to resolve music libraries.");image_.load(path);}
         image_.finish();
         fadeStart_ = milliseconds(image_.tag("length"));
         fadeMs_ = std::max(0, milliseconds(image_.tag("fade")));
@@ -510,7 +511,10 @@ class PsfBackend final : public IMusicBackend {
             if(std::getenv("NGMV_GBA_MIXER_DEBUG"))std::fprintf(stderr,"GBA mixer: layout=%d slots=%d RAMwrites=%llu recognized=%llu checks=%u\n",gba_[0]->mixer.info!=0,gba_[0]->mixer.voices,(unsigned long long)gba_[0]->mixer.writes,(unsigned long long)gba_[0]->mixer.recognized,gba_[0]->mixer.checks);
             if(std::getenv("NGMV_GBA_MIXER_DEBUG")&&gba_[0]->mixer.info){auto s=GbaMixerTap::ram(&gba_[0]->system,gba_[0]->mixer.info,24);std::fprintf(stderr,"GBA mixer fields: reverb=%u master=%u freq=%u samples=%u\n",s[5],s[7],GbaMixerTap::word(s+20),GbaMixerTap::word(s+16));}
             if(std::getenv("NGMV_GBA_MIXER_DEBUG")&&gba_[0]->mixer.info)std::fprintf(stderr,"GBA DMA offsets: A=%x B=%x\n",GbaMixerTap::word(gba_[0]->system.ioMem+0xbc)-gba_[0]->mixer.info,GbaMixerTap::word(gba_[0]->system.ioMem+0xc8)-gba_[0]->mixer.info);
-            if(!std::getenv("NGMV_GBA_HARDWARE_ONLY")&&gba_[0]->mixer.recognized>32){gbaVoices_=gba_[0]->mixer.voices;gbaMixerInfo_=gba_[0]->mixer.info;channels_.resize(4);for(int i=0;i<gbaVoices_;i++)channels_.push_back({"PCM VOICE "+std::to_string(i+1)});channels_.push_back({"EFFECTS / OTHER"});}
+            // A verified direct ROM can have silent/PSG-only entries. The initialized
+            // m4a RAM identity/count/rate already establishes its real PCM slots;
+            // do not collapse the layout merely because no PCM writes occurred.
+            if(!std::getenv("NGMV_GBA_HARDWARE_ONLY")&&(gba_[0]->mixer.recognized>32||(directRom&&gba_[0]->mixer.info&&gba_[0]->mixer.voices>0))){gbaVoices_=gba_[0]->mixer.voices;gbaMixerInfo_=gba_[0]->mixer.info;channels_.resize(4);for(int i=0;i<gbaVoices_;i++)channels_.push_back({"PCM VOICE "+std::to_string(i+1)});channels_.push_back({"EFFECTS / OTHER"});}
             if(!std::getenv("NGMV_GBA_HARDWARE_ONLY")&&!gbaVoices_&&gba_[0]->nintendo.recognized>32&&!gba_[0]->nintendo.fault){auto profile=gba_[0]->nintendo.selected;nintendoVoices_=int(profile.count);nintendoPools_={profile};channels_.resize(4);for(int i=0;i<nintendoVoices_;i++)channels_.push_back({"PCM VOICE "+std::to_string(i+1)});channels_.push_back({"EFFECTS / OTHER"});}
             // Do not retain the probe's prefetched, unmuted output in either mode.
             selectTrack(0);
@@ -640,5 +644,8 @@ class PsfBackend final : public IMusicBackend {
 } // namespace
 std::unique_ptr<IMusicBackend> makePsfBackend(const std::filesystem::path &path, Format format) {
     return std::make_unique<PsfBackend>(path, format);
+}
+std::unique_ptr<IMusicBackend> makeGbaImageBackend(std::vector<uint8_t> image,const std::string&title){
+    return std::make_unique<PsfBackend>(std::filesystem::path{},Format::Gsf,std::move(image),title);
 }
 } // namespace ngmv

@@ -6,7 +6,7 @@
 namespace ngmv {
 FolderPlaylist FolderPlaylist::scan(const std::filesystem::path &file, Format format) {
     FolderPlaylist result;
-    if (format == Format::Nsf || format == Format::Nsfe || format == Format::Gbs)
+    if (format == Format::Nsf || format == Format::Nsfe || format == Format::Gbs || format == Format::GbaRom || format == Format::NesRom)
         return result;
     auto matches = [format](const std::filesystem::path &path) {
         auto ext = path.extension().wstring();

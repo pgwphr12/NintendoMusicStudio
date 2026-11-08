@@ -1,0 +1,53 @@
+{
+  "component": "MesenCE Orfanidis/Butterworth equalizer",
+  "repository": "https://github.com/nesdev-org/MesenCE",
+  "commit": "4b8a196e299b3de297b204fd1208d2981562c89b",
+  "license": "GPL-3.0 as distributed by MesenCE; root LICENSE and upstream README included",
+  "runtime": [
+    "orfanidis_eq.h"
+  ],
+  "test_only": [
+    "Equalizer.cpp",
+    "Equalizer.h",
+    "pch.h"
+  ],
+  "modifications": "Upstream header and Equalizer reference sources unmodified. pch.h is an owned test harness. App wrapper and native UI are separate integration code.",
+  "upstream_blobs": [
+    {
+      "path": "UI/Config/AudioConfig.cs",
+      "git_blob_sha": "5e39a0cb7b31e0015bcee0731f8cd5a3c2e92cc6"
+    },
+    {
+      "path": "UI/Controls/MesenSlider.axaml",
+      "git_blob_sha": "37fa893815f38dcebfbdf20423b5d67c5f9b1d48"
+    },
+    {
+      "path": "UI/Controls/MesenSlider.axaml.cs",
+      "git_blob_sha": "ae35fefd0b26d674d6f5869df476e086582dfb4b"
+    },
+    {
+      "path": "UI/Views/AudioConfigView.axaml",
+      "git_blob_sha": "11ec5667a047aecbfc5e6f6a24ced1ea2e2a7d11"
+    },
+    {
+      "path": "Utilities/Audio/Equalizer.cpp",
+      "git_blob_sha": "9be12360c8ba3f14b8ff6f8354648e9a91031311"
+    },
+    {
+      "path": "Utilities/Audio/Equalizer.h",
+      "git_blob_sha": "2c610336554ea0eb9d41a8d641287d108d8da951"
+    },
+    {
+      "path": "Utilities/Audio/orfanidis_eq.h",
+      "git_blob_sha": "012f448d53b49e7357cf635be4da2afcca3fbe2f"
+    }
+  ],
+  "files_sha256": {
+    "orfanidis_eq.h": "6b2d38609aa496a24650f55da09e5aca3ab4646b94ebad3bb1f9bd729a542768",
+    "Equalizer.cpp": "288d987c4fbb34b81e14638ae8a477dcb333fefaa0ea123633a5cd9f831f7fe8",
+    "Equalizer.h": "e5662bc117d2b91f888633d9b36fdd387fd3cab20b56e75f95fa93cf014fafd1",
+    "LICENSE": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+    "UPSTREAM-README.md": "01c52fa64ad7d8e44a3492f2b96c765e7fad8fb9ad0f31a90ebb64e2067dbaee",
+    "pch.h": "6ba92c4bd9fc72831624145e248ecd3bafc1af57c3493187d44db51102127d01"
+  }
+}

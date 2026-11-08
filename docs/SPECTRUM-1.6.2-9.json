@@ -1,0 +1,268 @@
+{
+  "version": "1.6.2-9",
+  "date": "2026-11-08",
+  "type": "test toward official1.6.2",
+  "user_request": "Optional central local image with side spectrum bars; without image two separate horizontal spectrum rows stacked vertically, not a mirrored single axis",
+  "algorithm": {
+    "source": "actual SDL float stereo output after pitch/tempo/master; upstream EQ/reverb/channel mix already applied",
+    "fft_frames": 4096,
+    "window": "Hann, DC removed, per-channel radix2 FFT",
+    "bands": 72,
+    "frequency_Hz": [
+      40,
+      16000
+    ],
+    "above_Nyquist": "not displayed",
+    "analysis_update": "at most once per16ms; latest window cached between audio callbacks",
+    "motion": "time-based35ms attack/220ms release using existing monitor-paced display",
+    "audio_callback": "bounded atomic stereo sample tap; no locks, allocations, FFT, or file I/O; not a guarantee of all hardware realtime deadlines",
+    "source_restart": "epoch clears display cache across seeks/restarts/track changes"
+  },
+  "images": {
+    "decoder": "Windows Imaging Component; local file only",
+    "formats_fresh_tested": [
+      "PNG",
+      "JPEG",
+      "BMP",
+      "GIF",
+      "TIFF"
+    ],
+    "frame": "first",
+    "limits": "64MiB encoded,100million input pixels; scaled to max2048 side before retaining bitmap",
+    "aspect_ratio": "contained without stretching; premultiplied alpha draw",
+    "storage": "path only in settings sibling spectrum-image.txt; source file never modified/uploaded/bundled",
+    "missing_source": "two-row fallback without modal dialog"
+  },
+  "controls": [
+    "F6 waveform/spectrum",
+    "F7 image menu",
+    "Delete clear view image, preserve original",
+    "header buttons",
+    "F9 remote view/image buttons"
+  ],
+  "unit_test": "682PASS: independent left440Hz/right3kHz at6 output rates, anti-phase, silence, NaN, concurrent tap wrap/reset,60/144Hz motion",
+  "core_regressions": "4/4PASS0.63s: spectrum, MesenCE reference EQ, common channel gain, ROM state transitions; freshly rebuilt current sources",
+  "native_UI": {
+    "pass": true,
+    "audio": "dummy",
+    "user_media_settings_processes_used": false,
+    "cases": [
+      {
+        "session": 0,
+        "layout": "two horizontal stereo rows",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      },
+      {
+        "session": 1,
+        "layout": "side bars with image",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      },
+      {
+        "session": 2,
+        "layout": "two horizontal stereo rows",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      },
+      {
+        "session": 3,
+        "layout": "two horizontal stereo rows",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      }
+    ]
+  },
+  "image_replacement_resources": {
+    "replacements": 64,
+    "initial_GDI": 138,
+    "warmup_max": 144,
+    "last_batch_GDI": 142,
+    "last32_no_additional_growth": true,
+    "entire_initial_GDI_growth_zero_claimed": false,
+    "measurement": "read-only UI-thread scalar query after completed image-load revision/paint;64 PNG/JPEG replacements"
+  },
+  "fullscreen_repeat": {
+    "pass": true,
+    "cases": [
+      {
+        "phase": "fullscreen",
+        "wrap": true,
+        "maximum_ms": 992,
+        "fullscreen": true,
+        "recording": false
+      },
+      {
+        "phase": "fullscreen-recording",
+        "wrap": true,
+        "maximum_ms": 1002,
+        "fullscreen": true,
+        "recording": true
+      },
+      {
+        "phase": "fullscreen-normal-again",
+        "wrap": true,
+        "maximum_ms": 1002,
+        "fullscreen": true,
+        "recording": false
+      },
+      {
+        "phase": "windowed",
+        "wrap": true,
+        "maximum_ms": 1002,
+        "fullscreen": false,
+        "recording": false
+      },
+      {
+        "phase": "fullscreen-again",
+        "wrap": true,
+        "maximum_ms": 992,
+        "fullscreen": true,
+        "recording": false
+      }
+    ],
+    "timer1_delivery": "disabled in own snapshot loop",
+    "audio": "dummy"
+  },
+  "about": {
+    "pass": true,
+    "audio": "dummy",
+    "offscreen": true,
+    "user_app_operated": false,
+    "cases": [
+      {
+        "entry": "F1",
+        "pass": true,
+        "duplicate_windows": 0,
+        "playback_continued": true,
+        "owner_clicks_worked": true,
+        "escape_close_reopen_owner_cleanup": true
+      },
+      {
+        "entry": "button",
+        "pass": true,
+        "duplicate_windows": 0,
+        "playback_continued": true,
+        "owner_clicks_worked": true,
+        "escape_close_reopen_owner_cleanup": true
+      },
+      {
+        "entry": "recording-F1",
+        "pass": true,
+        "duplicate_windows": 0,
+        "playback_continued": true,
+        "owner_clicks_worked": true,
+        "escape_close_reopen_owner_cleanup": true
+      }
+    ]
+  },
+  "remote_EQ": {
+    "pass": true,
+    "audio": "dummy",
+    "only_owned_processes_and_settings": true,
+    "cases": [
+      {
+        "session": 0,
+        "remote_transport_master_common": true,
+        "20band_controls": true,
+        "EQ_persist_or_reset": true,
+        "modeless_main_responsive": true,
+        "F9_return": true
+      },
+      {
+        "session": 1,
+        "remote_transport_master_common": true,
+        "20band_controls": true,
+        "EQ_persist_or_reset": true,
+        "modeless_main_responsive": true,
+        "F9_return": true
+      }
+    ]
+  },
+  "render_benchmark": {
+    "scope": "own offscreen1920x1080 GDI render120frames, not physical monitor/VRR FPS",
+    "cases": {
+      "stereo-rows": {
+        "width": "1920",
+        "height": "1080",
+        "frames": "120",
+        "mean_ms": "4.20075",
+        "p95_ms": "5.0123",
+        "gdi_before": "152",
+        "gdi_after": "152"
+      },
+      "image-sides": {
+        "width": "1920",
+        "height": "1080",
+        "frames": "120",
+        "mean_ms": "4.77863",
+        "p95_ms": "5.4318",
+        "gdi_before": "145",
+        "gdi_after": "145"
+      },
+      "recording-rows": {
+        "width": "1920",
+        "height": "1080",
+        "frames": "120",
+        "mean_ms": "0.960646",
+        "p95_ms": "1.2206",
+        "gdi_before": "160",
+        "gdi_after": "160"
+      }
+    }
+  },
+  "failed_candidates": [
+    "First image test fabricated cross-process HDROP with sender-private memory. Actual error was failed music open; corrected test uses supported marshalled WM_COPYDATA and waits image revision. Not a WIC decode failure.",
+    "Initial stress assertion assumed exactlyzero first-use GDI growth.64replacement trace showed bounded first-use138->144 then142, no continuing growth. Subsequent test compares postwarmup batches.",
+    "Initial pause check used350ms despite intentional220ms release. Corrected expected settling window800ms; no faster fake decay added.",
+    "An external resource-count sample caught one transient paint handle145 before returning142. Switched resource measurements to the owned UI thread to avoid sampling an in-progress paint; final standalone64replacement run passed unchanged image lifetime logic."
+  ],
+  "reuse": "Earlier broad actual ROM/GBS/GBA song matrices unchanged and not rerun; no physical audio/hardware monitoring.",
+  "limits": [
+    "Direct external MIDI-device output bypasses internal PCM and is not loopback-captured",
+    "No spectrogram/history waterfall; these are instantaneous frequency bars with temporal smoothing",
+    "No all-machine/VRR/4K-long-stress certification",
+    "GIF/TIFF animation,EXIF auto-orientation and arbitrary SVG/video backgrounds not implemented"
+  ],
+  "source_music_images_redistributed": false,
+  "external_upload": false,
+  "standalone_EXE_native_UI": {
+    "pass": true,
+    "audio": "dummy",
+    "user_media_settings_processes_used": false,
+    "cases": [
+      {
+        "session": 0,
+        "layout": "two horizontal stereo rows",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      },
+      {
+        "session": 1,
+        "layout": "side bars with image",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      },
+      {
+        "session": 2,
+        "layout": "two horizontal stereo rows",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      },
+      {
+        "session": 3,
+        "layout": "two horizontal stereo rows",
+        "real_output_spectrum": true,
+        "pause_resume": true,
+        "saved_state": true
+      }
+    ]
+  }
+}

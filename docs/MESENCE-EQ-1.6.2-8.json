@@ -1,0 +1,117 @@
+{
+  "version": "1.6.2-8",
+  "channel": "test",
+  "target_release": "1.6.2",
+  "test_iteration": 8,
+  "date": "2026-11-07",
+  "request": "MesenCE EQ should work the same, not only look similar",
+  "reference_commit": "4b8a196e299b3de297b204fd1208d2981562c89b",
+  "primary_sources": [
+    "https://github.com/nesdev-org/MesenCE/blob/4b8a196e299b3de297b204fd1208d2981562c89b/Utilities/Audio/Equalizer.cpp",
+    "https://github.com/nesdev-org/MesenCE/blob/4b8a196e299b3de297b204fd1208d2981562c89b/UI/Config/AudioConfig.cs",
+    "https://github.com/nesdev-org/MesenCE/blob/4b8a196e299b3de297b204fd1208d2981562c89b/UI/Controls/MesenSlider.axaml",
+    "https://github.com/nesdev-org/MesenCE/blob/4b8a196e299b3de297b204fd1208d2981562c89b/UI/Controls/MesenNumericTextBox.cs"
+  ],
+  "algorithm": "Unmodified MesenCE Orfanidis eq1 Butterworth4th-order parallel band bank; linear-neighbor-midpoint bandwidths; gain rebuilds filter pair; bypass freezes histories; PCM16 input/output clipping and integer conversion. EQ before reverb.",
+  "controls": {
+    "range_dB": [
+      -20,
+      20
+    ],
+    "step_dB": 1,
+    "page_step_dB": 5,
+    "numeric": "signed integer input/auto-select on focus; clamp overflow range; blank->0; -0->-1; invalid partial sign retains last value until blur",
+    "disabled": "sliders/numeric/frequency labels disabled; stored gains retained",
+    "default": "off,0",
+    "legacy": "previous0.1dB values round to nearest integer"
+  },
+  "upstream_quirks_preserved": [
+    "15kHz UI label uses13kHz actual center per original Equalizer.cpp",
+    "Enabled all0dB still runs the band bank, unlike bypass",
+    "No invented smoothing; gain changes rebuild/reset filters like original"
+  ],
+  "reference_test": {
+    "oracle": "Unmodified upstream Equalizer.cpp/.h built with owned pch shim, separate from integration wrapper; same unmodified filter header underpins both. Tests verify integration parity, not independent filter-library correctness.",
+    "sample_rate": 48000,
+    "profiles": 24,
+    "stereo_frames": 199680,
+    "maximum_PCM16_error": 0,
+    "coverage": "20solo+15,flat0,all+15,alternating±20,all-20; history retained/changed settings reset/disabled exact passthrough/reenable/clip",
+    "log": "PASS upstream MesenCE4b8a196 reference24profiles/199680 stereo frames exact max_PCM16_error=0; zero/all+15/extremes/updates/frozen bypass/re-enable/history/clipping"
+  },
+  "source_identity": {
+    "orfanidis_eq.h": {
+      "sha256": "6b2d38609aa496a24650f55da09e5aca3ab4646b94ebad3bb1f9bd729a542768",
+      "git_blob_sha": "012f448d53b49e7357cf635be4da2afcca3fbe2f"
+    },
+    "Equalizer.cpp": {
+      "sha256": "288d987c4fbb34b81e14638ae8a477dcb333fefaa0ea123633a5cd9f831f7fe8",
+      "git_blob_sha": "9be12360c8ba3f14b8ff6f8354648e9a91031311"
+    },
+    "Equalizer.h": {
+      "sha256": "e5662bc117d2b91f888633d9b36fdd387fd3cab20b56e75f95fa93cf014fafd1",
+      "git_blob_sha": "2c610336554ea0eb9d41a8d641287d108d8da951"
+    }
+  },
+  "native_UI": {
+    "pass": true,
+    "audio": "dummy",
+    "own_windows_and_settings_only": true,
+    "cases": [
+      {
+        "legacy_fraction_migrated": true,
+        "range_integer_1_page5": true,
+        "numeric_plus_minus_limits": true,
+        "disabled_controls": true
+      },
+      {
+        "saved_values_and_enabled_restored": true,
+        "reset20": true
+      }
+    ]
+  },
+  "remote_UI": {
+    "pass": true,
+    "audio": "dummy",
+    "only_owned_processes_and_settings": true,
+    "cases": [
+      {
+        "session": 0,
+        "remote_transport_master_common": true,
+        "20band_controls": true,
+        "EQ_persist_or_reset": true,
+        "modeless_main_responsive": true,
+        "F9_return": true
+      },
+      {
+        "session": 1,
+        "remote_transport_master_common": true,
+        "20band_controls": true,
+        "EQ_persist_or_reset": true,
+        "modeless_main_responsive": true,
+        "F9_return": true
+      }
+    ]
+  },
+  "focused_tests": "3/3PASS0.61s:graphic_equalizer_audio/common_channel_volume_priority/rom_channel_transition_stability",
+  "failed_candidate": "Creation EN_CHANGE from new edit boxes initially overwrote restored gains with0. A creation/update guard fixes it; failed ui.log preserved, final ui-verified.log PASS. Initial apply_patch format / command-length errors did not mutate sources.",
+  "logs_sha256": {
+    "reference-final.log": "433c9bca12bc1efdc78636d640de8bcdf41bb305218b9d0289948fd5082400ab",
+    "targeted.log": "6d0d43046831f4b656772c12c1f069b3040e87c82b33944524db484a5edc32fe",
+    "ui.log": "19044578edb6bdd3eb3f5b2db846b4a2e28b4236c758eb394dfeff37d17d788c",
+    "ui-final.log": "469e7fce56cca7e273c881660ad173453c1ad08db40960ae722619fc07baf80b",
+    "ui-verified.log": "469e7fce56cca7e273c881660ad173453c1ad08db40960ae722619fc07baf80b",
+    "remote-ui.log": "37cb610cbcf5d4f769ad739832fd6cb6a6248ccff76c94fb5a86498c13af5fdc"
+  },
+  "limits": [
+    "Canonical EQ-stage parity at internal48kHz; entire MesenCE decoder/resampler/master/reverb/limiter output equality not claimed",
+    "Native Win32 UI differs visually from Avalonia; requested control semantics and photo band layout retained",
+    "Native MesenCE process was not run or modified; only selected local EQ settings were read for context",
+    "No physical listening/hardware/audio-device comparison",
+    "Unchanged ROM/GBS matrices reused; not rerun or claimed fresh"
+  ],
+  "license": "MesenCE GPL3 root LICENSE/README, upstream component source, provenance and embedded license notices included; no new DLL",
+  "exe_sha256": "a3969e486bde6955747b712c26ee42ffd9db1886c7ded6217f090d9c149124be",
+  "external_upload": false,
+  "user_settings_or_game_assets_modified": false
+}

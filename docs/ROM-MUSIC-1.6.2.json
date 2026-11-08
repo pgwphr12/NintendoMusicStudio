@@ -1,0 +1,97 @@
+{
+  "version": "1.6.2-1",
+  "type": "test build: limited ROM playback",
+  "date": "2026-11-07",
+  "implementation": {
+    "inputs": "GBA ROM full size/CRC whitelist; verified Super Mario Advance1 only",
+    "profiles": [
+      {
+        "crc32": "c95824c4",
+        "code": "AMZE",
+        "entries": 321
+      },
+      {
+        "crc32": "69924cbd",
+        "code": "AMZE",
+        "entries": 321
+      },
+      {
+        "crc32": "1e4c6d6a",
+        "code": "AMAE",
+        "entries": 321
+      },
+      {
+        "crc32": "b993b92f",
+        "code": "AMAJ",
+        "entries": 319
+      }
+    ],
+    "size_bytes": 4194304,
+    "engine": "Original m4aSoundInit/SongNumStart/VSync/Main in ROM, emulated by existing viogsf",
+    "bootstrap": "Own ARM emitter appends to private memory image; reset branch only original-byte change. No on-disk ROM patch, game boot/save/BIOS. VCOUNT edge polling once per frame.",
+    "listing": "Validated song headers/ROM pointers; zero-track entries omitted; BGM and sound effects retained; original IDs as Song N, no guessed original names or durations. Default real ID170.",
+    "channels": "Six hardware channels4PSG+PCM A/B; no claim of individual PCM instrument separation. Existing GSF probe/voices path unchanged.",
+    "ui": "Open/drop .gba, auto-start, Tracks/previous/next, pause, seek, mixer/effects and recording view;21 extension registration plan without changing system defaults"
+  },
+  "validation": {
+    "full_ctest": {
+      "passed": 35,
+      "failed": 0,
+      "seconds": 108.97,
+      "log_sha256": "807fa2187ccc946abb55baf95266db6ea37e2a16ea443c4241b75521ef444477",
+      "stage": "Before final ROM-only auto-start condition"
+    },
+    "final_affected": {
+      "passed": 6,
+      "failed": 0,
+      "seconds": 17.94,
+      "includes": "Own ROM bootstrap plus fixture/native clicks/folder/ordinary-open/MIDI checks",
+      "log_sha256": "8783e49b8b5d25b63480e60a2040a32885cb91d7172aefcfeef6760f2064ed41"
+    },
+    "actual_four_profiles": {
+      "result": "PASS original ROMs read-only; exact in-process readback equality after tests",
+      "songs_tested": [
+        170,
+        171
+      ],
+      "checks": "Distinct nonzero finite PCM, deterministic replay, exact500ms seek, all-channel mute, invalid selection errors",
+      "log_sha256": "b60d5b8a5683c9d735b5fe64fa2a4ef67cde055f57fe1918d8466a430ef00041",
+      "scope": "Two representative songs per profile, not every entry auditioned"
+    },
+    "native_actual": {
+      "pass": true,
+      "entries": 321,
+      "hardware_channels": 6,
+      "auto_start": true,
+      "previous_next_pause_recording": true,
+      "pcm_waves": true,
+      "audio": "dummy",
+      "original_rom_read_only": true
+    },
+    "native_log_sha256": "a819262ea25f32a5af5a9eb59b7c272f7b5c94f2010c5c9507db6975783235a2",
+    "image": "Own offscreen recording screenshot visually inspected: Song171 and real nonflat PCM A/B",
+    "audio": "Offline/dummy only; physical console/listening not tested",
+    "failure_fixed": "First native test exposed no automatic start on new ROM format. Added GbaRom to opening auto-start condition; final native and affected regression pass. First failure log preserved privately.",
+    "exe_sha256": "da0718c57854ad354319d05d541c617086d8bfe34d00ed6eb05ced5e8698dc57",
+    "packaging_failure_fixed": "First package metadata gate still expected1.6.1h after all shipped-EXE UI checks passed. Updated exact expected release to1.6.2; failure log preserved privately. Runtime code unchanged.",
+    "test_label_packaging": "Final user convention:1.6.2-1 test/target official1.6.2; numeric PE1.6.2.1. Rebuilt title/resource/instance label, fresh actual native ROM test PASS and shipped-EXE checks run again. Engine/core unchanged from four-profile tests."
+  },
+  "references": [
+    "https://loveemu.github.io/vgmdocs/Summary_of_GBA_Standard_Sound_Driver_MusicPlayer2000.html",
+    "https://github.com/pret/pokeemerald/blob/master/src/m4a.c",
+    "https://github.com/pret/pokeemerald/blob/master/src/m4a_1.s"
+  ],
+  "limits": [
+    "Other GBA engines/revisions and NES/GB/SNES/other ROMs unsupported",
+    "CRC is revision matching, not security/authenticity certification",
+    "Six hardware channels only for this ROM path; individual PCM voice separation not connected",
+    "Song names/durations/loop boundaries unknown; many listed items are short sound effects",
+    "No physical-console fidelity claim; engine update schedule is own bootstrap",
+    "All319/321 entries structurally listed, only170/171 playback checked per profile"
+  ],
+  "assets": "No ROM/driver bytes/music/samples/BIOS included; local preliminary generated-GSF prototype kept outside source/packages; original files read-only",
+  "next": "Identify original Nintendo drivers in SMA2/3/4 separately; do not apply standard-m4a offsets or profiles blindly",
+  "user_delivery_policy": "Unless explicitly requested as 배포본, test build. Increment trailing iteration only; official1.6.2 omits -1.",
+  "target_release": "1.6.2",
+  "test_iteration": 1
+}

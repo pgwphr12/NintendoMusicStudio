@@ -62,6 +62,7 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
         std::lock_guard<std::mutex> lock(stateMutex_);
         channelStates_.assign(backend_->channels().size(), ChannelState{});
         if(initialStates.size()==channelStates_.size())channelStates_=initialStates;
+        if(commonChannelVolume_>=0)for(auto& state:channelStates_)state.volume=commonChannelVolume_;
         error_.clear();
     }
     track_ = 0;
@@ -88,7 +89,25 @@ void Player::restart(int track, int ms, bool play) {
             usedChannels_=0;
         }
         sourceEndFrame_=UINT64_MAX;
+        const auto previousChannels = backend_->channels();
+        const auto previousStates = states();
         backend_->selectTrack(track);
+        {
+            std::lock_guard<std::mutex> lock(stateMutex_);
+            channelStates_.assign(backend_->channels().size(), ChannelState{});
+            for(size_t i=0;i<channelStates_.size();i++) {
+                if(commonChannelVolume_>=0)channelStates_[i].volume=commonChannelVolume_;
+                const auto& name=backend_->channels()[i].name;
+                if(i<previousChannels.size()&&i<previousStates.size()&&previousChannels[i].name==name)
+                    channelStates_[i]=previousStates[i];
+                else for(size_t j=0;j<previousChannels.size()&&j<previousStates.size();j++)
+                    if(previousChannels[j].name==name){channelStates_[i]=previousStates[j];break;}
+            }
+        }
+        { std::lock_guard<std::mutex> lock(stateMutex_);
+          // Current-song stop/seek/replay preserves its mixed per-channel edits.
+          // A different song still starts from the saved common gain.
+          if(track!=track_&&commonChannelVolume_>=0)for(auto& state:channelStates_)state.volume=commonChannelVolume_; }
         configureVisibleChannels();
         gbaPsgUsed_ = -1;
         if (ms)
@@ -116,7 +135,7 @@ void Player::configureVisibleChannels(){
     uint64_t used=UINT64_MAX;
     if(!backend_||!backend_->channelUsage(used)){visibleMask_=UINT64_MAX;return;}
     // Base console channels remain fixed, even if silent throughout the song.
-    if(format_==Format::Nsf||format_==Format::Nsfe)used|=15;
+    if(format_==Format::Nsf||format_==Format::Nsfe||format_==Format::NesRom)used|=15;
     else if(format_!=Format::Vgm)used=UINT64_MAX;
     visibleMask_=used;
 }
@@ -167,7 +186,8 @@ std::vector<ChannelState> Player::states() const {
 void Player::channelVolumes(float volume) {
     if(!std::isfinite(volume))return;
     std::lock_guard<std::mutex> lock(stateMutex_);
-    for(auto&state:channelStates_)state.volume=std::clamp(volume,0.f,2.f);
+    commonChannelVolume_=std::clamp(volume,0.f,2.f);
+    for(auto&state:channelStates_)state.volume=commonChannelVolume_;
 }
 std::string Player::error() const {
     std::lock_guard<std::mutex> lock(stateMutex_);
@@ -216,6 +236,13 @@ void Player::produce() {
             }
             backend_->muteMask64(mask);
             backend_->render(frames, block);
+            // Reject inconsistent decoder layouts before history/mixing can index
+            // stale channel buffers. Never truncate voices to conceal the error.
+            if(block.mix.size()!=frames || block.voices.size()!=state.size())
+                throw std::runtime_error("Decoder audio/channel layout mismatch.");
+            for(const auto& voice:block.voices)
+                if(voice.size()!=frames)
+                    throw std::runtime_error("Decoder channel frame count mismatch.");
             uint64_t decodedEnd=0;if(exactSourceEnd_ && backend_->decodedEndFrame(decodedEnd))sourceEndFrame_=decodedEnd;
             uint32_t psg=0;if(backend_->gbaPsgUsed(psg))gbaPsgUsed_=int(psg&15);
             history_.append(block);
@@ -249,8 +276,10 @@ void Player::produce() {
             reverb_.enabled(reverbEnabled_.load());
             reverb_.amount(reverbAmount_.load());
             reverb_.decay(reverbDecay_.load());
+            std::array<float,20> eqGains{};for(size_t band=0;band<20;band++)eqGains[band]=eqDb10_[band].load()/10.f;
+            equalizer_.beginBlock(eqEnabled_.load(),eqGains);
             for (auto &sample : block.mix)
-                sample = level_.process(reverb_.process(sample));
+                sample = level_.process(reverb_.process(equalizer_.process(sample)));
             if (!audio_.push(block.mix.data(), frames))
                 throw std::runtime_error("Audio ring producer overflow.");
             produced += frames;

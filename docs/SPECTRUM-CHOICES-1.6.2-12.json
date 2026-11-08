@@ -1,0 +1,150 @@
+{
+  "version": "1.6.2-12",
+  "date": "2026-11-08",
+  "request": "Remove perspective waterfall; open direct choice window instead of cycling; default scrolling",
+  "implemented": [
+    "Native owned modeless choice window, single reused instance",
+    "F7/header/recording remote all open same window without changing current choice",
+    "Three radio choices: bars0/lines1/scrolling3; immediate apply and persistence",
+    "Keyboard native arrow selection, Esc/close hide; main playback remains enabled",
+    "Removed perspective-history storage/render/idle scheduling; curve interpolation preserved separately",
+    "Default type3; legacy removed2 migrates to3; valid saved0/1/3 retained",
+    "F6 waveform/spectrum and16:9 scrolling unchanged; no image feature"
+  ],
+  "fresh_tests": {
+    "unit": {
+      "checks": 3497,
+      "pass": true
+    },
+    "native_three_styles": {
+      "pass": true,
+      "cases": [
+        {
+          "style": 0,
+          "name": "bars",
+          "two_rows": true,
+          "pause_resume": true,
+          "persistence": true,
+          "benchmark": {
+            "width": "1920",
+            "height": "1080",
+            "frames": "120",
+            "mean_ms": "3.85432",
+            "p95_ms": "4.4322",
+            "gdi_before": "156",
+            "gdi_after": "156"
+          }
+        },
+        {
+          "style": 1,
+          "name": "lines",
+          "two_rows": true,
+          "pause_resume": true,
+          "persistence": true,
+          "benchmark": {
+            "width": "1920",
+            "height": "1080",
+            "frames": "120",
+            "mean_ms": "3.89545",
+            "p95_ms": "4.3383",
+            "gdi_before": "154",
+            "gdi_after": "154"
+          }
+        },
+        {
+          "style": 3,
+          "name": "scrolling",
+          "two_rows": true,
+          "pause_resume": true,
+          "persistence": true,
+          "benchmark": {
+            "width": "1920",
+            "height": "1080",
+            "frames": "120",
+            "mean_ms": "7.89945",
+            "p95_ms": "9.5172",
+            "gdi_before": "150",
+            "gdi_after": "150"
+          }
+        }
+      ],
+      "audio": "dummy",
+      "only_owned_processes_settings_media": true,
+      "image_feature_removed": true,
+      "waterfall_removed": true,
+      "default_type": "scrolling",
+      "choice_window_nonmodal": true,
+      "entry_points": [
+        "F7",
+        "header",
+        "recording remote"
+      ]
+    },
+    "choice_window_and_migration": {
+      "pass": true,
+      "legacy2_to_scrolling3": true,
+      "checked_radio": true,
+      "native_arrow_selection": true,
+      "Escape_hides": true,
+      "close_reopen_reuses_window": true,
+      "saved3": true,
+      "only_owned_offscreen_windows": true,
+      "audio": "dummy"
+    },
+    "visual": "Native460x242 client capture reviewed; all3options fit and selected scrolling marked"
+  },
+  "source_reuse": {
+    "from": "1.6.2-11 full sourceZIP",
+    "files": {
+      "src/audio/SdlOutput.cpp": {
+        "unchanged": true,
+        "SHA256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38"
+      },
+      "src/audio/SdlOutput.hpp": {
+        "unchanged": true,
+        "SHA256": "96a4c00dedb5c6e0201ff0ca1e23b42e229e967ccb2f2cd00e8a638c2e017d6b"
+      },
+      "src/visualizer/AudioTap.hpp": {
+        "unchanged": true,
+        "SHA256": "170f435dfe52a260179707ce1e88840e2c6ebb2c897a3e556572c900473d89b5"
+      },
+      "src/visualizer/Spectrum.hpp": {
+        "unchanged": true,
+        "SHA256": "d52d2de0233a344f3864fc4b40110e82aef579ae11b7614637dcd6f755813a29"
+      },
+      "src/visualizer/SpectrogramHistory.hpp": {
+        "unchanged": true,
+        "SHA256": "bbf72ee368683c138094b4e5423524b482fcd712e1d63191f6eca3699010b337"
+      },
+      "src/player/Player.cpp": {
+        "unchanged": true,
+        "SHA256": "dec761f842c828467ba662761f336534f36f16346cf651135d40e5bac2155603"
+      },
+      "src/audio/GraphicEqualizer.cpp": {
+        "unchanged": true,
+        "SHA256": "6afc53785af4c02cb18e73c7d4b78b8076a53b0383646f6315e62419a92e083c"
+      },
+      "src/formats/GbaRom.cpp": {
+        "unchanged": true,
+        "SHA256": "036b10859a8900313c150c3c16b620b92a3e265d598dc865834dbb8e88bdb286"
+      }
+    },
+    "scope": "Actual audio/decoder/FFT and spectrogram history byte-identical; prior full-screen repeat and decoder matrices reused, not freshly rerun"
+  },
+  "failed_candidates": [
+    {
+      "scope": "offscreen diagnostic capture only",
+      "observation": "Initial custom WM_PRINT helper repeated parent text over radio controls",
+      "resolution": "Choice window uses standard native WM_PRINT path; final capture clean and all keyboard/native tests rerun",
+      "private_first_capture_preserved": true
+    }
+  ],
+  "limits": [
+    "Dummy audio/offscreen tests, no physical listening/monitor/VRR certification",
+    "Valid prior saved types override default; waveform/spectrum view setting remains independent",
+    "Existing external MIDI direct output is outside internal PCM visualizer"
+  ],
+  "new_thirdparty_dependencies": false,
+  "external_upload": false,
+  "user_assets_in_packages": false
+}

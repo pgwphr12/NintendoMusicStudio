@@ -1,0 +1,31 @@
+{
+  "license": "LGPL-2.1-or-later; original notices preserved",
+  "scope": "Only GBS APU upgraded from Gb_Snd_Emu0.1.5 to bundled0.2.0; GBS GB CPU/banking/timing retained; AGB mode with native wave extension off",
+  "references": [
+    "https://github.com/gbdev/pandocs/blob/master/src/Audio_details.md"
+  ],
+  "files": {
+    "Gb_Apu.h": {
+      "original_sha256": "0a8fb501a97719dcfb5867412e045f842b49afec7b5c9da0b1d6855011191c41",
+      "derived_from": "viogsf/vbam/apu/Gb_Apu.h"
+    },
+    "Gb_Apu.cpp": {
+      "original_sha256": "85b3bd6260b62ac5b70ffd1018db0c64fe09b4ec68db28f18761a60974d0e59a",
+      "derived_from": "viogsf/vbam/apu/Gb_Apu.cpp"
+    },
+    "Gb_Oscs.h": {
+      "original_sha256": "de4b8f942d47c374278000e416a2e6d8cb498a7bc8897a5c21fb7b966db7ed33",
+      "derived_from": "viogsf/vbam/apu/Gb_Oscs.h"
+    },
+    "Gb_Oscs.cpp": {
+      "original_sha256": "8ab988ca76abbdde2b0f9bfbd06a754fd3e4e09065da1a63ceb249f3ea3fcaa0",
+      "derived_from": "viogsf/vbam/apu/Gb_Oscs.cpp"
+    },
+    "Gbs_Emu.cpp": {
+      "original_sha256": "21b03fd6220a7ffa68cd0dee832a4e8a218eb614dda01159d87c22bb41f4b9e4"
+    },
+    "Gbs_Emu.h": {
+      "original_sha256": "741f6686695d470dd89c7f62be4ca7ff338d3baef06f8e39cbb9f63986d10612"
+    }
+  }
+}

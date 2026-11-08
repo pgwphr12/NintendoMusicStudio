@@ -62,7 +62,7 @@ def send(h, msg, a=0, b=0):
 
 
 from PIL import Image
-settings=out/'settings.ini';settings.write_text('repeat=0\nautoplay=0\npitch=100\nspeed=100\nreverb=0\ncontrolsRevision=1415\n')
+settings=out/'settings.ini';settings.write_text(('spectrumView=1\n' if '--spectrum' in sys.argv else '')+('spectrumStyle=3\n' if '--scrolling' in sys.argv else 'spectrumStyle=2\n' if '--waterfall' in sys.argv else '')+'repeat=0\nautoplay=0\npitch=100\nspeed=100\nreverb=0\ncontrolsRevision=1415\n')
 target=out/'fullscreen.bmp';env=dict(os.environ,SDL_AUDIODRIVER='dummy',NGMV_TEST_SESSION='fullscreen156',NGMV_SETTINGS_TEST_FILE=str(settings),NGMV_TEST_SNAPSHOT_MS='20000',NGMV_TEST_DISABLE_PLAYBACK_TIMER='1')
 p=subprocess.Popen([str(exe),'--snapshot',str(fixture),str(target),'--size=1920x1080'],env=env,creationflags=subprocess.CREATE_NO_WINDOW)
 u.SetWindowPos.argtypes=[W.HWND,W.HWND,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,W.UINT]
