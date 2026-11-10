@@ -79,7 +79,7 @@ static void segaTests(const std::filesystem::path &root) {
         for (bool recording : {false, true})
             for (size_t i = 0; i < count; ++i) {
                 auto cell = channelCell(i, count, recording);
-                require(cell.y >= (recording ? 205 : 276) &&
+                require(cell.y >= (recording ? 16 : 276) &&
                             cell.y + cell.height <= (recording ? 1064 : 1000),
                         "Channel clipped below screen");
                 require(cell.waveRight() > cell.waveLeft() &&

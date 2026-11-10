@@ -1,3 +1,4 @@
+Selected SN76496: copyright Nicola Salmoria, with contributions by others.
 Selected K051649: copyright Bryan McPhail.
 Selected OKIM6295: copyright Mirko Buffoni, Aaron Giles.
 Selected OKI ADPCM: copyright Andrew Gardner, Aaron Giles.

@@ -23,10 +23,17 @@ class ChannelHistory {
                     (block.voices[ch][i].l + block.voices[ch][i].r) * .5f;
         end_ += block.mix.size();
     }
-    std::vector<std::vector<float>> interpolatedSnapshot(double consumed,size_t frames=4096)const{
-        std::lock_guard<std::mutex>lock(mutex_);std::vector<std::vector<float>>out(data_.size(),std::vector<float>(frames));
+    std::vector<std::vector<float>> interpolatedSnapshot(double consumed,size_t frames=4096,uint64_t selected=UINT64_MAX)const{
+        std::lock_guard<std::mutex>lock(mutex_);std::vector<std::vector<float>>out(data_.size());
         double endpoint=std::min(consumed,double(end_));uint64_t oldest=std::max(base_,end_>Capacity?end_-Capacity:uint64_t(0));
-        for(size_t j=0;j<frames;j++){double p=endpoint+double(j)-frames;if(p<double(oldest)||p>=double(end_))continue;auto a=uint64_t(p);float f=float(p-a);auto b=a+1<end_?a+1:a;for(size_t ch=0;ch<data_.size();ch++)out[ch][j]=data_[ch][a%Capacity]*(1-f)+data_[ch][b%Capacity]*f;}
+        double start=endpoint-double(frames);
+        size_t first=size_t(std::clamp(std::ceil(double(oldest)-start),0.,double(frames)));
+        for(size_t ch=0;ch<data_.size();++ch){
+            if(selected!=UINT64_MAX&&(ch>=64||!(selected&(uint64_t(1)<<ch))))continue;
+            auto&dest=out[ch];dest.resize(frames,0);if(first==frames)continue;
+            uint64_t a=uint64_t(start+first);float f=float(start+first-double(a));const auto&source=data_[ch];
+            for(size_t j=first;j<frames;++j,++a){auto b=a+1<end_?a+1:a;dest[j]=source[a%Capacity]*(1-f)+source[b%Capacity]*f;}
+        }
         return out;
     }
     std::vector<std::vector<float>> snapshot(uint64_t consumed, size_t frames = 4096) const {

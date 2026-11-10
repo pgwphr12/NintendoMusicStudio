@@ -1,0 +1,132 @@
+{
+  "version": "1.6.3-1 beta",
+  "date": "2026-11-08",
+  "request": "Right-click channel hiding with hidden-channel inspection/restoration from remote",
+  "implemented": {
+    "action": "Right button release over a visible channel waveform cell hides its original channel index",
+    "scope": "normal and recording channel views; spectrum/toolbar ignored",
+    "restore": "F9 remote button2114 -> modeless list, selected/all/doubleclick restore",
+    "persistence": "system + channel name + duplicate occurrence, cached on file/subsong changes; no file paths",
+    "audio": "display preference only; no mute/gain/player/backend changes",
+    "auto_filter": "Manual filter intersects existing used-channel filter; restore never forces unused channels visible",
+    "all_hidden": "safe empty-state notice; playback continues; restore through remote"
+  },
+  "fresh_tests": {
+    "hidden4sessions": {
+      "pass": true,
+      "cases": [
+        {
+          "normal_and_recording_right_click": true,
+          "hidden_list_selected_and_all_restore": true,
+          "hide_all_safe": true,
+          "automatic_unused_filter_unchanged": true,
+          "mute_gain_unchanged": true,
+          "subsong_stop_play_persist": true,
+          "spectrum_and_toolbar_no_hide": true
+        },
+        {
+          "process_restart_persistence": true
+        },
+        {
+          "other_system_isolation": true
+        },
+        {
+          "split16channel_grid_normal_and_recording": true,
+          "right_column_identity": true,
+          "restore16": true
+        }
+      ],
+      "audio": "dummy",
+      "own_children_settings_media_only": true
+    },
+    "remote_EQ2sessions": {
+      "pass": true,
+      "audio": "dummy",
+      "only_owned_processes_and_settings": true,
+      "cases": [
+        {
+          "session": 0,
+          "remote_transport_master_common": true,
+          "20band_controls": true,
+          "EQ_persist_or_reset": true,
+          "modeless_main_responsive": true,
+          "F9_return": true
+        },
+        {
+          "session": 1,
+          "remote_transport_master_common": true,
+          "20band_controls": true,
+          "EQ_persist_or_reset": true,
+          "modeless_main_responsive": true,
+          "F9_return": true
+        }
+      ]
+    },
+    "beta_identity": {
+      "pass": true,
+      "name_version": true,
+      "legacy_editor_CLI_rejected": true,
+      "F2_F3_no_editor_windows": true,
+      "offscreen_player_snapshot": "C:\\Users\\pgwph\\Documents\\Codex\\2026-10-05\\referenced-chatgpt-conversation-this-is-an\\work\\hidden163b1-private\\identity\\player.bmp",
+      "audio": "dummy",
+      "user_app_operated": false
+    },
+    "visual": "Native hidden-list and enlarged remote client captures reviewed; controls fit without overlap"
+  },
+  "reused": {
+    "from": "stable1.6.2 full sourceZIP",
+    "verified_byte_identical": {
+      "src/player/Player.cpp": {
+        "unchanged": true,
+        "SHA256": "914b3334a04b601fed93542e9c4cf7138cc90e6c155b470c5a86e4dc82040246"
+      },
+      "src/player/Player.hpp": {
+        "unchanged": true,
+        "SHA256": "088ce15f1e283825be09d3e536bbd7075d80a6363bf7287b1fcc7779388b24fc"
+      },
+      "src/audio/SdlOutput.cpp": {
+        "unchanged": true,
+        "SHA256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38"
+      },
+      "src/audio/GraphicEqualizer.cpp": {
+        "unchanged": true,
+        "SHA256": "6afc53785af4c02cb18e73c7d4b78b8076a53b0383646f6315e62419a92e083c"
+      },
+      "src/visualizer/Spectrum.hpp": {
+        "unchanged": true,
+        "SHA256": "d52d2de0233a344f3864fc4b40110e82aef579ae11b7614637dcd6f755813a29"
+      },
+      "src/visualizer/SpectrogramHistory.hpp": {
+        "unchanged": true,
+        "SHA256": "bbf72ee368683c138094b4e5423524b482fcd712e1d63191f6eca3699010b337"
+      },
+      "src/formats/GbaRom.cpp": {
+        "unchanged": true,
+        "SHA256": "036b10859a8900313c150c3c16b620b92a3e265d598dc865834dbb8e88bdb286"
+      },
+      "src/formats/NesRom.cpp": {
+        "unchanged": true,
+        "SHA256": "b630346fb4833e1985d58f30724e75ce3b0d0a6544b6f352ac9305d78f9f2bbd"
+      }
+    },
+    "scope": "Prior actual PCM mixed-gain, decoder/ROM/EQ/spectrum/fullscreen matrices retained, not rerun"
+  },
+  "failed_candidates": [
+    {
+      "failure": "First MSBuild link could not resolve newly added HiddenChannels.cpp functions",
+      "cause": "ZERO_CHECK regenerated project after outer MSBuild loaded the old compile-item list",
+      "resolution": "Fresh build using regenerated project compiled the new source and linked successfully; only rebuilt EXE used for native tests",
+      "log": "work/hidden163b1-build.log"
+    }
+  ],
+  "limits": [
+    "Preferences are per system/channel label, shared by songs with matching labels; duplicate label occurrence may differ between drivers",
+    "List covers manually hidden current channels, not automatic unused-channel omissions",
+    "Display-hidden channels still consume decoder/audio work and remain audible",
+    "Offscreen own-child/dummy tests, no physical device listening certification"
+  ],
+  "new_dependencies": false,
+  "external_upload": false,
+  "assets_packaged": false,
+  "stable_preserved": "1.6.2"
+}

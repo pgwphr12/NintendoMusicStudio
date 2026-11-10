@@ -1,3 +1,4 @@
+#include "WholeTrackUsage.hpp"
 #include "GmeBackend.hpp"
 #include "Midi.hpp"
 #include "PsfBackend.hpp"
@@ -109,7 +110,7 @@ std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &b,
     case Format::NesRom:
         return makeNesRomBackend(b);
     case Format::GbaRom:
-        return makeGbaRomBackend(b);
+        return withWholeTrackUsage(makeGbaRomBackend(b));
     case Format::Midi:
         return makeMidiBackend(b,path);
     case Format::AudioFile:
@@ -118,11 +119,11 @@ std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &b,
         return makeVgmBackend(b);
     case Format::Bcstm:
     case Format::Bcwav:
-        return makeStreamBackend(path);
+        return withWholeTrackUsage(makeStreamBackend(path));
     case Format::Usf:
     case Format::Gsf:
     case Format::TwoSf:
-        return makePsfBackend(path, identify(b,path));
+        return withWholeTrackUsage(makePsfBackend(path, identify(b,path)));
     case Format::Nsf:
         return std::make_unique<NSFBackend>(b);
     case Format::Nsfe:

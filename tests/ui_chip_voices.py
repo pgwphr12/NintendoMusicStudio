@@ -91,9 +91,10 @@ for name,count in [('es-many.vgm',33),('es-last.vgm',40),('ay-own.vgm',3),('es-d
         if count==33:send(main,0x100,0x78) # recording view,3 columns
         send(main,0x113,2);assert p.wait(timeout=10)==0
         im=Image.open(folder/'channels.bmp').convert('RGB');im.save(folder/'channels.png')
-        colored=sum(1 for c in im.crop((200,280,1888,980)).getdata() if c in [(247,205,87),(126,222,190),(137,180,249)])
+        colored=sum(1 for c in im.crop((200,280,1888,980)).getdata() if c in [(247,205,87),(126,222,190),(137,180,249),(222,146,232),(250,155,106),(181,211,119),(126,213,228),(247,163,181)])
         assert colored>200 or name=='es-direct-bus.vgm','Missing chip waveform'
         results.append({'file':name,'channels':count,'wave_pixels':colored,'high_index_controls':count==40,'recording':count==33})
     finally:
         if p.poll() is None:p.terminate();p.wait(timeout=5)
 (out/'result.json').write_text(json.dumps({'pass':True,'cases':results,'audio':'dummy'},indent=2));print(json.dumps(results))
+

@@ -1,0 +1,97 @@
+{
+  "version": "1.6.3-beta 7",
+  "date": "2026-11-10",
+  "requests": [
+    "Startup noise causes unused YM1..3 to stay visible in supplied file",
+    "Remove other forced basic-channel visibility rules",
+    "Keep NES/GB/SNES base channels",
+    "Add remote Show all channels checkbox"
+  ],
+  "confirmed_cause": {
+    "file": "1793424975458.vgm",
+    "SHA256": "b8cb756ab0c23bfc8827d43f82de03fe7c83e49334a17137c715217d3c3bd6a6",
+    "YM1_2_3_key_on_count": [
+      0,
+      0,
+      0
+    ],
+    "YM4_first_ms": 29866.666666666668,
+    "YM5_first_ms": 14933.333333333334,
+    "YM6_first_ms": 233.33333333333334,
+    "DAC_enable_count": 0,
+    "explanation": "YM base lanes were forced visible regardless of usage. Independent live audio-activity flags can contain startup artifacts; they are not used for the new decision."
+  },
+  "implementation": {
+    "YM": "Whole timed VGM program union of per-slot FM keys and DAC enable/data or stream starts; setup/stop/reset without timed notes does not imply use. Genuine one-tick intro notes and later/partial-slot notes retained. No arbitrary intro time cutoff.",
+    "other_chips": "Primary OPL1/OPL2, AY8930 and SN76489 have no blanket base exemption; existing ES/SCC/OKI whole-program rules retained.",
+    "console_exceptions": "NES5base APU includingDMC,GB4,SNES8 only; NES expansions still follow known usage",
+    "general": "WholeTrackUsage wrapper uses authoritative existing usage or a physical finite decoded end/validated VGM duration. Full unmuted offline frames, reset to beginning, cache per selection,10s soft budget. Only a completed pass or all channels proven used yields a mask. Length tags alone do not prove an executable ROM/PSF end; unknown/failure/timeout retains all from the start.",
+    "all_option": "Remote checkbox2115, native auto-checkbox at y298, enlarged remote390high. Persist showAllChannels. When checked overrides automatic and manual hiding; unchecking restores both prior states. Right-click manual hide disables the override. No mute/gain changes.",
+    "audio": "Visibility only; actual3s8-float mix/stems byte identical to baseline; original source file unchanged"
+  },
+  "validation": {
+    "ctest": {
+      "passed": 14,
+      "failed": 0,
+      "seconds": 23.55,
+      "log_SHA256": "081f4517ba8d8daffd756352df0fa56c9c4d8b7f2970377996710c60a69e23c0"
+    },
+    "YM": "5own reset/brief-intro/late/partial-slot/directDAC/streamDAC cases; supplied YM1..3+DAC hidden, YM4..6 shown at initial load; controls/rewind do not change list",
+    "generic": "Known finite early/late/silent channel union, exact initial PCM restore, cached replay/mute restore; unknown/failed scans never claim prefix as whole-track; real decoder errors remain observable",
+    "console_and_chips": "Fresh visibility tests show NES5/GB4/SNES8 base exceptions, unused AY1-of3, late ES before first note; OPL/SN own usage checks and native UI pass",
+    "remote": {
+      "pass": true,
+      "cases": [
+        {
+          "session": 0,
+          "total": 44,
+          "automatic": 13,
+          "option_works": true,
+          "settings_restored": false,
+          "mute_gain_unchanged": true
+        },
+        {
+          "session": 1,
+          "total": 44,
+          "automatic": 13,
+          "option_works": true,
+          "settings_restored": true,
+          "mute_gain_unchanged": true
+        }
+      ],
+      "audio": "dummy",
+      "only_owned_children": true
+    },
+    "visual_review": "New checkbox visible with no overlap; automatic recording screenshot contains YM4..6 and13total labels, no YM1..3; other metadata hidden",
+    "actual_audio": {
+      "first_seconds": 3,
+      "byte_identical": true,
+      "SHA256": "067964231b3827d5056005313aaf2dd0bbefb9b8e1f5644a0331f4133f905d40",
+      "peak": 0.34100574254989624
+    },
+    "source_assets_readonly": true,
+    "audio_method": "Dummy/offscreen own processes; no physical listening or driver changes"
+  },
+  "unchanged_sources_from_beta6": {
+    "src/visualizer/Envelope.cpp": "b115fda8e114874ec8fe16415a4fa7ef1db799a582b3efdd6ac4e4ceae87c187",
+    "src/formats/LicensedChips.cpp": "5efcf981c84506a7394bb6f12016019a28a8fd3d609a0bab0ec47c5170a4004e",
+    "src/audio/SdlOutput.cpp": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38",
+    "src/formats/MidiBackend.cpp": "f8eda418f9d6c3eee69ff9450472d16c4041ee56682b1db33c7a3293b978e379",
+    "src/formats/PsfBackend.cpp": "780bb9ac2d7d7544a0a8c436a19e3c68c2420f85c79741dc4661bf2065ed366c"
+  },
+  "failed_candidates": [
+    "Own actual-YM test initially assumed a live activity flag for lateYM4 would be false; startup artifacts can set that flag, so assertions now use the actual full-program note record and precomputed visibility.",
+    "Old UI expectations assumed every GBA/DS lane visible; conservative finite-end rule retains unknown executable ends, tests preserve unknown cases. A tag-only scan prototype was removed to avoid hiding notes beyond a metadata tag.",
+    "Chip waveform pixel test counted only first3 palette colors. With unused YM lanes removed the active high-index ES lane had another color; corrected to all8 real channel colors.",
+    "Recording edge test cropped a fixed y300..600 range. A freely moving sine can leave that slice; corrected to the complete first recording lane, still requiring exact right-edge containment."
+  ],
+  "limits": [
+    "No claim of universal game-driver usage detection. Unknown/infinite execution ends, failed/too-slow scans retain channels rather than guess.",
+    "Generic offline scan threshold1e-7 is on raw unmuted PCM, not live/user volume. Metadata commands are preferred where available; arbitrary audible startup data in unmodeled formats is not automatically identifiable as noise.",
+    "Soft10s budget checked between decoder blocks, not forced cancellation of an individual native decode call.",
+    "No physical listening, actual driver removal, forced OOM or malformed decoder stress newly injected"
+  ],
+  "new_dependency": false,
+  "original_music_banks_distributed": false,
+  "external_upload": false
+}

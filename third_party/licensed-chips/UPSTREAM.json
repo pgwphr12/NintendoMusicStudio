@@ -41,8 +41,14 @@
       "original_SHA256": "b84fc3c83534dffae71237f1c5ceab5b7a66d1f7156adcd164c0e69fb85a2724",
       "upstream_commit": "61b62d64455e039de2a1d01498afa9e9b5f1cb88",
       "license_header": "// license:LGPL-2.1+"
+    },
+    {
+      "file": "sn76496.c",
+      "original_SHA256": "07f754530428c5aca771dac7231592fdf7167e1f1bfea392070fabe6f652ea5f",
+      "upstream_commit": "61b62d64455e039de2a1d01498afa9e9b5f1cb88",
+      "license_header": "// license:BSD-3-Clause"
     }
   ],
-  "local_changes": "Own minimal C interface declarations and adapter; fmopl disabled-Y8950 include guarded. No libvgm player/utils/SoundEmu/Resampler copied.",
+  "local_changes": "Own minimal C interface declarations and adapter; fmopl disabled-Y8950 include guarded. No libvgm player/utils/SoundEmu/Resampler copied. Own SN functional configuration declarations; YM3526 enabled in existing OPL core. SN core unchanged.",
   "LGPL_linking": "Nuked OPN2 retains LGPL-2.1-or-later; full library/application source and CMake relinking build supplied for LGPL2.1 section6a. No source license conversion is claimed."
 }

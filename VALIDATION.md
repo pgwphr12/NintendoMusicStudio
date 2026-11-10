@@ -1,3 +1,50 @@
+## Beta6 smooth revision
+
+Latest evidence: docs/WAVE-SMOOTH-1.6.3-beta-6.json. Final6focused checks PASS;108synthetic refresh/shape/frequency cases, history/transition tests and native performance/reference comparison PASS. Previous evidence below is historical.
+
+## Corrected beta6 validation
+
+See RELEASE-NOTES-1.6.3-beta-6.md and docs/WAVE-GBA-1.6.3-beta-6-revision.json for fresh tests and preserved failed candidates. Prior beta7 evidence below is historical, not a fresh run of this revision.
+
+# Test1.6.3-beta 6 validation
+
+New YM cases cover reset-only, short genuine intro notes, later/partial-slot notes, DAC enable-only/center-only, real direct/stream DAC, fixed pre-play masks and unchanged controls. Generic finite-end/unknown/error analysis cases and native all-channels persistence/override checks are included. Details: docs/YM-USAGE-1.6.3-beta-7.json.
+
+# Test1.6.3-beta 6 validation
+
+YM3812/YM3526 primary and auxiliary channels now use a precomputed whole-song key/rhythm usage mask. Late notes are visible before playback; silence/mute/gain do not alter visibility. Decoder channels and real audio remain intact.
+
+Free-running scope tests cover24 signed/DC/pulse/bass/harmonic phase sweeps at60/144Hz,256/2048/4096 sample windows. Left and middle must vary, samples must not be modified, and unchanged input must not invent animation. Existing silence/peaks/interpolation checks remain. See docs/WAVE-FREE-1.6.3-beta-6.json.
+
+Same-version revision: user requested recording channel names retained and version unchanged. Fresh recording/name-only palette and ES/AY native UI3/3 PASS5.46s. Names are drawn as fitted outlined overlays; metadata remains hidden. Earlier waveform stability/audio evidence below is reused unchanged.
+
+# Test1.6.3-beta 5 validation
+
+Final9/9 tests PASS27.61s plus fresh independent remote and hidden-channel native tests. Recording canvas has only waveform/background colors and uses the former metadata/header/footer space; normal-view controls remain.
+
+24 moving phase sweeps cover signed/positive/bass/harmonic/pulse signals,256/2048/4096 windows and60/144Hz presentation advances. Fractional stable curves are compared with beta4 display code. Silence/DC/short input, original peak retention, live noise changes, no input mutation and a scope benchmark are included. Details: docs/WAVE-STABILITY-1.6.3-beta-5.json.
+
+# Test1.6.3-beta 4 validation
+
+No-VMS cases cover stale saved SF2/external preferences, missing/invalid/corrupt registered bank candidates, real system DLS synthesis and channel samples, seek/mute, an owned DLS-only input and descriptive missing-all failures. Native UI uses own offscreen/dummy processes, without uninstalling the host driver. Details and remaining limits: docs/NO-VMS-1.6.3-beta-4.json.
+
+# Test1.6.3-beta 3 validation
+
+New chip checks: YM3526 standard and custom335582Hz tone contracts, SN76489 period260/stereo, stem recombination/mute/replay and34 bounded malformed/unsupported cases. Supplied slogic renders63.483s including final silence, and1794124986077 renders67.023s; seek500ms/replay/all-mute/dummy worker checks pass. Full-timeline render does not certify physical listening identity with the original Furnace project.
+
+Final focused13/13 PASS17.35s; earlier focused4/4 includes own8pitch cases, generic/extended VGM regressions and ES/AY voice structure. Actual lobby10second stems show the expected octave change only in ES, YM2612/OKI byte-identical. Generic frequency contracts, wrong creator/serial/later ACTV negative cases, replay/seek/mute/stem sums are covered. See docs/ES-PITCH-1.6.3-beta-3.json for source rationale, failed diagnostic candidates and limits. No full Furnace project/WAV or physical listening identity claim.
+
+
+# Test1.6.3-beta 2 validation
+
+Fresh native offscreen/dummy sessions verify normal/recording startup without remote, independent F9/F12/button toggles, child/EQ focus routing, autorepeat suppression, native close, reused window, responsive playback, and recording footer pixels containing no shortcut/button. Hidden-channel and remote/EQ regressions are fresh. See docs/REMOTE-1.6.3-beta-2.json. Unchanged audio/core matrices are reused with SHA provenance.
+
+
+# Test1.6.3-1 beta validation
+
+Fresh native own-process hidden-channel tests cover right-click hit testing, normal/recording views, selected/all restoration, hide-all safety, unaffected mute/gain, saved restart preference, subsong transport, ignored toolbar/spectrum clicks and cross-system isolation. See docs/HIDDEN-CHANNELS-1.6.3-1-beta.json. Unchanged audio/decoder/ROM evidence from stable1.6.2 is reused explicitly. Tests are offscreen/dummy audio, not physical listening certification.
+
+
 # Nintendo Music Studio1.6.2 — release validation
 
 Fresh focused mixed-gain regression includes old failure and fixed actual internal PCM comparisons; native UI checks stop/play/seek/new-song priority. Stable identity/standalone/choice/About smoke checks and package CRC/SHA/license/asset exclusions are documented in docs/RELEASE-1.6.2.json. Earlier unchanged decoder and spectrum evidence is reused explicitly. Dummy audio/offscreen tests are not physical listening/VRR certification. Historical records follow.

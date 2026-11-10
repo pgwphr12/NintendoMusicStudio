@@ -1,9 +1,9 @@
 {
-  "date": "2026-11-08",
-  "version": "1.6.2",
+  "date": "2026-11-10",
+  "version": "1.6.3-beta 6",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
-  "compiled_translation_units": 986,
+  "compiled_translation_units": 989,
   "unclassified_translation_units": [],
   "removed_VGM_framework_and_old_ES": true,
   "remaining_conflicting_N64_TUs": [],
@@ -1784,7 +1784,7 @@
     },
     {
       "path": "src/formats/ExtendedVgmBackend.cpp",
-      "SHA256": "58dea116bb44bfcdc38e071f0ff19694ff9799deee2c748323f33440683285f2",
+      "SHA256": "8e442c90a8f94e88952b082084922aae380742eeab388ba975f5b4e77e9ca6a2",
       "targets": [
         "viewer_core"
       ],
@@ -1793,7 +1793,7 @@
     },
     {
       "path": "src/formats/GbaRom.cpp",
-      "SHA256": "036b10859a8900313c150c3c16b620b92a3e265d598dc865834dbb8e88bdb286",
+      "SHA256": "8119bfcfbb448d7498d23f7be2f8cdda6c0d40550285bdbe63b2f065d0111140",
       "targets": [
         "viewer_core"
       ],
@@ -1802,7 +1802,7 @@
     },
     {
       "path": "src/formats/GmeBackend.cpp",
-      "SHA256": "4f52659a6d4e1eb4a342eebe0de85b6085456da0d96166fbab6bb83ef633ab50",
+      "SHA256": "f03f52da4db9d6fa6610c462051e06a527cd4e36415b031911f9da4808a3cc5e",
       "targets": [
         "viewer_core"
       ],
@@ -1811,7 +1811,7 @@
     },
     {
       "path": "src/formats/LicensedChips.cpp",
-      "SHA256": "a7988af66febcacdb65d9594b791a68f419a958a6c45bf22eaea1d54bd7c93a9",
+      "SHA256": "5efcf981c84506a7394bb6f12016019a28a8fd3d609a0bab0ec47c5170a4004e",
       "targets": [
         "viewer_core"
       ],
@@ -1829,7 +1829,7 @@
     },
     {
       "path": "src/formats/MidiBackend.cpp",
-      "SHA256": "1cacdff856225e16f66f96f50c6b91bcc06c4d53b989d5539e0bc84e30af2f01",
+      "SHA256": "f8eda418f9d6c3eee69ff9450472d16c4041ee56682b1db33c7a3293b978e379",
       "targets": [
         "viewer_core"
       ],
@@ -1874,7 +1874,7 @@
     },
     {
       "path": "src/formats/PsfBackend.cpp",
-      "SHA256": "780bb9ac2d7d7544a0a8c436a19e3c68c2420f85c79741dc4661bf2065ed366c",
+      "SHA256": "503c2dcc0f1bbe8b122071a01d0dcb7e8be35c85fea545a6d915234c520eed3d",
       "targets": [
         "viewer_core"
       ],
@@ -1883,7 +1883,7 @@
     },
     {
       "path": "src/formats/Registry.cpp",
-      "SHA256": "4a137d60eff8895587ae36afd42443aeff6d31d38e05d36746f6b9a90eb2906a",
+      "SHA256": "5a3bdc1692ba374ef81f1123b4269790ea72046c61f6328e912b0ef74e1aa70e",
       "targets": [
         "viewer_core"
       ],
@@ -1892,7 +1892,7 @@
     },
     {
       "path": "src/formats/StreamBackend.cpp",
-      "SHA256": "63ce1b335efad0a30942471db2524e31450213c9ab9b9b99e02cd87a878ee6a2",
+      "SHA256": "c93e8ff8f08986d65b1ce39472b5f7dcdd621b8482b2366095dcf70cd8ed6703",
       "targets": [
         "viewer_core"
       ],
@@ -1901,7 +1901,16 @@
     },
     {
       "path": "src/formats/VgmBackend.cpp",
-      "SHA256": "bace626ec6d36c2a5b2c543597fc4bd7367667d92140a22416c810f9f49f8ca7",
+      "SHA256": "b44fd515a6bd5ee5ecf15ae6b2a75b2507a6c5a7a70b6fd33469b1399f463013",
+      "targets": [
+        "viewer_core"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "src/formats/WholeTrackUsage.cpp",
+      "SHA256": "0eb771fb219794a72250058e039f65a4bf03e6b334c60ae34ddcfd94b038df52",
       "targets": [
         "viewer_core"
       ],
@@ -1919,7 +1928,7 @@
     },
     {
       "path": "src/player/Player.cpp",
-      "SHA256": "914b3334a04b601fed93542e9c4cf7138cc90e6c155b470c5a86e4dc82040246",
+      "SHA256": "9555275069ab8bcff600061dbd3208fdcb1d704f99ce2ea0b7b83de50e97b27d",
       "targets": [
         "viewer_core"
       ],
@@ -1928,7 +1937,16 @@
     },
     {
       "path": "src/ui/ExtraWindows.cpp",
-      "SHA256": "e608751c3369ae63c0afc1ced66a0a104094441eddab5f719aa2d7bd29e1f145",
+      "SHA256": "8faac366e22c9361bba59eba8d8a19c4297d45dd394599458fe5238d3ae89422",
+      "targets": [
+        "NintendoGameMusicViewer"
+      ],
+      "declared_terms": "GPL-2.0-or-later",
+      "evidence": "SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "src/ui/HiddenChannels.cpp",
+      "SHA256": "2b70b9d462a79d085de909f78b098091e1801c275c5a3564e3c28572c804aed0",
       "targets": [
         "NintendoGameMusicViewer"
       ],
@@ -1937,7 +1955,7 @@
     },
     {
       "path": "src/ui/SpectrumView.cpp",
-      "SHA256": "8c06db49091fe42d58b7a6779b9e2579526fa16789d22436f4f9ec528d4cb86c",
+      "SHA256": "93928e796a1787f62771fd06d4297b9a36027feb3583e71ae2e0ebc697192dbb",
       "targets": [
         "NintendoGameMusicViewer"
       ],
@@ -1946,7 +1964,7 @@
     },
     {
       "path": "src/ui/Window.cpp",
-      "SHA256": "40df45d2cbed03e6f070a53c7c99e54677f363465b53b97413551c64d07cdeb0",
+      "SHA256": "5e366f7cfe5ce727b9b3d333e00e7ff02396614a257f24f9985bcc1b07d55f2d",
       "targets": [
         "NintendoGameMusicViewer"
       ],
@@ -1955,7 +1973,7 @@
     },
     {
       "path": "src/visualizer/Envelope.cpp",
-      "SHA256": "3943cf9bc09b3b8bed4f9020bf0ca496bde91e885e9e68c0e5da04c59db25924",
+      "SHA256": "1967c385fd48f797cc8a7967e3d45771d2fc95f72fe8cd6c85988dcaa3b3d008",
       "targets": [
         "viewer_core"
       ],
@@ -2478,6 +2496,15 @@
     {
       "path": "third_party/licensed-chips/emu/cores/okim6295.c",
       "SHA256": "fdcbdbb711686ecb86bbadc28f15b6ff52f68b1ddb557e95d3db470c5162a17a",
+      "targets": [
+        "licensed_vgm_chips"
+      ],
+      "declared_terms": "BSD-3-Clause",
+      "evidence": "Explicit first-line core license + third_party/licensed-chips/UPSTREAM.json"
+    },
+    {
+      "path": "third_party/licensed-chips/emu/cores/sn76496.c",
+      "SHA256": "07f754530428c5aca771dac7231592fdf7167e1f1bfea392070fabe6f652ea5f",
       "targets": [
         "licensed_vgm_chips"
       ],

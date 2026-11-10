@@ -22,14 +22,17 @@ static void paintToolClient(HWND h,HDC dc){
  printing=false;
 }
 static std::wstring clockText(double v){int n=std::max(0,int(v));return std::to_wstring(n/60)+L":"+(n%60<10?L"0":L"")+std::to_wstring(n%60);}
-void Window::setRecording(bool v){recording_=v;syncRemote();}
+void Window::setRecording(bool v){recording_=v;updateRemote();}
 void Window::updateRemote(){
  if(!remoteWindow_||!IsWindow(remoteWindow_))return;
+ SetWindowTextW(GetDlgItem(remoteWindow_,2106),recording_?L"녹화뷰 끄기 (F9)":L"녹화뷰 켜기 (F9)");
  std::wstring title=player_.loaded()?wide(player_.tracks()[player_.track()].title):L"음악을 열어 주세요";
  SetWindowTextW(GetDlgItem(remoteWindow_,2100),(clockText(player_.seconds())+L"   "+title).c_str());
  SetWindowTextW(GetDlgItem(remoteWindow_,2102),player_.playing()?L"일시정지":L"재생");
  SetWindowTextW(GetDlgItem(remoteWindow_,2105),player_.repeat()?L"반복 켜짐":L"반복 꺼짐");
  SetWindowTextW(GetDlgItem(remoteWindow_,2109),spectrumStyle_==0?L"종류: 막대형… (F7)":spectrumStyle_==1?L"종류: 선형… (F7)":L"종류: 가로흐름… (F7)");
+ SendDlgItemMessageW(remoteWindow_,2115,BM_SETCHECK,player_.showAllChannels()?BST_CHECKED:BST_UNCHECKED,0);
+ SetWindowTextW(GetDlgItem(remoteWindow_,2114),(L"숨긴 채널 ("+std::to_wstring(hiddenChannelCount())+L")…").c_str());
  float common=player_.commonChannelVolume();auto states=player_.states();if(common<0)common=states.empty()?1:states[0].volume;
  int volume=int(std::lround(common*100));SendDlgItemMessageW(remoteWindow_,2110,TBM_SETPOS,TRUE,volume);
  bool mixed=std::any_of(states.begin(),states.end(),[&](const auto& s){return std::abs(s.volume-states.front().volume)>.001f;});
@@ -37,8 +40,13 @@ void Window::updateRemote(){
  int master=int(std::lround(player_.master()*100));SendDlgItemMessageW(remoteWindow_,2112,TBM_SETPOS,TRUE,master);
  SetWindowTextW(GetDlgItem(remoteWindow_,2113),(L"마스터 "+std::to_wstring(master)+L"%").c_str());
 }
-void Window::syncRemote(){
- if(!hwnd_)return;if(!recording_){if(remoteWindow_)ShowWindow(remoteWindow_,SW_HIDE);return;}
+void Window::toggleRemote(){
+ if(remoteWindow_&&IsWindowVisible(remoteWindow_))ShowWindow(remoteWindow_,SW_HIDE);
+ else showRemote();
+ InvalidateRect(hwnd_,nullptr,FALSE);
+}
+void Window::showRemote(){
+ if(!hwnd_)return;
  if(remoteWindow_&&IsWindow(remoteWindow_)){ShowWindow(remoteWindow_,screenshot_.empty()?SW_SHOWNORMAL:SW_SHOWNOACTIVATE);updateRemote();return;}
  INITCOMMONCONTROLSEX init{sizeof(init),ICC_BAR_CLASSES};InitCommonControlsEx(&init);
  WNDCLASSW wc{};wc.hInstance=GetModuleHandleW(nullptr);wc.lpszClassName=L"NintendoMusicStudioRemote";wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_BTNFACE+1);
@@ -50,25 +58,28 @@ void Window::syncRemote(){
    for(int i=0;i<5;i++)control(h,L"BUTTON",ko[i],WS_TABSTOP,2101+i,14+102*i,48,94,34);
    control(h,L"STATIC",L"",0,2111,14,96,145,24);auto v=control(h,TRACKBAR_CLASSW,L"",WS_TABSTOP|TBS_HORZ,2110,158,88,360,36);SendMessageW(v,TBM_SETRANGE,TRUE,MAKELPARAM(0,200));
    control(h,L"STATIC",L"",0,2113,14,136,145,24);v=control(h,TRACKBAR_CLASSW,L"",WS_TABSTOP|TBS_HORZ,2112,158,128,360,36);SendMessageW(v,TBM_SETRANGE,TRUE,MAKELPARAM(0,100));
-   control(h,L"BUTTON",L"20밴드 EQ…",WS_TABSTOP,2107,14,178,180,34);control(h,L"BUTTON",L"녹화뷰 나가기 (F9)",WS_TABSTOP,2106,210,178,230,34);
+   control(h,L"BUTTON",L"20밴드 EQ…",WS_TABSTOP,2107,14,178,180,34);control(h,L"BUTTON",L"녹화뷰 전환 (F9)",WS_TABSTOP,2106,210,178,230,34);
    control(h,L"BUTTON",L"파형 / 스펙트럼 (F6)",WS_TABSTOP,2108,14,218,240,30);
    control(h,L"BUTTON",L"스펙트럼 종류 (F7)",WS_TABSTOP,2109,270,218,240,30);
+   control(h,L"BUTTON",L"숨긴 채널…",WS_TABSTOP,2114,14,258,496,30);
+   control(h,L"BUTTON",L"모든 채널 표시",WS_TABSTOP|BS_AUTOCHECKBOX,2115,14,298,496,26);
    SetTimer(h,1,200,nullptr);return 0;
   }
   if(!self)return DefWindowProcW(h,m,a,b);
   if(m==WM_PRINT||m==WM_PRINTCLIENT){paintToolClient(h,reinterpret_cast<HDC>(a));return 0;}
   if(m==WM_TIMER){self->updateRemote();return 0;}
   if(m==WM_COMMAND&&HIWORD(a)==BN_CLICKED&&!self->changing_){try{switch(LOWORD(a)){
+   case IDCANCEL:self->toggleRemote();break;
    case 2101:self->nextTrack(-1);break;case 2102:if(self->player_.playing())self->player_.pause();else self->player_.play();break;
    case 2103:self->player_.stop();break;case 2104:self->nextTrack(1);break;case 2105:self->player_.repeat(!self->player_.repeat());break;
-   case 2106:PostMessageW(self->hwnd_,WM_KEYDOWN,VK_F9,0);break;case 2107:self->showEqualizer();break;case 2108:self->toggleSpectrum();break;case 2109:self->showSpectrumChoices();break;
+   case 2106:PostMessageW(self->hwnd_,WM_KEYDOWN,VK_F9,0);break;case 2107:self->showEqualizer();break;case 2108:self->toggleSpectrum();break;case 2109:self->showSpectrumChoices();break;case 2114:self->showHiddenChannels();break;case 2115:self->player_.showAllChannels(SendDlgItemMessageW(h,2115,BM_GETCHECK,0,0)==BST_CHECKED);self->savePreferences();break;
   }self->updateRemote();InvalidateRect(self->hwnd_,nullptr,FALSE);}catch(const std::exception&e){self->report(e);}return 0;}
   if(m==WM_HSCROLL&&!self->changing_){int id=GetDlgCtrlID(reinterpret_cast<HWND>(b));int v=int(SendMessageW(reinterpret_cast<HWND>(b),TBM_GETPOS,0,0));if(id==2110)self->setAllChannelVolume(v/100.f);else if(id==2112)self->player_.master(v/100.f);self->savePreferences();self->allVolumeDirty_=false;self->updateRemote();return 0;}
-  if(m==WM_CLOSE){ShowWindow(h,SW_HIDE);return 0;}if(m==WM_DESTROY){KillTimer(h,1);self->remoteWindow_=nullptr;return 0;}
+  if(m==WM_CLOSE){ShowWindow(h,SW_HIDE);InvalidateRect(self->hwnd_,nullptr,FALSE);return 0;}if(m==WM_DESTROY){KillTimer(h,1);self->remoteWindow_=nullptr;return 0;}
   return DefWindowProcW(h,m,a,b);
  };
  if(!RegisterClassW(&wc)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot create recording remote.");
- RECT r{};GetWindowRect(hwnd_,&r);remoteWindow_=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT,wc.lpszClassName,L"Nintendo Music Studio · 녹화 리모컨",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,r.right-570,r.bottom-305,560,310,hwnd_,nullptr,wc.hInstance,this);
+ RECT r{};GetWindowRect(hwnd_,&r);remoteWindow_=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT,wc.lpszClassName,L"Nintendo Music Studio · 리모컨",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,r.right-570,r.bottom-385,560,390,hwnd_,nullptr,wc.hInstance,this);
  if(!remoteWindow_)throw std::runtime_error("Cannot open recording remote.");updateRemote();ShowWindow(remoteWindow_,screenshot_.empty()?SW_SHOWNORMAL:SW_SHOWNOACTIVATE);
 }
 void Window::showSpectrumChoices(){

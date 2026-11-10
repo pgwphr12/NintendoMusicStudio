@@ -90,6 +90,7 @@ static std::wstring time(double s) {
     return b;
 }
 static constexpr int EqualizerButtonX=1680, EqualizerButtonWidth=180;
+static constexpr int RemoteButtonX=1030,RemoteButtonWidth=190;
 static void button(HDC dc, const wchar_t *s, int x, int y, int w, bool active = false,bool enabled=true) {
     fill(dc, {x, y, x + w, y + 50}, active ? RGB(31, 76, 76) : RGB(28, 34, 46));
     text(dc, s, x + 16, y, w - 28, 50, 20, !enabled?RGB(118,136,158):active ? RGB(101, 237, 204) : RGB(214, 220, 235));
@@ -125,11 +126,11 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6.2\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.3-beta 6\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
                 L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
-                L"F6 파형/스펙트럼 · F7 스펙트럼 종류 선택 · F9 녹화뷰\r\n"
+                L"F6 파형/스펙트럼 · F7 스펙트럼 종류 선택 · F9 녹화뷰 · F12 리모컨\r\n"
                 L"NES ROM: 검증된 Super Mario Bros. NROM32 프로그램의 음악 선택(.nes)\r\n"
                 L"GBA ROM: 검증된 Super Mario Advance 1–4 판본의 곡 선택 재생(.gba). 그 외 ROM은 미지원\r\n"
                 L"MIDI: MID · MIDI (format0/1), Windows 기본 MIDI 장치 또는 내부 합성(SF2/DLS) · F8 선택\r\n"
@@ -241,11 +242,12 @@ bool Window::open(const std::filesystem::path &p) {
         if (!prepared)
             return false;
         player_.openPrepared(std::move(prepared), format);
+        waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};
         restoreChannels();
         file_ = p;
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.6.2 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6.3-beta 6 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening audio/MIDI/a supported ROM starts it; folder advance is separate.
         if (format == Format::AudioFile || format == Format::Midi || format == Format::GbaRom || format == Format::NesRom)
@@ -274,10 +276,11 @@ void Window::selectFolder(size_t index, bool play) {
     if (!prepared)
         return;
     player_.openPrepared(std::move(prepared), identify(readMusicFile(path),path));
+    waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.2 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3-beta 6 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -298,6 +301,8 @@ void Window::nextTrack(int direction, bool automatic) {
     } else if (!automatic && !player_.tracks().empty()) {
         int size = int(player_.tracks().size());
         player_.select((player_.track() + size + direction) % size);
+        waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};
+        refreshHiddenChannels();
     }
 }
 void Window::openDialog() {
@@ -344,8 +349,11 @@ void Window::tracksMenu() {
     if (chosen >= 1000) {
         if (playlist_.active())
             selectFolder(chosen - 1000, player_.playing());
-        else
+        else{
             player_.select(chosen - 1000);
+            waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};
+            refreshHiddenChannels();
+        }
     }
 }
 void Window::soundFontMenu() {
@@ -481,7 +489,7 @@ std::vector<size_t> Window::visibleChannels() const {
     std::vector<size_t> indices;
     const auto &channels = player_.channels();
     for (size_t i = 0; i < channels.size(); ++i)
-        if (player_.channelVisible(i))
+        if (player_.showAllChannels() || (player_.channelVisible(i) && (i>=hiddenChannels_.size() || !hiddenChannels_[i])))
             indices.push_back(i);
     return indices;
 }
@@ -499,7 +507,7 @@ void Window::paint(HDC dc, int width, int height) {
     SetWorldTransform(dc, &xf);
     fill(dc, {0, 0, 1920, 1080}, RGB(12, 16, 24));
     if (changing_) {
-        text(dc, recording_ ? L"Loading…" : L"불러오는 중…", 42, 22, 1810, 62, 46,
+        if(!recording_)text(dc, L"불러오는 중…", 42, 22, 1810, 62, 46,
              RGB(235, 240, 249));
         RestoreDC(dc, saved);
         return;
@@ -512,7 +520,7 @@ void Window::paint(HDC dc, int width, int height) {
         player_.loaded() ? (info.title.empty() ? L"Track " + std::to_wstring(player_.track() + 1)
                                                : wide(info.title))
                          : (recording_ ? L"Open a music file" : L"음악 파일을 열어 주세요");
-    text(dc, title, 42, 22, recording_ ? 1810 : 1000, 62, 46, RGB(235, 240, 249), true);
+    if(!recording_)text(dc, title, 42, 22, 1000, 62, 46, RGB(235, 240, 249), true);
     if (!recording_){
         button(dc,spectrumMode_?L"스펙트럼 (F6)":L"파형 (F6)",1080,22,190,spectrumMode_);
         button(dc,spectrumStyle_==0?L"막대형 ▾ (F7)":spectrumStyle_==1?L"선형 ▾ (F7)":L"가로흐름 ▾ (F7)",1285,22,195,spectrumMode_);
@@ -524,11 +532,11 @@ void Window::paint(HDC dc, int width, int height) {
                    ? L"NSF · NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM · BCWAV · VGM · VGZ"
                    : file_.stem().wstring())
             : wide(info.game);
-    text(dc,
+    if(!recording_)text(dc,
          game + L"  /  " + wide(info.system) +
              (info.author.empty() ? L"" : L"  /  " + wide(info.author)),
          44, 89, 1600, 32, 22, RGB(150, 166, 189));
-    text(dc,
+    if(!recording_)text(dc,
          time(player_.seconds()) + L" / " +
              (info.lengthMs > 0 ? time(info.lengthMs / 1000.) : L"--:--"),
          recording_ ? 44 : 1625, recording_ ? 125 : 91, recording_ ? 1800 : 260,
@@ -587,24 +595,22 @@ void Window::paint(HDC dc, int width, int height) {
     const auto spectrumStates=player_.states();
     if(!spectrumMode_){
     const auto &channels = player_.channels();
-    auto waves = player_.waveforms();
+    auto visible = visibleChannels();uint64_t waveMask=0;for(auto c:visible)if(c<64)waveMask|=uint64_t(1)<<c;
+    auto waves = player_.waveforms(size_t(windowSamples_) + 2048,waveMask);
+    waveformTrackers_.resize(waves.size());
+    waveformTransitions_.resize(waves.size());
+    auto waveNow=std::chrono::steady_clock::now();
+    double waveElapsed=waveformPaintTime_.time_since_epoch().count()?std::chrono::duration<double>(waveNow-waveformPaintTime_).count():1./60;
+    waveformPaintTime_=waveNow;
     auto states = player_.states();
     const COLORREF colors[] = {RGB(247, 205, 87),  RGB(126, 222, 190), RGB(137, 180, 249),
                                RGB(222, 146, 232), RGB(250, 155, 106), RGB(181, 211, 119),
                                RGB(126, 213, 228), RGB(247, 163, 181)};
-    auto visible = visibleChannels();
-    if(visible.empty() && player_.loaded())
-        text(dc,recording_?L"No channels used in this song":L"이 곡에서 사용하는 채널이 없습니다.",54,300,1750,45,24,RGB(118,136,158));
+    if(!recording_ && visible.empty() && player_.loaded())
+        text(dc,hiddenChannelCount()?(recording_?L"Channels hidden - restore in recording remote":L"채널이 숨겨져 있습니다. F12 리모컨의 숨긴 채널에서 복원하세요."):(recording_?L"No channels used in this song":L"이 곡에서 사용하는 채널이 없습니다."),54,300,1750,45,24,RGB(118,136,158));
 
     auto labelText=[&](const std::wstring&s,int x,int y,int w,int h,int size,COLORREF color,bool bold=false){
-        if(recording_){
-            // Recording labels may use the whole channel cell. Fit the complete
-            // measured name instead of clipping it in the old narrow control column.
-            for(;size>1;--size){auto old=SelectObject(dc,drawing.font(size,bold));SIZE extent{};GetTextExtentPoint32W(dc,s.c_str(),int(s.size()),&extent);SelectObject(dc,old);if(extent.cx<=w&&extent.cy<=h)break;}
-            auto font=SelectObject(dc,drawing.font(size,bold));SIZE actual{};GetTextExtentPoint32W(dc,s.c_str(),int(s.size()),&actual);SelectObject(dc,font);if(actual.cx>w||actual.cy>h)recordingLabelOverflow_++;
-            overlayText_.push_back({s,x,y,w,h,size,color,bold});
-        }
-        else text(dc,s,x,y,w,h,size,color,bold);
+        if(!recording_)text(dc,s,x,y,w,h,size,color,bold);
     };
     size_t count = visible.size();
     for (size_t i = 0; i < count; i++) {
@@ -615,10 +621,18 @@ void Window::paint(HDC dc, int width, int height) {
         int y = cell.y, lane = cell.height;
         fill(dc, {cell.x, y, cell.x + cell.width, y + lane - 8},
              i % 2 ? RGB(16, 22, 32) : RGB(18, 24, 35));
-        float peak = 0;
-        for (float v : waves[c])
-            peak = std::max(peak, std::abs(v));
         COLORREF color = states[c].mute ? RGB(96, 103, 119) : colors[c % 8];
+        if(recording_){
+            const auto label=channelLabel(channels[c].name,true);
+            const int w=cell.width-44,h=std::min(30,lane-12);
+            int size=cell.compact?13:std::min(cell.split?20:24,lane/4);
+            for(;size>1;--size){auto font=SelectObject(dc,drawing.font(size,true));SIZE extent{};GetTextExtentPoint32W(dc,label.c_str(),int(label.size()),&extent);SelectObject(dc,font);if(extent.cx<=w&&extent.cy<=h)break;}
+            auto font=SelectObject(dc,drawing.font(size,true));SIZE extent{};GetTextExtentPoint32W(dc,label.c_str(),int(label.size()),&extent);SelectObject(dc,font);
+            if(extent.cx>w||extent.cy>h)++recordingLabelOverflow_;
+            // Names only, drawn above the waveform with the existing outline.
+            overlayText_.push_back({label,cell.labelX(),y+2,w,h,size,color,true});
+        }
+        if(!recording_){
         std::wstring label = channelLabel(channels[c].name, recording_);
         if (cell.compact && channels[c].name == "EFFECTS / OTHER")
             label = L"FX / OTHER";
@@ -658,23 +672,28 @@ void Window::paint(HDC dc, int width, int height) {
                  sliderY, color, 3);
             volumeButton(dc, L"+", cell.plusX(), cell.volumeY(), cell.buttonSize());
         }
+        } // Normal-view labels and controls. Recording is visualization only.
         int x0 = cell.waveLeft(recording_), x1 = cell.waveRight(recording_), center = y + (lane - 8) / 2;
         float amp = (lane - 22) * .44f;
+        if(!recording_){
         line(dc, x0, center, x1, center, RGB(44, 56, 73));
         for (int x = x0; x < x1; x += int((x1 - x0) / 8))
             line(dc, x, y + 12, x, y + lane - 18, RGB(29, 39, 54));
-        auto env = envelope(waves[c], size_t(x1 - x0), size_t(windowSamples_));
-
-        float mean = 0;
-        for (float v : waves[c])
-            mean += v;
-        mean /= float(std::max(size_t(1), waves[c].size()));
-        float gain = peak > .0001f ? std::min(64.f, .65f / peak) : 1;
+        }
+        EnvelopeScale scale;
+        auto offset = waveformTrackers_[c].locate(waves[c], size_t(windowSamples_));
+        auto env = envelope(waves[c], size_t(x1 - x0), size_t(windowSamples_), &scale, offset);
+        // A sliding-window mean makes a steady bass note bob. Use the same
+        // DC-relative midpoint for triggering and vertical centering.
+        float mean = scale.center;
+        float gain = scale.amplitude > .0001f ? std::min(64.f, .65f / scale.amplitude) : 1;
+        for(auto&p:env){p.minimum=(p.minimum-mean)*gain;p.maximum=(p.maximum-mean)*gain;p.center=(p.center-mean)*gain;}
+        waveformTransitions_[c].apply(env,waveElapsed,player_.playing());
         int previous = center;
         for (size_t x = 0; x < env.size(); x++) {
             auto point = env[x];
             auto py = [&](float v) {
-                return center - int(std::clamp((v - mean) * gain, -1.f, 1.f) * amp);
+                return center - int(std::clamp(v, -1.f, 1.f) * amp);
             };
             int low = py(point.minimum), high = py(point.maximum), mid = py(point.center);
             if (low != high)
@@ -704,11 +723,12 @@ void Window::paint(HDC dc, int width, int height) {
         volumeButton(dc, L"+", 480, 1038);
         text(dc, mixed ? L"혼합" : std::to_wstring(int(std::lround(group * 100))) + L"%", 530, 1034,
              95, 40, 20, RGB(196, 208, 225));
+        button(dc,L"리모컨 (F12)",RemoteButtonX,1028,RemoteButtonWidth,remoteWindow_&&IsWindowVisible(remoteWindow_));
         button(dc,L"EQ 설정",EqualizerButtonX,1028,EqualizerButtonWidth,player_.equalizerEnabled());
-        text(dc, L"F1 정보 · F9 녹화뷰 · F11 전체 화면", 660, 1034, 565, 40, 18,
+        text(dc, L"F1 정보 · F9 녹화뷰 · F11 전체화면", 660, 1034, 358, 40, 17,
              RGB(112, 130, 153));
     }
-    if (!player_.error().empty())
+    if (!recording_ && !player_.error().empty())
         text(dc, (recording_ ? L"Error: " : L"오류: ") + wide(player_.error()), 42, 1048, 1800, 28,
              18, RGB(245, 131, 131));
     RestoreDC(dc, saved);
@@ -777,7 +797,9 @@ void Window::click(int x, int y) {
                 drag_ = 102;
                 SetCapture(hwnd_);
                 mouseMove(x, y);
-            } else if (lx>=EqualizerButtonX && lx<EqualizerButtonX+EqualizerButtonWidth)
+            } else if(lx>=RemoteButtonX&&lx<RemoteButtonX+RemoteButtonWidth)
+                toggleRemote();
+            else if (lx>=EqualizerButtonX && lx<EqualizerButtonX+EqualizerButtonWidth)
                 showEqualizer();
             else if (lx >= 1435 && lx < 1665)
                 soundFontMenu();
@@ -911,6 +933,7 @@ void Window::rememberChannels() {
     }
 }
 void Window::restoreChannels() {
+    refreshHiddenChannels();
     if (!preferencesEnabled_ || !player_.loaded())
         return;
     const auto &channels = player_.channels();
@@ -960,6 +983,7 @@ void Window::savePreferences() {
     v["autoplay"] = autoplay_;
     v["recording"] = recording_;
     v["windowSamples"] = windowSamples_;
+    v["showAllChannels"] = player_.showAllChannels()?1:0;
     v["spectrumView"]=spectrumMode_;
     v["spectrumStyle"]=spectrumStyle_;
     if (!fullscreen_ && !IsIconic(hwnd_) && !IsZoomed(hwnd_)) {
@@ -1020,23 +1044,58 @@ void Window::renderFrame(HDC dc, int width, int height) {
         bufferWidth_ = width;
         bufferHeight_ = height;
     }
+    auto paintStart=std::chrono::steady_clock::now();
     paint(bufferDC_, width, height);
     // Complete background/text GDI work before touching the same DIB memory.
     GdiFlush();
+    auto wavesStart=std::chrono::steady_clock::now();
     drawWaves();
+    auto labelsStart=std::chrono::steady_clock::now();
     drawOverlayText(bufferDC_);
+    GdiFlush();auto labelsEnd=std::chrono::steady_clock::now();
+    lastPaintMs_=std::chrono::duration<double,std::milli>(wavesStart-paintStart).count();
+    lastWavesMs_=std::chrono::duration<double,std::milli>(labelsStart-wavesStart).count();
+    lastLabelsMs_=std::chrono::duration<double,std::milli>(labelsEnd-labelsStart).count();
     BitBlt(dc, 0, 0, width, height, bufferDC_, 0, 0, SRCCOPY);
 }
 void Window::drawOverlayText(HDC dc){
     if(overlayText_.empty())return;
-    int saved=SaveDC(dc);SetGraphicsMode(dc,GM_ADVANCED);
-    XFORM xf{FLOAT(scale_),0,0,FLOAT(scale_),FLOAT(offsetX_),FLOAT(offsetY_)};SetWorldTransform(dc,&xf);
-    for(const auto&v:overlayText_){
-        for(auto offset:{POINT{-1,0},POINT{1,0},POINT{0,-1},POINT{0,1}})
-            text(dc,v.value,v.x+offset.x,v.y+offset.y,v.w,v.h,v.size,RGB(6,9,14),v.bold);
-        text(dc,v.value,v.x,v.y,v.w,v.h,v.size,v.color,v.bold);
+    auto draw=[&](HDC target){
+        int saved=SaveDC(target);SetGraphicsMode(target,GM_ADVANCED);
+        XFORM xf{FLOAT(scale_),0,0,FLOAT(scale_),FLOAT(offsetX_),FLOAT(offsetY_)};SetWorldTransform(target,&xf);
+        for(const auto&v:overlayText_){
+            for(auto offset:{POINT{-1,0},POINT{1,0},POINT{0,-1},POINT{0,1}})
+                text(target,v.value,v.x+offset.x,v.y+offset.y,v.w,v.h,v.size,RGB(6,9,14),v.bold);
+            text(target,v.value,v.x,v.y,v.w,v.h,v.size,v.color,v.bold);
+        }
+        RestoreDC(target,saved);
+    };
+    if(desktop::automatedSession()&&GetEnvironmentVariableW(L"NGMV_LABEL_GDI_BASELINE",nullptr,0)){draw(dc);return;}
+    // Cache text coverage, including ClearType's individual color components.
+    // Rendering against black/white yields premultiplied ink and transmission;
+    // composite over the NEW waveform each frame, never an opaque label box.
+    size_t key=size_t(bufferWidth_)*1315423911u+bufferHeight_;
+    auto mix=[&](size_t v){key^=v+size_t(0x9e3779b9)+(key<<6)+(key>>2);};
+    mix(size_t(offsetX_));mix(size_t(offsetY_));mix(std::hash<double>{}(scale_));
+    for(const auto&v:overlayText_){mix(std::hash<std::wstring>{}(v.value));for(int n:{v.x,v.y,v.w,v.h,v.size,int(v.color),int(v.bold)})mix(size_t(n));}
+    if(key!=labelCacheKey_||labelPixels_.empty()){
+        BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=bufferWidth_;info.bmiHeader.biHeight=-bufferHeight_;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+        void*bits=nullptr;HDC mem=CreateCompatibleDC(dc);HBITMAP bmp=mem?CreateDIBSection(dc,&info,DIB_RGB_COLORS,&bits,nullptr,0):nullptr;
+        if(!mem||!bmp){if(bmp)DeleteObject(bmp);if(mem)DeleteDC(mem);draw(dc);return;}
+        auto old=SelectObject(mem,bmp);auto pixels=static_cast<unsigned long*>(bits);size_t count=size_t(bufferWidth_)*bufferHeight_;
+        std::fill(pixels,pixels+count,0);draw(mem);GdiFlush();std::vector<unsigned long> black(pixels,pixels+count);
+        std::fill(pixels,pixels+count,0xffffff);draw(mem);GdiFlush();
+        labelPixels_.clear();
+        for(size_t i=0;i<count;++i){unsigned long b=black[i]&0xffffff,w=pixels[i]&0xffffff;if(!b&&w==0xffffff)continue;
+            unsigned long remain=0;for(int shift:{0,8,16})remain|=unsigned long(std::clamp(int((w>>shift)&255)-int((b>>shift)&255),0,255))<<shift;
+            labelPixels_.push_back({i,b,remain});
+        }
+        SelectObject(mem,old);DeleteObject(bmp);DeleteDC(mem);labelCacheKey_=key;
     }
-    RestoreDC(dc,saved);
+    for(const auto&p:labelPixels_){unsigned long base=bufferPixels_[p.index],result=0;
+        for(int shift:{0,8,16})result|=(((p.ink>>shift)&255)+(((base>>shift)&255)*((p.remain>>shift)&255)+127)/255)<<shift;
+        bufferPixels_[p.index]=result;
+    }
 }
 void Window::drawWaves() {
     // Rasterize the actual min/max envelope directly: no per-segment kernel/GDI calls.
@@ -1051,6 +1110,16 @@ void Window::drawWaves() {
         int error = dx + dy;
         const unsigned long color = (GetRValue(segment.color) << 16) |
                                     (GetGValue(segment.color) << 8) | GetBValue(segment.color);
+        // Most envelope spans are vertical. Fill the clipped span once rather
+        // than stamping overlapping 2x2 boxes for every pixel along it.
+        if(x==endX||y==endY){
+            int left=std::clamp(std::min(x,endX)-thickness/2,0,bufferWidth_);
+            int right=std::clamp(std::max(x,endX)-thickness/2+thickness,0,bufferWidth_);
+            int top=std::clamp(std::min(y,endY)-thickness/2,0,bufferHeight_);
+            int bottom=std::clamp(std::max(y,endY)-thickness/2+thickness,0,bufferHeight_);
+            for(int row=top;row<bottom;++row)std::fill(bufferPixels_+size_t(row)*bufferWidth_+left,bufferPixels_+size_t(row)*bufferWidth_+right,color);
+            continue;
+        }
         for (;;) {
             const int left = std::clamp(x - thickness / 2, 0, bufferWidth_);
             const int right = std::clamp(x - thickness / 2 + thickness, 0, bufferWidth_);
@@ -1096,9 +1165,11 @@ void Window::capture() {
         GdiFlush();
         auto resourcesBefore = GetGuiResources(GetCurrentProcess(), GR_GDIOBJECTS);
         std::vector<double> durations;
+        double paintTotal=0,wavesTotal=0,labelsTotal=0;
         for (int i = 0; i < 120; ++i) {
             auto begin = std::chrono::steady_clock::now();
             renderFrame(mem, w, h);
+            paintTotal+=lastPaintMs_;wavesTotal+=lastWavesMs_;labelsTotal+=lastLabelsMs_;
             GdiFlush();
             durations.push_back(
                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - begin)
@@ -1110,9 +1181,9 @@ void Window::capture() {
             total += ms;
         std::sort(durations.begin(), durations.end());
         std::ofstream report(std::filesystem::path(screenshot_ + L".render.csv"));
-        report << "width,height,frames,mean_ms,p95_ms,gdi_before,gdi_after\n"
+        report << "width,height,frames,mean_ms,p95_ms,gdi_before,gdi_after,paint_ms,waves_ms,labels_ms\n"
                << w << ',' << h << ",120," << total / durations.size() << ',' << durations[113]
-               << ',' << resourcesBefore << ',' << resourcesAfter << '\n';
+               << ',' << resourcesBefore << ',' << resourcesAfter << ',' << paintTotal/120 << ',' << wavesTotal/120 << ',' << labelsTotal/120 << '\n';
     }
     renderFrame(mem, w, h);
     GdiFlush();
@@ -1186,6 +1257,9 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 35:return spectrogram_.size();
             case 36:return spectrogramTimeMs_;
             case 37:return spectrumChoiceWindow_&&IsWindowVisible(spectrumChoiceWindow_);
+            case 38:return hiddenChannelCount();
+            case 39:return b>=0&&size_t(b)<hiddenChannels_.size()&&hiddenChannels_[size_t(b)];
+            case 40:return remoteWindow_&&IsWindowVisible(remoteWindow_);
             case 25: return virtualMidiReloads_;
             case 26: return !virtualMidiError_.empty();
             case 23: return midiDeviceOutput();
@@ -1320,6 +1394,9 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
     case WM_LBUTTONDOWN:
         click(GET_X_LPARAM(b), GET_Y_LPARAM(b));
         return 0;
+    case WM_RBUTTONUP:
+        hideChannelAt(GET_X_LPARAM(b),GET_Y_LPARAM(b));
+        return 0;
     case WM_MOUSEMOVE:
         mouseMove(GET_X_LPARAM(b), GET_Y_LPARAM(b));
         return 0;
@@ -1368,6 +1445,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
                             recording_ ? L"Default apps... (F10)" : L"기본 앱 설정... (F10)");
             } else if (a == VK_F10)
                 desktop::defaultAppsPrompt(hwnd_, true, recording_);
+            else if (a == VK_F12){if(!(b&(LPARAM(1)<<30)))toggleRemote();}
             else if (a == VK_F11)
                 toggleFullscreen();
             else if (a == VK_ESCAPE && fullscreen_)
@@ -1395,6 +1473,8 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         DestroyWindow(hwnd_);
         return 0;
     case WM_DESTROY:
+        if(hiddenChannelsWindow_&&IsWindow(hiddenChannelsWindow_))DestroyWindow(hiddenChannelsWindow_);
+        if(spectrumChoiceWindow_&&IsWindow(spectrumChoiceWindow_))DestroyWindow(spectrumChoiceWindow_);
         if(remoteWindow_&&IsWindow(remoteWindow_))DestroyWindow(remoteWindow_);
         if(equalizerWindow_&&IsWindow(equalizerWindow_))DestroyWindow(equalizerWindow_);
         if (aboutWindow_ && IsWindow(aboutWindow_))
@@ -1419,6 +1499,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                            GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
     if (preferencesEnabled_) {
         preferences_.load(desktop::Settings::path());
+        player_.showAllChannels(preferences_.get("showAllChannels",0,0,1)!=0);
         player_.equalizerEnabled(preferences_.get("eqEnabled",0,0,1)!=0);
         for(size_t band=0;band<20;band++)player_.equalizerGain(band,preferences_.get("eqBand"+std::to_string(band),0,-200,200));
         const int common=preferences_.get("allChannelVolume",-1,0,200);
@@ -1465,7 +1546,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.2", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3-beta 6", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);
@@ -1517,12 +1598,16 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     }
     const bool dropPlaybackTimer=!screenshot_.empty() && desktop::automatedSession() &&
         GetEnvironmentVariableW(L"NGMV_TEST_DISABLE_PLAYBACK_TIMER",nullptr,0)>0;
-    syncRemote();
+    // Remote visibility is session-only and independent of recording preference.
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
         // Fault-injection only in explicitly isolated snapshot tests: verify
         // transport still advances with no idle timer delivery at all.
         if(dropPlaybackTimer && msg.hwnd==hwnd_ && msg.message==WM_TIMER && msg.wParam==1)continue;
+        auto toolHasMessage=[&](HWND tool){return tool&&(msg.hwnd==tool||IsChild(tool,msg.hwnd));};
+        if(msg.message==WM_KEYDOWN&&msg.wParam==VK_F12&&(toolHasMessage(remoteWindow_)||toolHasMessage(equalizerWindow_)||toolHasMessage(spectrumChoiceWindow_)||toolHasMessage(hiddenChannelsWindow_)||toolHasMessage(aboutWindow_))){
+            PostMessageW(hwnd_,WM_KEYDOWN,VK_F12,msg.lParam);continue;
+        }
         if(remoteWindow_&&(msg.hwnd==remoteWindow_||IsChild(remoteWindow_,msg.hwnd))){
             if(msg.message==WM_KEYDOWN&&(msg.wParam==VK_F9||msg.wParam==VK_F6||msg.wParam==VK_F7)){PostMessageW(hwnd_,WM_KEYDOWN,msg.wParam,0);continue;}
             if(IsDialogMessageW(remoteWindow_,&msg))continue;
@@ -1530,6 +1615,10 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
         if(spectrumChoiceWindow_&&(msg.hwnd==spectrumChoiceWindow_||IsChild(spectrumChoiceWindow_,msg.hwnd))){
             if(msg.message==WM_KEYDOWN&&(msg.wParam==VK_F7||msg.wParam==VK_F6||msg.wParam==VK_F9)){PostMessageW(hwnd_,WM_KEYDOWN,msg.wParam,0);continue;}
             if(IsDialogMessageW(spectrumChoiceWindow_,&msg))continue;
+        }
+        if(hiddenChannelsWindow_&&(msg.hwnd==hiddenChannelsWindow_||IsChild(hiddenChannelsWindow_,msg.hwnd))){
+            if(msg.message==WM_KEYDOWN&&msg.wParam==VK_F9){PostMessageW(hwnd_,WM_KEYDOWN,VK_F9,0);continue;}
+            if(IsDialogMessageW(hiddenChannelsWindow_,&msg))continue;
         }
         if(equalizerWindow_&&(msg.hwnd==equalizerWindow_||IsChild(equalizerWindow_,msg.hwnd))&&IsDialogMessageW(equalizerWindow_,&msg))continue;
         if (aboutWindow_ && (msg.hwnd == aboutWindow_ || IsChild(aboutWindow_, msg.hwnd))) {

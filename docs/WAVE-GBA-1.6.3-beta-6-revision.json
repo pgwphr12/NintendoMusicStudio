@@ -1,0 +1,70 @@
+{
+  "version": "1.6.3-beta 6",
+  "revision": "2026-11-10-corrected",
+  "supersedes_label": "1.6.3-beta 7",
+  "previous_beta6_preserved": "outputs/NintendoMusicStudio-1.6.3-beta-6-previous",
+  "changes": [
+    "Real-shape correlation selects a fractional offset from recent unmodified audio. Left and middle amplitudes are not pinned to zero. No reference refresh on a strong match, avoiding accumulated phase error. Noise/transients use latest audio. Match span max2048 internal48kHz samples, up to42.67ms added visual history.",
+    "Precomputed irregular96-point reference positions; no per-candidate trigonometry. Per-channel display state only; no audio changes.",
+    "MP2K linked player/header identity validated after existing probe; CFG follows every track, pattern-return running status, repeat branches and VOICE commands. Complete structural union before playback, not an intro audio usage guess. PCM always visible; unsupported drivers/commands remain conservatively visible.",
+    "Split/rhythm instruments follow real key mappings; nested splits are rejected notes in MP2K, not recursively playable instruments. Budget8192 tones/262144 CFG states.",
+    "Persistent Show all channels override from prior candidate retained; console base exception only NES/GB/SNES."
+  ],
+  "tests": {
+    "focused_initial": "15/15 PASS; core tests recompiled against revised core",
+    "final_after_MP2K_nested_split_semantics": "7/7 PASS including actual core/visibility/UI/tracking and GBA unit",
+    "waveform": "36 combinations:60/144/240Hz,4frequencies,3shapes. Sine/harmonic interframe display error ratio0.00070754 vs raw newest-window. Arbitrary nonzero edge, pause, noise, silence, source unchanged. Not a physical monitor confirmation.",
+    "GBA_actual": "2 read-only supplied SMA1 cases:known PSG0,11 raw lanes; cache invariant after render/seek",
+    "GBA_native_UI": {
+      "pass": true,
+      "cases": [
+        {
+          "session": 0,
+          "total": 11,
+          "automatic": 7,
+          "option_works": true,
+          "settings_restored": false,
+          "mute_gain_unchanged": true
+        },
+        {
+          "session": 1,
+          "total": 11,
+          "automatic": 7,
+          "option_works": true,
+          "settings_restored": true,
+          "mute_gain_unchanged": true
+        }
+      ],
+      "audio": "dummy",
+      "only_owned_children": true
+    },
+    "audio": {
+      "VGM_3seconds_mix_and_grouped_stems_byte_identical_to_beta7": true,
+      "GSF_1second_original_vs_split_mix_byte_identical": true,
+      "physical_audio": false
+    },
+    "packaged_GUI_full_suite": false
+  },
+  "failures_preserved": [
+    "Initial MSBuild target invocation before CMake regeneration failed; regenerated before final build.",
+    "Initial parser treated empty-stack PEND as unknown; verified real MP2K no-op in primary source then corrected.",
+    "First recursive split implementation gave false confidence on nested type; strict fallback exposed actual unsupported mask, then verified MP2K skips nested split notes and added direct unit coverage. Final actual integration known1 repeated after correction.",
+    "Early debug candidates and pre-final15test logs retained privately; final7test rerun uses final code."
+  ],
+  "remaining": [
+    "Nonstandard GBA drivers/unsupported commands remain all PSG visible instead of guessing. Full universal GBA engine usage is not claimed.",
+    "Physical refresh/VRR and user-perceived waveform smoothness await user confirmation; synthetic waveforms and native dummy UI verified.",
+    "Conservative CFG union can retain declared instruments on a never-sounding branch; it never reveals channels dynamically based on live sound."
+  ],
+  "references": [
+    "https://github.com/pret/pokeemerald/blob/master/include/gba/m4a_internal.h",
+    "https://github.com/pret/pokeemerald/blob/master/src/m4a_1.s"
+  ],
+  "source_hashes": {
+    "src\\formats\\GbaSongUsage.hpp": "97e803d8c7f37cd8adf44b578269d2c487106d2ff688b0da99f4742b2fc00783",
+    "src\\formats\\PsfBackend.cpp": "503c2dcc0f1bbe8b122071a01d0dcb7e8be35c85fea545a6d915234c520eed3d",
+    "src\\visualizer\\Envelope.cpp": "07563b1e6193a7aaba7d7190c272d79d37fd47530e1afe74b17963c35afd196d",
+    "src\\ui\\Window.cpp": "6304c35fd3dde1901fabd68bd6c5e2189bb6b54adf351aa1627a4562942dc259"
+  },
+  "user_music_redistributed": false
+}

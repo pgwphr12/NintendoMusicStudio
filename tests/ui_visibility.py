@@ -63,7 +63,7 @@ def send(h, msg, a=0, b=0):
 
 
 results=[]
-for name,wanted in [('channels.nsfe',4),('dmc-late.nsfe',5),('chips/es-late.vgm',8),('chips/es-many.vgm',32),('chips/ay-own.vgm',3),('chips/es-direct-bus.vgm',1),('channels.minigsf',6),('channels.mini2sf',16)]:
+for name,wanted in [('channels.nsfe',5),('dmc-late.nsfe',5),('chips/es-late.vgm',1),('chips/es-many.vgm',32),('chips/ay-own.vgm',1),('chips/es-direct-bus.vgm',1),('channels.minigsf',6),('channels.mini2sf',16)]:
  folder=out/Path(name).stem;folder.mkdir(exist_ok=True);settings=folder/'settings.ini';settings.write_text('repeat=0\nautoplay=0\n')
  env=dict(os.environ,SDL_AUDIODRIVER='dummy',NGMV_TEST_SESSION='visibility1511-'+Path(name).stem,NGMV_SETTINGS_TEST_FILE=str(settings),NGMV_TEST_SNAPSHOT_MS='20000')
  p=subprocess.Popen([str(exe),'--snapshot',str(fixture/name),str(folder/'view.bmp'),'--size=1920x1080'],env=env,creationflags=subprocess.CREATE_NO_WINDOW)

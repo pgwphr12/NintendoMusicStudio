@@ -78,6 +78,7 @@ for session,style in enumerate((0,1,3)):
    assert state(37) and state(31)==1
    send(choice,0x111,2)
    send(main,0x100,0x78);assert state(15)
+   send(main,0x100,0x7b)
    remote=wait(lambda:windows(p.pid,'NintendoMusicStudioRemote'),'No remote')[0]
    send(remote,0x111,2109);assert state(37) and state(31)==1
    warm=state(34)

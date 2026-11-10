@@ -3,6 +3,7 @@
 // No libvgm player, loader, device framework or resampler implementation.
 #include "core/IMusicBackend.hpp"
 #include "LicensedChips.hpp"
+#include "FurnaceEsRate.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -25,18 +26,18 @@ std::vector<uint8_t> validateExtended(const std::vector<uint8_t> &b) {
     require(b.size() >= 0x40 && b.size() <= 64 * 1024 * 1024, "Invalid VGM size.");
     size_t end = uint64_t(le(4)) + 4;
     require(end <= b.size() && end >= 0x40, "Invalid VGM length.");
-    require(le(8) >= 0x150 && le(8) <= 0x171, "Unsupported extended VGM version.");
+    require(le(8) >= 0x150 && le(8) <= 0x172, "Unsupported extended VGM version.");
     size_t start = le(0x34) ? uint64_t(le(0x34)) + 0x34 : 0x40;
     require(start >= 0x40 && start < end, "Invalid VGM data offset.");
     auto hdr = [&](size_t p) { return p + 4 <= start ? le(p) : 0u; };
     const size_t clocks[] = {0x0c, 0x10, 0x2c, 0x30, 0x38, 0x40, 0x44, 0x48, 0x4c, 0x50, 0x54,
                              0x58, 0x5c, 0x60, 0x64, 0x68, 0x6c, 0x70, 0x74, 0x80, 0x84, 0x88,
                              0x8c, 0x90, 0x98, 0x9c, 0xa0, 0xa4, 0xa8, 0xac, 0xb0, 0xb4, 0xb8,
-                             0xc0, 0xc4, 0xc8, 0xcc, 0xd0, 0xd8, 0xdc, 0xe0};
+                             0xc0, 0xc4, 0xc8, 0xcc, 0xd0, 0xd8, 0xdc, 0xe0, 0xe4, 0xe8, 0xec, 0xf0, 0xf4, 0xf8, 0xfc};
     unsigned chips = 0;
     for (auto p : clocks)
         if (auto clock = hdr(p)) {
-            require(p == 0x74 || p == 0x2c || p == 0x50 || p == 0x98 || p == 0x9c || p == 0xd0,
+            require(p == 0x0c || p == 0x54 || p == 0x74 || p == 0x2c || p == 0x50 || p == 0x98 || p == 0x9c || p == 0xd0,
                     "This VGM chip combination is not supported yet.");
             require(!(clock & 0x40000000) && (p == 0xd0 || p == 0x98 || p == 0x9c || !(clock & 0x80000000)) &&
                         (clock & 0x3fffffff) >= 1000 && (clock & 0x3fffffff) <= 50000000,
@@ -44,6 +45,7 @@ std::vector<uint8_t> validateExtended(const std::vector<uint8_t> &b) {
             ++chips;
         }
     if(hdr(0x74)){require(start>0x79 && b[0x78]==3,"Only AY8930 is supported by the new AY integration.");require(!(b[0x79]&~0x11)&& (hdr(0x74)&0x3fffffff)<=20000000,"Unsupported AY8930 flags or excessive clock.");}
+    if(hdr(0x0c)){unsigned taps=b[0x28]|unsigned(b[0x29])<<8;if(!taps)taps=9;unsigned width=b[0x2a]?b[0x2a]:16;unsigned bits=0;for(unsigned v=taps;v;v>>=1)bits+=v&1;require(width>=2&&width<=16&&taps<(1u<<width)&&bits==2,"Unsupported SN76489 noise configuration.");require(!(b[0x2b]&~31),"Unsupported SN76489 flags.");}
     require(chips != 0, "VGM has no supported sound chips.");
     if (hdr(0xbc)) { // Optional extra clock/volume tables, relative offsets.
         size_t x = uint64_t(hdr(0xbc)) + 0xbc;
@@ -81,7 +83,7 @@ std::vector<uint8_t> validateExtended(const std::vector<uint8_t> &b) {
             loopSeen = true;
         uint8_t c = b[p];
         size_t n = 1;
-        if (c == 0x52 || c == 0x53 || c == 0x5a || c == 0xb8 || c == 0xbe || c == 0xa0 || c == 0x61)
+        if (c == 0x52 || c == 0x53 || c == 0x5a || c == 0x5b || c == 0xb8 || c == 0xbe || c == 0xa0 || c == 0x61)
             n = 3;
         else if (c == 0xd2)
             n = 4;
@@ -93,7 +95,7 @@ std::vector<uint8_t> validateExtended(const std::vector<uint8_t> &b) {
             n = 6;
         else if (c == 0x93)
             n = 11;
-        else if (c == 0x31)
+        else if (c == 0x31 || c == 0x50 || c == 0x4f)
             n = 2;
         else if (c == 0x94)
             n = 2;
@@ -109,6 +111,8 @@ std::vector<uint8_t> validateExtended(const std::vector<uint8_t> &b) {
         };
         if (c == 0x52 || c == 0x53)
             chip(0x2c);
+        if(c==0x50||c==0x4f)chip(0x0c);
+        if(c==0x5b)chip(0x54);
         if (c == 0x5a)
             chip(0x50);
         if (c == 0xb8) {
@@ -193,7 +197,7 @@ std::vector<uint8_t> validateExtended(const std::vector<uint8_t> &b) {
 uint32_t read32(const std::vector<uint8_t>&b,size_t p){require(p<=b.size()&&b.size()-p>=4,"Truncated VGM integer.");return b[p]|uint32_t(b[p+1])<<8|uint32_t(b[p+2])<<16|uint32_t(b[p+3])<<24;}
 uint16_t read16(const std::vector<uint8_t>&b,size_t p){require(p+2<=b.size(),"Truncated VGM word.");return b[p]|uint16_t(b[p+1])<<8;}
 struct Event {uint64_t tick;size_t offset;};
-struct Config {ChipKind kind;uint32_t clock;uint8_t flags;unsigned voices,id;const char*name;float gain=1;};
+struct Config {ChipKind kind;uint32_t clock;uint8_t flags;unsigned voices,id;const char*name;float gain=1;unsigned furnaceEsVoices=0;uint16_t noiseTaps=9;uint8_t noiseWidth=16;};
 struct Program {
     std::vector<uint8_t> bytes,pcm;
     std::vector<std::pair<size_t,size_t>> blocks;
@@ -204,38 +208,65 @@ struct Program {
     float gain=1;
     uint64_t usageMask=0;
     uint64_t analyzeUsage()const{
-        unsigned offset=0,esOffset=0,sccOffset=0,okiOffset=0,oplOffset=0,ayOffset=0;
-        bool hasScc=false,hasOki=false,optionalOpl=false;uint64_t result=0;
-        const bool ymMain=std::any_of(configs.begin(),configs.end(),[](const Config&c){return c.kind==ChipKind::Ym2612;});
-        const bool oplMain=!ymMain&&std::any_of(configs.begin(),configs.end(),[](const Config&c){return c.kind==ChipKind::Opl2;});
+        unsigned offset=0,esOffset=0,sccOffset=0,okiOffset=0,ayOffset=0,ymOffset=0,snOffset=0;
+        bool hasScc=false,hasOki=false,hasYm=false,hasSn=false;uint64_t result=0;
+        std::array<unsigned,2>oplOffsets{};std::array<bool,2>hasOpl{};
         std::unique_ptr<LicensedChip> es,ay;
         for(const auto&c:configs){
             require(offset+c.voices<=64,"Too many VGM channels.");
             if(c.kind==ChipKind::Es5506){esOffset=offset;es=std::make_unique<LicensedChip>(c.kind,c.clock,c.flags);}
+            else if(c.kind==ChipKind::Ym2612){hasYm=true;ymOffset=offset;}
             else if(c.kind==ChipKind::Scc){hasScc=true;sccOffset=offset;}
             else if(c.kind==ChipKind::Oki){hasOki=true;okiOffset=offset;}
-            else if(c.kind==ChipKind::Opl2&&ymMain){optionalOpl=true;oplOffset=offset;}
-            else if(c.kind==ChipKind::Ay8930&&(ymMain||oplMain)){ayOffset=offset;ay=std::make_unique<LicensedChip>(c.kind,c.clock,c.flags);}
-            else result|=((uint64_t(1)<<c.voices)-1)<<offset; // primary chip channels
+            else if(c.kind==ChipKind::Opl2||c.kind==ChipKind::Opl1){unsigned k=c.kind==ChipKind::Opl2?0:1;hasOpl[k]=true;oplOffsets[k]=offset;}
+            else if(c.kind==ChipKind::Ay8930){ayOffset=offset;ay=std::make_unique<LicensedChip>(c.kind,c.clock,c.flags);}
+            else if(c.kind==ChipKind::Sn76489){hasSn=true;snOffset=offset;}
             offset+=c.voices;
         }
         std::array<uint8_t,5>sccVolume{};uint8_t sccEnable=0,okiRunning=0;bool okiPending=false;
-        std::array<uint8_t,256>oplRegisters{};
+        std::array<std::array<uint8_t,256>,2>oplRegisters{};
+        std::array<bool,6>ymKeys{};bool ymDac=false,ymDataWritten=false;uint8_t ymData=128;size_t ymPcm=0;
+        std::array<bool,255>ymStreams{};
+        std::array<uint8_t,4>snVolume{{15,15,15,15}};uint8_t snLatch=0;
         auto collect=[&]{
+            if(hasSn)for(unsigned c=0;c<4;c++)if(snVolume[c]<15)result|=uint64_t(1)<<(snOffset+c);
+            if(hasYm){
+                for(unsigned c=0;c<6;c++)if(ymKeys[c]&&!(c==5&&ymDac))result|=uint64_t(1)<<(ymOffset+c);
+                if(ymDac&&((ymDataWritten&&ymData!=128)||std::any_of(ymStreams.begin(),ymStreams.end(),[](bool v){return v;})))result|=uint64_t(1)<<(ymOffset+6);
+            }
             if(es)result|=es->programmedEsVoices()<<esOffset;
             if(hasScc)for(unsigned c=0;c<5;c++)if((sccEnable&(1<<c))&&sccVolume[c])result|=uint64_t(1)<<(sccOffset+c);
             if(hasOki)result|=uint64_t(okiRunning)<<okiOffset;
             if(ay)result|=ay->programmedAyVoices()<<ayOffset;
-            if(optionalOpl){bool drums=bool(oplRegisters[0xbd]&32);for(unsigned c=0;c<(drums?6u:9u);c++)if(oplRegisters[0xb0+c]&32)result|=uint64_t(1)<<(oplOffset+c);
-                if(drums)for(unsigned d=0;d<5;d++)if(oplRegisters[0xbd]&(16>>d))result|=uint64_t(1)<<(oplOffset+9+d);}
+            // Whole-program key/rhythm gates, including primary OPL chips.
+            // This metadata pass never consults live loudness or user mute.
+            for(unsigned k=0;k<2;k++)if(hasOpl[k]){const auto&r=oplRegisters[k];bool drums=bool(r[0xbd]&32);
+                for(unsigned c=0;c<(drums?6u:9u);c++)if(r[0xb0+c]&32)result|=uint64_t(1)<<(oplOffsets[k]+c);
+                if(drums)for(unsigned d=0;d<5;d++)if(r[0xbd]&(16>>d))result|=uint64_t(1)<<(oplOffsets[k]+9+d);
+            }
         };
         uint64_t groupTick=0;
         for(const auto&e:events){
             if(e.tick>groupTick){collect();groupTick=e.tick;}
             size_t p=e.offset;auto cmd=bytes[p];
+            if(hasSn&&cmd==0x50){auto value=bytes[p+1];if(value&128)snLatch=(value>>4)&7;if(snLatch&1)snVolume[snLatch/2]=value&15;}
+            if(hasYm){
+                if(cmd==0x52){auto reg=bytes[p+1],value=bytes[p+2];
+                    if(reg==0x28&&(value&3)!=3)ymKeys[(value&3)+((value&4)?3:0)]=bool(value&0xf0);
+                    else if(reg==0x2b)ymDac=bool(value&128);
+                    else if(reg==0x2a){ymDataWritten=true;ymData=value;}
+                }
+                if(cmd==0xe0)ymPcm=read32(bytes,p+1);
+                if(cmd>=0x80&&cmd<=0x8f){require(ymPcm<pcm.size(),"Usage PCM cursor exceeds bank.");ymDataWritten=true;ymData=pcm[ymPcm++];}
+                if(cmd==0x90)ymStreams[bytes[p+1]]=false;
+                if(cmd==0x93&&(bytes[p+6]&15))ymStreams[bytes[p+1]]=true;
+                if(cmd==0x95)ymStreams[bytes[p+1]]=true;
+                if(cmd==0x94){if(bytes[p+1]==255)ymStreams.fill(false);else ymStreams[bytes[p+1]]=false;}
+            }
             if(es&&cmd==0xbe)es->write(0,bytes[p+1],bytes[p+2]);
             if(ay&&cmd==0xa0)ay->write(0,bytes[p+1],bytes[p+2]);
-            if(optionalOpl&&cmd==0x5a)oplRegisters[bytes[p+1]]=bytes[p+2];
+            if(hasOpl[0]&&cmd==0x5a)oplRegisters[0][bytes[p+1]]=bytes[p+2];
+            if(hasOpl[1]&&cmd==0x5b)oplRegisters[1][bytes[p+1]]=bytes[p+2];
             if(hasScc&&cmd==0xd2){auto port=bytes[p+1],reg=bytes[p+2],value=bytes[p+3];if(port==2&&reg<5)sccVolume[reg]=value&15;if(port==3&&reg==0)sccEnable=value&31;}
             if(hasOki&&cmd==0xb8&&bytes[p+1]==0){auto value=bytes[p+2];if(okiPending){okiRunning|=(value>>4)&15;okiPending=false;}else if(value&128)okiPending=true;else okiRunning&=~((value>>3)&15);}
         }
@@ -252,6 +283,9 @@ struct Program {
         add(0x98,ChipKind::Oki,4,24,"MSM6295",uint8_t(header(0x98)>>31));
         add(0x9c,ChipKind::Scc,5,25,"K051649",uint8_t(header(0x9c)>>31));
         add(0xd0,ChipKind::Es5506,33,37,"ES5506",uint8_t(header(0xd0)>>24)&128);
+        add(0x54,ChipKind::Opl1,14,11,"YM3526",0);
+        add(0x0c,ChipKind::Sn76489,4,0,"SN76489",b[0x2b]);
+        for(auto&c:configs)if(c.kind==ChipKind::Sn76489){c.noiseTaps=read16(b,0x28);if(!c.noiseTaps)c.noiseTaps=9;c.noiseWidth=b[0x2a]?b[0x2a]:16;}
         for(auto&c:configs)if(c.kind==ChipKind::Es5506){require(c.flags&128,"Licensed ES5505 support is not implemented.");} // Real serial output is already normalized; preserve unity chip balance.
         if(auto extra=header(0xbc)){
             size_t x=extra+0xbc;auto volume=read32(b,x+8);
@@ -264,6 +298,7 @@ struct Program {
         // The file's modifier controls the mix. Merely declaring another chip
         // must not attenuate all existing voices (regression in16/17).
         gain=float(std::pow(2.,modifier/32.))*.5f;
+        FurnaceEsRate furnaceRate;
         for(size_t p=start;p<b.size();){
             uint8_t c=b[p];size_t n=1;
             if(c==0x66)break;
@@ -273,13 +308,14 @@ struct Program {
             else if(c>=0x70&&c<=0x7f)ticks+=(c&15)+1;
             else {
                 events.push_back({ticks,p});
+                if(c==0xbe)furnaceRate.write(b[p+1],b[p+2],ticks);
                 if(c==0x67){n=7+read32(b,p+3);if(b[p+2]==0){blocks.push_back({pcm.size(),n-7});pcm.insert(pcm.end(),b.begin()+p+7,b.begin()+p+n);}}
-                else if(c==0x52||c==0x53||c==0x5a||c==0xb8||c==0xbe||c==0xa0)n=3;
+                else if(c==0x52||c==0x53||c==0x5a||c==0x5b||c==0xb8||c==0xbe||c==0xa0)n=3;
                 else if(c==0xd2)n=4;
                 else if(c==0xe0||c==0x90||c==0x91||c==0x95)n=5;
                 else if(c==0x92)n=6;
                 else if(c==0x93)n=11;
-                else if(c==0x94||c==0x31)n=2;
+                else if(c==0x94||c==0x31||c==0x50||c==0x4f)n=2;
                 else if(c>=0x80&&c<=0x8f)ticks+=c&15;
             }
             p+=n;
@@ -292,13 +328,14 @@ struct Program {
                 if(c>=0xd800&&c<=0xdbff){auto lo=read16(b,p);require(lo>=0xdc00&&lo<=0xdfff,"Invalid VGM UTF16 surrogate.");p+=2;cp=0x10000+((c-0xd800)<<10)+(lo-0xdc00);}
                 else require(c<0xdc00||c>0xdfff,"Invalid VGM UTF16 surrogate.");utf8(tag,cp);}p+=2;}
             info.title=tags[0].empty()?tags[1]:tags[0];info.game=tags[2].empty()?tags[3]:tags[2];info.system=tags[4].empty()?tags[5]:tags[4];info.author=tags[6].empty()?tags[7]:tags[6];info.comment=tags[10];
+            for(auto&c:configs)if(c.kind==ChipKind::Es5506)c.furnaceEsVoices=furnaceRate.voices(tags[9]);
         }
         usageMask=analyzeUsage();
     }
 };
 class Core {
     std::shared_ptr<const Program> program;
-    std::array<std::unique_ptr<LicensedChip>,6> chips;
+    std::array<std::unique_ptr<LicensedChip>,8> chips;
     struct Stream {bool setup=false,data=false,on=false,loop=false,reverse=false;uint32_t frequency=0,stride=1,base=0;size_t start=0,count=0,index=0;double next=0;};
     std::array<Stream,255> streams{};
     size_t event=0,pcm=0;uint64_t frame=0,mask_=0;
@@ -315,6 +352,8 @@ class Core {
         if(c==0x52||c==0x53)write(ChipKind::Ym2612,c-0x52,b[p+1],b[p+2]);
         else if(c==0xa0)write(ChipKind::Ay8930,0,b[p+1],b[p+2]);
         else if(c==0x31)write(ChipKind::Ay8930,1,0,b[p+1]);
+        else if(c==0x50||c==0x4f)write(ChipKind::Sn76489,c==0x4f?1:0,0,b[p+1]);
+        else if(c==0x5b)write(ChipKind::Opl1,0,b[p+1],b[p+2]);
         else if(c==0x5a)write(ChipKind::Opl2,0,b[p+1],b[p+2]);
         else if(c==0xb8)write(ChipKind::Oki,0,b[p+1],b[p+2]);
         else if(c==0xbe)write(ChipKind::Es5506,0,b[p+1],b[p+2]);
@@ -339,7 +378,7 @@ class Core {
     }
   public:
     Core(std::shared_ptr<const Program>p,int solo=-1,unsigned voice=0):program(std::move(p)){
-        for(size_t i=0;i<program->configs.size();++i)if(solo<0||size_t(solo)==i){auto&c=program->configs[i];auto d=std::make_unique<LicensedChip>(c.kind,c.clock,c.flags);if(solo>=0){d->mute(c.kind==ChipKind::Es5506?0:~(1u<<voice));if(c.kind==ChipKind::Es5506)d->captureEsVoices();}chips[size_t(c.kind)]=std::move(d);}
+        for(size_t i=0;i<program->configs.size();++i)if(solo<0||size_t(solo)==i){auto&c=program->configs[i];auto d=std::make_unique<LicensedChip>(c.kind,c.clock,c.flags,c.noiseTaps,c.noiseWidth);if(c.kind==ChipKind::Es5506&&c.furnaceEsVoices)d->furnaceEsRate(c.furnaceEsVoices);if(solo>=0){d->mute(c.kind==ChipKind::Es5506?0:~(1u<<voice));if(c.kind==ChipKind::Es5506)d->captureEsVoices();}chips[size_t(c.kind)]=std::move(d);}
     }
     void mask(uint64_t mask){mask_=mask;unsigned offset=0;for(auto&c:program->configs){if(auto*d=chip(c.kind))d->mute(uint32_t((mask>>offset)&(c.kind==ChipKind::Es5506?uint64_t(UINT32_MAX):((uint64_t(1)<<c.voices)-1))));offset+=c.voices;}}
     const std::array<Stereo,33>& esVoices()const{return esVoices_;}
@@ -391,4 +430,5 @@ class ExtendedVgmBackend final:public IMusicBackend {
 } // namespace
 std::unique_ptr<IMusicBackend> makeExtendedVgmBackend(const std::vector<uint8_t>&b){return std::make_unique<ExtendedVgmBackend>(b);}
 } // namespace ngmv
+
 

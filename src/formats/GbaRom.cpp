@@ -57,6 +57,7 @@ public:
     void render(size_t n,AudioBlock&b)override{core_->render(n,b);}
     bool gbaPsgActivity(uint32_t&v)const override{return core_->gbaPsgActivity(v);}
     bool gbaPsgUsed(uint32_t&v)const override{return core_->gbaPsgUsed(v);}
+    bool channelUsage(uint64_t&v)const override{return core_->channelUsage(v);}
 };
 }
 GbaRomMusic inspectGbaRom(const std::vector<uint8_t>&r){

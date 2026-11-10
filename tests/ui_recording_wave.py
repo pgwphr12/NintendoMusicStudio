@@ -77,13 +77,25 @@ for recording in [False,True]:
         image=Image.open(target).convert('RGB');image.save(target.with_suffix('.png'))
         region=image.crop((38,320,275,580));points=[(i%region.width,i//region.width) for i,c in enumerate(region.getdata()) if c==(247,205,87)]
         if recording:assert len(points)>100 and max(y for x,y in points)-min(y for x,y in points)>20,'Recording waveform did not enter name area'
-        right=image.crop((1856,300,1888,600));edge=[(i%right.width,i//right.width) for i,c in enumerate(right.getdata()) if c==(247,205,87)]
+        right=image.crop((1856,16 if recording else 300,1888,532 if recording else 600));edge=[(i%right.width,i//right.width) for i,c in enumerate(right.getdata()) if c==(247,205,87)]
         if recording:assert len(edge)>25 and max(x for x,y in edge)>=30,'Recording wave did not reach channel cell edge'
         else:assert not edge,'Normal-mode right margin changed'
-        outside=image.crop((1888,300,1920,600));assert not any(c==(247,205,87) for c in outside.getdata()),'Wave escaped channel cell'
+        outside=image.crop((1888,16 if recording else 300,1920,532 if recording else 600));assert not any(c==(247,205,87) for c in outside.getdata()),'Wave escaped channel cell'
         if recording:
-            label=image.crop((54,205,180,250));label_ys=[i//label.width for i,c in enumerate(label.getdata()) if c==(247,205,87)]
-            assert label_ys and min(label_ys)<12,'Recording label is too low'
+            allowed={(6,9,14),(12,16,24),(18,24,35),(16,22,32),(247,205,87),(126,222,190),(137,180,249),(222,146,232),(250,155,106),(181,211,119),(126,213,228),(247,163,181),(96,103,119)}
+            # Only the channel-name strips may contain font antialias colors.
+            # The rest must remain pure waveform/background, with no metadata.
+            clean=image.copy()
+            from PIL import ImageDraw
+            draw=ImageDraw.Draw(clean)
+            for top in (18,542):draw.rectangle((50,top-2,1850,top+32),fill=(12,16,24))
+            unexpected=set(clean.get_flattened_data())-allowed
+            assert not unexpected,('Metadata, grid or controls leaked outside names',list(unexpected)[:12])
+            for y,color in [(18,(247,205,87)),(542,(126,222,190))]:
+                assert sum(c==color for c in image.crop((50,y,250,y+30)).get_flattened_data())>30,'Recording channel name missing'
+
+            assert image.getpixel((50,20))==(18,24,35),'Old metadata header still reserves space'
+            assert image.getpixel((50,1050))==(16,22,32),'Visualization did not use the former footer'
         results.append({'recording':recording,'name_area_wave_pixels':len(points),'right_edge_wave_pixels':len(edge)})
     finally:
         if process.poll() is None:process.terminate();process.wait(timeout=5)

@@ -1,0 +1,65 @@
+{
+  "version": "1.6.3-beta 6",
+  "date": "2026-11-10",
+  "latest_requests": [
+    "Free the left edge rather than locking it or the middle on the center line",
+    "Use beta6",
+    "Hide truly unused many-channel chip lanes based on the whole song; never reveal only when a live note begins"
+  ],
+  "implementation": {
+    "waveform": "No crossing search or center trigger. View begins at latest captured endpoint-window. Fractional history interpolation, integrated pixel buckets/DC-relative display scale retained. No synthetic phase drift/mirrored samples/frozen shape. Pause uses identical samples.",
+    "history": "Always4096 display frames, including max4096 window; remove extra8192-frame trigger-only copy",
+    "recording": "Retain fitted outlined channel names; keep other metadata/time/grid/status/controls hidden and full canvas frombeta5",
+    "OPL": "Independent OPL1/OPL2 whole-program key/rhythm register state, primary and auxiliary. Union at timed event groups computed during file loading;9melodic/5rhythm slots retained only when used. Mask applied to visibility only; decoder slots/mixing unchanged.",
+    "visibility_lifetime": "No live RMS/instant loudness inputs. Precomputed mask survives mute/zero gain/playback/seek/rewind. New file/subsong gets its own metadata. Existing NES/GB basic and GBA PCM policy unchanged."
+  },
+  "validation": {
+    "ctest": {
+      "pass": 13,
+      "fail": 0,
+      "seconds": 24.5,
+      "log_SHA256": "5b7cbe82a0321bb3f13e6f3e3b9a4e16be68c2f99ea5a3bc4684430b0e438b40"
+    },
+    "free_motion": "24signed/DC/bass/harmonic/pulse sweeps,60/144Hz presentation,256/2048/4096windows: both left and middle vary; triggerfalse/latest offset exact, unchanged input deterministic; silence/DC/peaks/noise/short/no-input-write PASS",
+    "scope_benchmark": "100max-window calls4.2206ms; microbenchmark only, no universal FPS claim",
+    "OPL_fixture": "OPL1/OPL2/combined independent masks8210/8210/4202514; late note and rhythm present before audio, instantaneous ON/OFF excluded, mute/gain0/seek/stop/play/pause do not alter list",
+    "actual_VGM": {
+      "file": "뷁.vgm",
+      "SHA256": "03bbf089a707366253f647c8ff6c29bfe7f7d5967058f72739826babadd4b9e2",
+      "visible_before_playback": 12,
+      "decoder_channels_preserved": 23,
+      "visible_OPL_channels": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "other_visible": "MSM6295 1,2; K0516491..4",
+      "original_unchanged": true,
+      "audio3s_byte_identical_before_after": true,
+      "audio_compare_SHA256": "c30bc79defb87d96cc8249741ac083f25db19ff8b2aad45dbddd5700b2f6bec0",
+      "rendered_float_peak": 0.6977545022964478
+    },
+    "native_actual": "Own offscreen/dummy actual VGM snapshot/version/autoplay smoke PASS",
+    "recording_and_visibility": "Fresh recording names-only, ES/AY controls and whole-song visibility native checks included in13CTest"
+  },
+  "audio_paths_unchanged_from_beta5": {
+    "src/player/Player.cpp": "914b3334a04b601fed93542e9c4cf7138cc90e6c155b470c5a86e4dc82040246",
+    "src/audio/SdlOutput.cpp": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38",
+    "src/formats/LicensedChips.cpp": "5efcf981c84506a7394bb6f12016019a28a8fd3d609a0bab0ec47c5170a4004e",
+    "src/formats/MidiBackend.cpp": "f8eda418f9d6c3eee69ff9450472d16c4041ee56682b1db33c7a3293b978e379",
+    "src/ui/ChannelLayout.hpp": "9f58a33a1b2543734ede6d903235b32d2fa0b6e5f7a8dd7841267ce99941b242"
+  },
+  "limits": [
+    "Live music/noise naturally scrolls and changes shape; this is now explicitly desired free motion",
+    "OPL usage means timed key/rhythm programming, conservatively retains notes even if instrument/sample settings or user mute make output quiet; no full-song amplitude guessing",
+    "Unknown/unsupported usage remains visible; not a promise of universal chip/format coverage",
+    "Dummy/offscreen tests are not physical listening; waveform benchmark is host dependent"
+  ],
+  "abandoned_candidate": "An earlier centered-trigger prototype passed its own test, then was replaced by the user latest free-left-edge preference before anybeta6 delivery. No artificial sine-phase animation shipped.",
+  "new_dependency": false,
+  "original_audio_assets_distributed": false,
+  "external_upload": false
+}

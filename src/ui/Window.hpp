@@ -4,17 +4,29 @@
 #include "player/Player.hpp"
 #include "DisplayPacer.hpp"
 #include "visualizer/SpectrumCurve.hpp"
+#include "visualizer/Envelope.hpp"
 #include "visualizer/SpectrogramHistory.hpp"
 #include <filesystem>
 #include <deque>
+#include <chrono>
 #include <windows.h>
 namespace ngmv {
 class Window {
     HWND hwnd_ = nullptr;
     HWND aboutWindow_ = nullptr;
     HWND spectrumChoiceWindow_ = nullptr;
+    HWND hiddenChannelsWindow_ = nullptr;
+    std::vector<std::string> hiddenChannelKeys_;
+    std::vector<bool> hiddenChannels_;
+    void refreshHiddenChannels();
+    void updateHiddenChannels();
+    void showHiddenChannels();
+    void setChannelHidden(size_t,bool);
+    void hideChannelAt(int,int);
+    size_t hiddenChannelCount() const;
     HWND remoteWindow_ = nullptr, equalizerWindow_ = nullptr;
-    void syncRemote();
+    void showRemote();
+    void toggleRemote();
     void updateRemote();
     void showEqualizer();
     bool equalizerSync_=false;
@@ -29,10 +41,17 @@ class Window {
         COLORREF color;
     };
     std::vector<WaveSegment> segments_;
+    std::vector<WaveformTracker> waveformTrackers_;
+    std::vector<WaveformTransition> waveformTransitions_;
+    std::chrono::steady_clock::time_point waveformPaintTime_{};
     unsigned long *bufferPixels_ = nullptr;
     struct OverlayText {std::wstring value;int x,y,w,h,size;COLORREF color;bool bold;};
     std::vector<OverlayText> overlayText_;
+    struct LabelPixel {size_t index;unsigned long ink,remain;};
+    std::vector<LabelPixel> labelPixels_;
+    size_t labelCacheKey_=0;
     int recordingLabelOverflow_=0;
+    double lastPaintMs_=0,lastWavesMs_=0,lastLabelsMs_=0;
     void drawOverlayText(HDC);
     void drawWaves();
     void releaseBuffer();

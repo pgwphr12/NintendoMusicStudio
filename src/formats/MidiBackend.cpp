@@ -24,6 +24,29 @@ std::mutex fontMutex;std::filesystem::path selectedFont;
 using Font=std::unique_ptr<tsf,decltype(&tsf_close)>;
 #include "MidiBank.inl"
 struct LoadedFont {Font font{nullptr,tsf_close};unsigned unsupported=0;};
+std::vector<std::filesystem::path> windowsBankCandidates(){
+    std::vector<std::filesystem::path> paths;
+    auto add=[&](const std::filesystem::path&p){if(p.empty()||!p.is_absolute())return;auto normalized=p.lexically_normal();if(std::find(paths.begin(),paths.end(),normalized)==paths.end())paths.push_back(normalized);};
+    // Own isolated tests can model stale/missing registrations without changing
+    // the PC registry or installing/removing any synthesizer.
+    wchar_t dummy[32]{},test[32768]{};
+    bool isolated=GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy");
+    if(isolated){auto n=GetEnvironmentVariableW(L"NGMV_TEST_GM_PATH",test,32768);if(n&&n<32768)add(test);if(GetEnvironmentVariableW(L"NGMV_TEST_GM_ONLY",nullptr,0))return paths;}
+    else for(DWORD view:{RRF_SUBKEY_WOW6464KEY,RRF_SUBKEY_WOW6432KEY}){
+        wchar_t value[32768]{};DWORD bytes=sizeof(value);
+        if(RegGetValueW(HKEY_LOCAL_MACHINE,L"SOFTWARE\\Microsoft\\DirectMusic",L"GMFilePath",RRF_RT_REG_SZ|RRF_RT_REG_EXPAND_SZ|RRF_NOEXPAND|view,nullptr,value,&bytes)==ERROR_SUCCESS&&value[0]){
+            // Expand both REG_SZ and REG_EXPAND_SZ. Old registrations may put
+            // %SystemRoot% in either type; a path is not proof a file exists.
+            wchar_t expanded[32768]{};auto n=ExpandEnvironmentStringsW(value,expanded,32768);if(n&&n<32768)add(expanded);
+        }
+    }
+    wchar_t directory[32768]{};auto n=GetSystemDirectoryW(directory,32768);if(n&&n<32768)add(std::filesystem::path(directory)/L"drivers"/L"gm.dls");
+    n=GetWindowsDirectoryW(directory,32768);if(n&&n<32768){auto win=std::filesystem::path(directory);add(win/L"System32"/L"drivers"/L"gm.dls");add(win/L"SysWOW64"/L"drivers"/L"gm.dls");}
+    return paths;
+}
+bool windowsBankHeader(const std::filesystem::path&path){
+    std::ifstream f(path,std::ios::binary);char h[12]{};return f.read(h,sizeof(h))&&!memcmp(h,"RIFF",4)&&!memcmp(h+8,"DLS ",4);
+}
 LoadedFont loadFont(const std::filesystem::path&path){
     std::ifstream f(path,std::ios::binary|std::ios::ate);if(!f)throw std::runtime_error("Cannot open MIDI sound bank. Choose an SF2/DLS bank with F8.");auto n=f.tellg();if(n<12||n>256*1024*1024)throw std::runtime_error("Sound bank is empty or exceeds256MB.");
     std::vector<uint8_t>b(static_cast<size_t>(n));f.seekg(0);if(!f.read(reinterpret_cast<char*>(b.data()),n))throw std::runtime_error("Incomplete sound bank read.");
@@ -39,6 +62,16 @@ LoadedFont loadFont(const std::filesystem::path&path){
         }
     }else throw std::runtime_error("Supported sound banks: PCM SF2 or DLS1 (no SF3/SFZ).");
     return result;
+}
+LoadedFont loadWindowsFont(std::filesystem::path&path){
+    std::string lastError;
+    for(const auto&candidate:windowsBankCandidates()){
+        if(!windowsBankHeader(candidate))continue;
+        try{auto font=loadFont(candidate);path=candidate;return font;}
+        catch(const std::bad_alloc&){throw;}
+        catch(const std::runtime_error&e){lastError=e.what();/* A stale/corrupt registered bank must not hide a valid system bank. */}
+    }
+    throw std::runtime_error("Windows default MIDI sound bank (gm.dls) is missing, unreadable or unsupported. Windows 기본 MIDI 음원(gm.dls)을 찾거나 읽을 수 없습니다. VirtualMIDISynth 설치는 필요하지 않습니다."+(lastError.empty()?std::string{}:" Details: "+lastError));
 }
 class MidiBackend final:public IMusicBackend {
     MidiSong song_;bool deviceMode_=false;std::unique_ptr<MidiDevice> device_;std::vector<TrackInfo> tracks_;std::vector<ChannelInfo> channels_;
@@ -69,10 +102,10 @@ class MidiBackend final:public IMusicBackend {
     }
   public:
     MidiBackend(const std::vector<uint8_t>&b,const std::filesystem::path&file,const std::filesystem::path&bank):song_(parseMidi(b)){
-        bool basicOnly=bank.empty()&&!virtualMidiInstalled();auto path=basicOnly?windowsMidiBank():bank.empty()?midiSoundFont():bank;bool system=path.empty();deviceMode_=system&&midiDeviceOutput();LoadedFont loaded;
+        bool basicOnly=bank.empty()&&!virtualMidiInstalled();auto path=basicOnly?std::filesystem::path{}:bank.empty()?midiSoundFont():bank;bool system=path.empty();deviceMode_=!basicOnly&&system&&midiDeviceOutput();LoadedFont loaded;
         // Hidden/dummy test sessions must never emit hardware MIDI notes.
         wchar_t dummy[32]{};if(GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy"))deviceMode_=false;
-        if(!deviceMode_){if(system)path=automaticMidiBank();loaded=loadFont(path);font_=std::move(loaded.font);}else device_=std::make_unique<MidiDevice>(song_,windowsMidiPort());
+        if(!deviceMode_){if(basicOnly)loaded=loadWindowsFont(path);else{if(system)path=automaticMidiBank();loaded=loadFont(path);}font_=std::move(loaded.font);}else device_=std::make_unique<MidiDevice>(song_,windowsMidiPort());
         for(unsigned c=0;c<16;c++)if(song_.used&(1<<c))channels_.push_back({"Channel "+std::to_string(c+1)});
         TrackInfo t;t.title=song_.title.empty()?file.stem().u8string():song_.title;t.system="MIDI";t.lengthMs=int((song_.endFrame*1000+InternalRate-1)/InternalRate);
         t.game=path.filename().u8string();
@@ -110,8 +143,8 @@ class MidiBackend final:public IMusicBackend {
 void midiSoundFont(const std::filesystem::path&p){std::lock_guard<std::mutex>lock(fontMutex);selectedFont=p;}
 std::filesystem::path midiSoundFont(){std::lock_guard<std::mutex>lock(fontMutex);return selectedFont;}
 std::filesystem::path windowsMidiBank(){
-    wchar_t text[32768]{};DWORD bytes=sizeof(text);if(RegGetValueW(HKEY_LOCAL_MACHINE,L"SOFTWARE\\Microsoft\\DirectMusic",L"GMFilePath",RRF_RT_REG_SZ|RRF_RT_REG_EXPAND_SZ,nullptr,text,&bytes)==ERROR_SUCCESS&&text[0])return text;
-    wchar_t system[MAX_PATH]{};if(!GetSystemDirectoryW(system,MAX_PATH))throw std::runtime_error("Cannot find Windows default MIDI sound bank.");return std::filesystem::path(system)/L"drivers"/L"gm.dls";
+    for(const auto&path:windowsBankCandidates())if(windowsBankHeader(path))return path;
+    throw std::runtime_error("Windows default MIDI sound bank (gm.dls) is missing or unreadable.");
 }
 void validateMidiBank(const std::filesystem::path&p){auto font=loadFont(p.empty()?automaticMidiBank():p);}
 std::unique_ptr<IMusicBackend> makeMidiBackend(const std::vector<uint8_t>&b,const std::filesystem::path&file,const std::filesystem::path&bank){return std::make_unique<MidiBackend>(b,file,bank);}

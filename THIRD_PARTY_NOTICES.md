@@ -1,3 +1,7 @@
+## YM3526 and mixed SN76489 integration (1.6.3-beta 3)
+
+YM3526 uses the existing GPL-2.0-or-later fmopl core. SN76496 by Nicola Salmoria, BSD-3-Clause, pinned libvgm commit61b62d64455e039de2a1d01498afa9e9b5f1cb88, is unchanged. Own bounded scheduler and minimal functional declarations; no libvgm player/framework linked. Full notice in licenses/selected-chips-BSD-3-Clause.txt and source provenance in third_party/licensed-chips/UPSTREAM.json.
+
 ## Standalone linkage1.5.12
 
 GME is now statically linked. Its LGPL2.1+ and the application GPL2+ notices and complete modified sources/build scripts remain supplied. The corresponding source archive rebuilds/relinks the full application against a modified GME. No sidecar DLL or extraction is required. All component license texts are also embedded in the executable About window. Windows MIDI APIs use the OS winmm component; no third-party mapper/driver is redistributed.

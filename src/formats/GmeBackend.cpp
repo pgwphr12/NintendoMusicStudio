@@ -77,10 +77,10 @@ void GmeBackend::selectTrack(int index) {
         auto found=usageCache_.find(index);
         if(found!=usageCache_.end()){usageMask_=found->second;usageKnown_=true;}
         else if(usageDurationMs_[index]>0){
-            uint64_t mask=15;std::vector<short> pcm(4096*2);
+            uint64_t mask=31;std::vector<short> pcm(4096*2);
             // Only optional channels need inspection; stop a channel as soon
             // as its use is proven, otherwise inspect the entire tagged song.
-            for(size_t c=4;c<isolated_.size();c++){
+            for(size_t c=5;c<isolated_.size();c++){
                 uint64_t left=uint64_t(usageDurationMs_[index])*InternalRate/1000;bool used=false;
                 while(left&&!used){size_t n=size_t(std::min<uint64_t>(left,4096));check(gme_play(isolated_[c].get(),int(n*2),pcm.data()));left-=n;
                     for(size_t i=0;i<n*2;i++)if(pcm[i]!=0){used=true;break;}}

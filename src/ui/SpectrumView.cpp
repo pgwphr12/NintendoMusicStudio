@@ -39,7 +39,7 @@ void Window::paintSpectrum(HDC dc){
     spectrumMotion_.step(spectrum_.left,spectrum_.right,elapsed);spectrumLastPaint_=now;
     spectrumPeak_=0;
     for(size_t i=0;i<SpectrumAnalyzer::Bands;++i)spectrumPeak_=std::max({spectrumPeak_,spectrumMotion_.left[i],spectrumMotion_.right[i]});
-    const int top=recording_?230:280,bottom=recording_?1030:990;
+    const int top=recording_?16:280,bottom=recording_?1064:990;
     if(spectrumStyle_==3){paintScrollingSpectrum(dc,top,bottom);return;}
     const int gap=28,row=(bottom-top-gap)/2;
     // Each channel gets its own horizontal frequency axis, matching the user's

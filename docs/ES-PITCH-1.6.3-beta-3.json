@@ -1,0 +1,278 @@
+{
+  "version": "1.6.3-beta 3",
+  "date": "2026-11-08",
+  "request": "Author reports ES5506 one octave lower than Furnace original playback",
+  "upstream": {
+    "repo": "https://github.com/tildearrow/furnace",
+    "commit": "592e7fd387e7bb5f0c908452c60632c8d37cdc39",
+    "source": "src/engine/platform/es5506.cpp",
+    "blob_SHA": "47be639bfa8c890816b7362d5f302eb9ac7abce9",
+    "url": "https://github.com/tildearrow/furnace/blob/592e7fd387e7bb5f0c908452c60632c8d37cdc39/src/engine/platform/es5506.cpp",
+    "facts": [
+      "setFlags uses clock/(16*(initChanMax+1)) as tracker rate",
+      "reset writes initChanMax and then31 to ACTV without updating that rate",
+      "Older dump can put this initial pair on PAGE0x3f/W_END before explicit serial setup"
+    ]
+  },
+  "actual_metadata": {
+    "file": "1793424975458.vgm",
+    "source_SHA256": "b8cb756ab0c23bfc8827d43f82de03fe7c83e49334a17137c715217d3c3bd6a6",
+    "clock": 16000000,
+    "creator": "Furnace (chiptune tracker)",
+    "observed_reset_pair": "PAGE0x3f W_END15 ->31 at tick0, followed by W_ST1/W_END17/LR_END32/MODE8",
+    "actual_ACTV_commands": 0,
+    "derived_tracker_voices": 16,
+    "old_native_Hz": 31250,
+    "new_native_Hz": 62500,
+    "ratio": 2,
+    "original_unchanged": true
+  },
+  "implementation": {
+    "detection": "Exact creator plus complete tick0 reset signature, legacy wrong-page or lower ACTV variant; reject unknown producer/missing serial/later ACTV/partial signature",
+    "adapter": "Static per-chip tracker rate selected before first output. ACTV/FC/sample data/command timestamps remain unchanged. Full mix and ES stems use same corrected native rate. No global transposition, filename check or music hash allowlist",
+    "vendored_core_modified": false,
+    "new_dependencies": "ES rate fix: none; new mixed-SN playback: unchanged pinned BSD3 SN core, full source/notices included"
+  },
+  "tests": {
+    "generic5rate_frequency_contract": {
+      "pass": true,
+      "cases": [
+        {
+          "case": "rate32",
+          "actual_Hz": 244.14060372709622,
+          "expected_Hz": 244.140625,
+          "ratio": 0.9999999128661862
+        },
+        {
+          "case": "rate16",
+          "actual_Hz": 488.28121743941864,
+          "expected_Hz": 488.28125,
+          "ratio": 0.9999999333159294
+        },
+        {
+          "case": "rate5",
+          "actual_Hz": 1562.5001227935243,
+          "expected_Hz": 1562.5,
+          "ratio": 1.0000000785878556
+        },
+        {
+          "case": "fc2",
+          "actual_Hz": 488.28124346158614,
+          "expected_Hz": 488.28125,
+          "ratio": 0.9999999866093284
+        },
+        {
+          "case": "fcHalf",
+          "actual_Hz": 122.07030459480777,
+          "expected_Hz": 122.0703125,
+          "ratio": 0.9999999352406652
+        }
+      ]
+    },
+    "baseline165s_private_reference": {
+      "seconds_rendered": 165,
+      "matched_non_silent_windows": 165,
+      "median_pitch_spectrum_cosine": 0.999974771737826,
+      "meaning": "Uncorrected decoder agrees with hardware-style reference; discrepancy is tracker/export initialization compatibility, not blanket half-frequency hardware math"
+    },
+    "fixed_actual10seconds": {
+      "other_YM2612_OKI_stems_bit_identical": true,
+      "cosine_fixed_vs_old_shift": {
+        "0": 0.47860179503414463,
+        "12": 0.906804831500732
+      },
+      "old_ES_RMS": 0.02440916933119297,
+      "fixed_ES_RMS": 0.02289561554789543
+    },
+    "focused_ctest": "4/4 PASS2.55s including owned fixture generation, extendedVGM,ES/AY voices,new Furnace pitch test",
+    "own8pitch_cases": "Legacy/lower page,5/16/32voice rate,8/16bit sample ROM,non-Furnace/wrong serial/later ACTV stay unchanged; stem sum max2.98e-8; mute and seek/replay pass",
+    "native_4chip_cases": {
+      "pass": true,
+      "cases": [
+        {
+          "file": "es-many.vgm",
+          "channels": 33,
+          "wave_pixels": 21056,
+          "high_index_controls": false,
+          "recording": true
+        },
+        {
+          "file": "es-last.vgm",
+          "channels": 40,
+          "wave_pixels": 9462,
+          "high_index_controls": true,
+          "recording": false
+        },
+        {
+          "file": "ay-own.vgm",
+          "channels": 3,
+          "wave_pixels": 62962,
+          "high_index_controls": false,
+          "recording": false
+        },
+        {
+          "file": "es-direct-bus.vgm",
+          "channels": 33,
+          "wave_pixels": 0,
+          "high_index_controls": false,
+          "recording": true
+        }
+      ],
+      "audio": "dummy"
+    },
+    "actual_lobby_native_smoke": {
+      "pass": true,
+      "name_version": true,
+      "legacy_editor_CLI_rejected": true,
+      "F2_F3_no_editor_windows": true,
+      "offscreen_player_snapshot": "private UI output, excluded from packages",
+      "audio": "dummy",
+      "user_app_operated": false
+    },
+    "final_focused_ctest": "13/13 PASS17.35s: equalizer, commonchannelgain, settings, fixturegeneration, coreaudio, pitchtempo, extendedVGM, presentation, monitorpacing, ES/AYvoices, visibility, FurnaceESpitch and newchips"
+  },
+  "failed_candidates": [
+    {
+      "scope": "Private independent reference wrapper",
+      "failure": "Initial missing device_reset yielded silence, result discarded; missing include/path compile attempts preserved",
+      "resolution": "Required native reset added; reference produced real signal, then165s compared successfully"
+    },
+    {
+      "scope": "Initial compatibility detector",
+      "failure": "Only lower ACTV pair recognized, actual legacy export left pair on PAGE0x3f/W_END; first candidate made no change",
+      "resolution": "Actual byte-write trace identifies exact legacy signature; refined detector plus positive/negative PCM tests"
+    },
+    {
+      "scope": "New own regression build",
+      "failure": "Missing array include",
+      "resolution": "Include added, all8cases passed"
+    }
+  ],
+  "reused_source": {
+    "src/player/Player.cpp": {
+      "unchanged": true,
+      "SHA256": "914b3334a04b601fed93542e9c4cf7138cc90e6c155b470c5a86e4dc82040246"
+    },
+    "src/audio/SdlOutput.cpp": {
+      "unchanged": true,
+      "SHA256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38"
+    },
+    "src/audio/GraphicEqualizer.cpp": {
+      "unchanged": true,
+      "SHA256": "6afc53785af4c02cb18e73c7d4b78b8076a53b0383646f6315e62419a92e083c"
+    },
+    "src/formats/GbaRom.cpp": {
+      "unchanged": true,
+      "SHA256": "036b10859a8900313c150c3c16b620b92a3e265d598dc865834dbb8e88bdb286"
+    },
+    "src/formats/NesRom.cpp": {
+      "unchanged": true,
+      "SHA256": "b630346fb4833e1985d58f30724e75ce3b0d0a6544b6f352ac9305d78f9f2bbd"
+    },
+    "third_party/vgsound-es5506/src/es550x/es5506.cpp": {
+      "unchanged": true,
+      "SHA256": "31856a915caef9ad2d8f7bfc02e87723f8bd9798ad3e3ebd3d9ac0d4a93acd96"
+    },
+    "third_party/vgsound-es5506/src/es550x/es5506.hpp": {
+      "unchanged": true,
+      "SHA256": "c04a06f0a914d989df881a9beb8974c8d1b9aa2f3eb334fa4ab2870b25beb612"
+    },
+    "third_party/vgsound-es5506/src/es550x/es550x_alu.cpp": {
+      "unchanged": true,
+      "SHA256": "71a803d5b12a40d201856e53c90932cc820b998683e86172277e56db24067e78"
+    }
+  },
+  "limits": [
+    "Corrected actual audio measured for first10s; original uncorrected reference comparison covered165s",
+    "Furnace original project/WAV was not supplied; complete intended timbre/whole corrected song/hardware listening identity not certified",
+    "Only the explicit tagged reset patterns are automatically adapted; other ambiguous exports remain unchanged",
+    "Native UI uses dummy audio/offscreen own processes"
+  ],
+  "private_reference_core_in_product": false,
+  "game_assets_reference_audio_in_archives": false,
+  "external_upload": false,
+  "new_file_compatibility": {
+    "files": [
+      {
+        "file": "slogic.vgm",
+        "bytes": 25505,
+        "SHA256": "3c5359904516ea87a22391aded6520057d3796c875f14fcafc2781f06d81071c",
+        "version": "0x172",
+        "ticks": 2755515,
+        "commands": {
+          "0x5b": 7082,
+          "0x62": 3749,
+          "0x66": 1
+        },
+        "ES_initial_page11": []
+      },
+      {
+        "file": "1794124986077.vgm",
+        "bytes": 968886,
+        "SHA256": "45557026edc32018b5125c4e62c3cb45af71f5fd99db8692c7175f44b01df9c1",
+        "version": "0x171",
+        "ticks": 2911602,
+        "commands": {
+          "0x67": 1,
+          "0xbe": 280196,
+          "0x50": 7,
+          "0x61": 2905,
+          "0x66": 1
+        },
+        "ES_initial_page11": [
+          {
+            "page": 63,
+            "value": 15
+          },
+          {
+            "page": 63,
+            "value": 31
+          },
+          {
+            "page": 32,
+            "value": 17
+          }
+        ]
+      }
+    ],
+    "support": "Bounded VGM1.72; YM3526 register5b using existing GPL2+OPL core; SN76489 data50/stereo4f in extended combinations using pinned unchanged BSD3core. Existing standalone GME SN/MegaDrive route retained.",
+    "full_timeline_checks": [
+      {
+        "file": "slogic.vgm",
+        "seconds_including_final_silence": 63.483,
+        "channels": 14,
+        "peak": 0.276779,
+        "max_stem_sum_error": 0
+      },
+      {
+        "file": "1794124986077.vgm",
+        "seconds_including_final_silence": 67.023,
+        "channels": 37,
+        "peak": 0.5,
+        "max_stem_sum_error": 8.9407e-08,
+        "SN_channels_silent": "File has7initial SN writes and no subsequent notes; no fake voices generated"
+      }
+    ],
+    "transport": "Both passed replay/seek500ms/allmute/unmute and dummy worker progression",
+    "new_chip_fixtures": "Three clock/tone cases: OPL1 219.6Hz expected219.995; customclock20.4 expected20.6245; SN430.8 expected430.234; stereo/stem sums/mute/replay;34negative (includes undeclared Mikey1.72 header) bounded cases PASS",
+    "native_smoke": "Both supplied files offscreen own Popen player snapshot/name/version/autoplay checks PASS; dummy output, no physical listening",
+    "failed_candidates": [
+      "Initial local Git blob comparison rejected CRLF copy; canonical LF bytes verified against official pinned Git blob47ebab1f121118b13eee6b7d13f259ba797fc011 before import",
+      "First own OPL fixture envelope decayed before observation window; fixture corrected to sustained tone",
+      "Own OPL frequency expectation initially missed block-1 term; corrected theoretical formula after inspection; synthesis untouched"
+    ],
+    "limits": [
+      "No complete VGM1.72/all-chip support; unknown declared chips/commands and dual/T6W28 remain rejected",
+      "SN noise width range2..16, exactly2feedback taps and flags0..31 supported; other modes explicitly rejected",
+      "No Furnace original project/audio available for exact intended timbre comparison",
+      "Supplied music remains read-only and excluded from archives"
+    ],
+    "readonly_original_hashes_verified": true,
+    "unsupported_future_header": "e4..fc nonzero declarations rejected; no silent acceptance of new1.72chips"
+  },
+  "test_log_SHA256": {
+    "es163b3-final-ctest2.log": "96104c4fb89f2dfe512b90fc3eb126a832a242ba21d686b22538df7183475f78",
+    "es163b3-final-two-files.log": "06ec01bc14006b80f2dd018ba48ceea9ca1e72e834c0d5db8d23d9456febb6f9",
+    "es163b3-newchip-tests3.log": "9faa667ae577ceda75df6db314994d1359a0b09608a9d83973016264ac1148d4"
+  }
+}

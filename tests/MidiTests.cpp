@@ -13,7 +13,7 @@ static std::vector<uint8_t> read(const std::filesystem::path&p){std::ifstream f(
 static double energy(const std::vector<Stereo>&v){double e=0;for(auto s:v){check(std::isfinite(s.l)&&std::isfinite(s.r),"Nonfinite MIDI");e+=s.l*s.l+s.r*s.r;}return e;}
 int wmain(int argc,wchar_t**argv){try{
     midiSelectOutput(4);check(midiDeviceOutput(),"Explicit external route lost");midiSelectOutput(3);check(!midiDeviceOutput(),"Windows default incorrectly routes to waveform-less device");SetEnvironmentVariableW(L"NGMV_TEST_SESSION",L"owned-midi-unit");SetEnvironmentVariableW(L"SDL_AUDIODRIVER",L"dummy");
-    auto root=std::filesystem::path(argv[1]);SetEnvironmentVariableW(L"NGMV_TEST_VMS_CONFIG",(root/"virtual-midi.conf").c_str());auto b=read(root/"channels.mid");auto song=parseMidi(b);
+    auto root=std::filesystem::absolute(std::filesystem::path(argv[1]));SetEnvironmentVariableW(L"NGMV_TEST_VMS_CONFIG",(root/"virtual-midi.conf").c_str());auto b=read(root/"channels.mid");auto song=parseMidi(b);
     check(song.used==3,"MIDI channels lost");check(song.endFrame==132000,"Tempo map duration wrong");
     check(song.events[2].frame==24000,"Running-status/tempo event position wrong");
     for(auto n:{"format2.mid","bad-running.mid","bad-vlq.mid","truncated.mid"}){bool failed=false;try{parseMidi(read(root/n));}catch(const std::exception&){failed=true;}check(failed,"Invalid MIDI accepted");}
@@ -42,7 +42,27 @@ int wmain(int argc,wchar_t**argv){try{
     midiSoundFont(root/"own.sf2");check(midiSoundFont()==root/"own.sf2","Soundfont selection lost");auto global=makeBackend(b,root/"channels.mid");global->render(512,a);check(energy(a.mix)>0,"Selected font not used");midiSoundFont({});
     {auto prepared=makeMidiBackend(b,root/"channels.mid",root/"own.sf2");prepared->seek(500);Player restored;std::vector<ChannelState>states(2);states[0].mute=true;states[1].volume=.55f;restored.openPrepared(std::move(prepared),Format::Midi,24000,states);check(restored.seconds()==.5,"Prepared bank position reset");check(restored.states()[0].mute&&restored.states()[1].volume==.55f,"Prepared bank lost initial controls");}
     {SetEnvironmentVariableW(L"NGMV_TEST_NO_VMS",L"1");check(!virtualMidiInstalled(),"No-VMS test presence ignored");midiSoundFont(root/"missing.sf2");midiDeviceOutput(true);auto basic=makeBackend(b,root/"channels.mid");check(!basic->hasDeviceOutput(),"No VMS retained stale external output");check(basic->tracks()[0].game==windowsMidiBank().filename().u8string(),"No VMS retained stale custom bank");basic->render(512,a);check(energy(a.mix)>0,"Default-only synthesis is silent");SetEnvironmentVariableW(L"NGMV_TEST_NO_VMS",nullptr);midiSoundFont({});midiDeviceOutput(false);}
+    {
+        SetEnvironmentVariableW(L"NGMV_TEST_NO_VMS",L"1");midiSoundFont(root/"missing-old-bank.sf2");midiDeviceOutput(true);
+        auto broken=root/"registered-broken.dls";{std::ofstream f(broken,std::ios::binary);f.write("RIFF\4\0\0\0DLS ",12);}
+        unsigned cases=0;
+        for(auto candidate:{root/"missing-registration.dls",root/"bad-bank.sf2",broken}){
+            SetEnvironmentVariableW(L"NGMV_TEST_GM_PATH",candidate.c_str());
+            auto fixed=makeBackend(b,root/"channels.mid");fixed->render(8192,a);
+            check(!fixed->hasDeviceOutput()&&energy(a.mix)>0,"No-VMS system fallback failed");
+            check(a.voices.size()==2&&energy(a.voices[0])>0,"No-VMS fallback lost real channel waveform");
+            check(fixed->tracks()[0].game=="gm.dls","Broken registration masked actual Windows bank");
+            fixed->seek(100);fixed->render(512,a);check(energy(a.mix)>0,"No-VMS fallback seek silent");
+            fixed->muteMask(3);fixed->selectTrack(0);fixed->render(512,a);check(energy(a.mix)==0,"No-VMS fallback mute failed");++cases;
+        }
+        SetEnvironmentVariableW(L"NGMV_TEST_GM_ONLY",L"1");SetEnvironmentVariableW(L"NGMV_TEST_GM_PATH",(root/"own.dls").c_str());
+        auto owned=makeBackend(b,root/"channels.mid");owned->render(8192,a);check(energy(a.mix)>0,"No-VMS owned DLS-only path failed");++cases;
+        for(auto candidate:{root/"missing-registration.dls",broken}){SetEnvironmentVariableW(L"NGMV_TEST_GM_PATH",candidate.c_str());bool descriptive=false;try{auto unavailable=makeBackend(b,root/"channels.mid");}catch(const std::runtime_error&e){descriptive=std::string(e.what()).find("Windows default MIDI sound bank")!=std::string::npos;}check(descriptive,"Missing all Windows banks did not fail clearly");++cases;}
+        SetEnvironmentVariableW(L"NGMV_TEST_GM_ONLY",nullptr);SetEnvironmentVariableW(L"NGMV_TEST_GM_PATH",nullptr);SetEnvironmentVariableW(L"NGMV_TEST_NO_VMS",nullptr);midiSoundFont({});midiDeviceOutput(false);
+        std::cout<<"No-VMS stale/missing/corrupt registration, actual system DLS fallback, stems/seek/mute, owned-only and missing-all diagnostics: "<<cases<<" cases PASS\n";
+    }
     validateMidiBank({});auto windows=makeMidiBackend(b,root/"channels.mid");windows->render(8192,a);check(energy(a.mix)>0,"Actual Windows default bank is silent");check(windows->tracks()[0].comment.find("Automatic MIDI bank:")!=std::string::npos,"Bank provenance missing");
     if(argc>2){auto file=std::filesystem::path(argv[2]);auto real=makeMidiBackend(read(file),file);double total=0;for(int i=0;i<600;i++){real->render(800,a);total+=energy(a.mix);}check(total>0,"Provided MIDI silent over10seconds");real->seek(5000);real->render(4096,a);check(energy(a.mix)>0,"Provided MIDI seek silent");std::cout<<"Provided MIDI: channels="<<real->channels().size()<<" length_ms="<<real->tracks()[0].lengthMs<<" first10s_energy="<<total<<" seek5s=PASS\n";}
     std::cout<<"Windows default bank, PCM SF2/DLS, MIDI format0/1, tempo/SMPTE, program/drums, malformed data: PASS\n";return 0;
 }catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
+

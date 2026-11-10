@@ -1,0 +1,180 @@
+{
+  "version": "1.6.3-beta 5",
+  "date": "2026-11-10",
+  "requests": [
+    "All music waveforms shake and appear to scroll left",
+    "Recording view should show visualization only, no additional information",
+    "Latest correction: retain recording channel names and keep beta5 version"
+  ],
+  "implementation": {
+    "trigger": "DC-relative min/max midpoint,16percent-amplitude dead band, confirmed rising crossing, fractional-sample offset, bounded lookback max(window,2048)",
+    "raster": "Piecewise-linear integrated pixel buckets preserve source extrema; Nsamples spanN-1intervals; spatial interpolation for short windows",
+    "vertical": "Same stable midpoint and half peak-to-peak display scale; remove moving-window mean bounce",
+    "history": "Display requests4096frames normally,8192only at4096-sample width; no lack of trigger headroom at maximum width",
+    "audio": "Decoder/mixer/output CPP source unchanged; Player.hpp change only display-history length; no sample writes or pitch/speed/sample-rate changes",
+    "recording": "Channel names retained as fitted outlined overlays. Other title/game/author/time/volume/status/error/loading text, grid/baseline decoration/footer controls hidden. Recording channel area y16..1064, normal geometry unchanged, F12 remote independent."
+  },
+  "validation": {
+    "phase_sweeps": {
+      "cases": 24,
+      "input_shapes": [
+        "positive/DC-offset220.3Hz sine",
+        "signed32.1Hz bass",
+        "110.1Hz harmonic waveform",
+        "unipolar period128pulse"
+      ],
+      "windows": [
+        256,
+        2048,
+        4096
+      ],
+      "presentation_Hz": [
+        60,
+        144
+      ],
+      "frames_each": 48,
+      "max_curve_frame_difference_new": 4.08888e-05,
+      "max_curve_frame_difference_beta4": 0.85695,
+      "scope_benchmark_100_calls_ms": 3.3978,
+      "other": "silence/DC, empty/single input, Nyquist peaks, changing noise, no input mutation; all PASS",
+      "meaning": "Owned synthetic periodic-signal comparison, not a guarantee mixed music never changes shape or an end-to-end FPS benchmark"
+    },
+    "recording_UI": {
+      "pass": true,
+      "cases": [
+        {
+          "recording": false,
+          "name_area_wave_pixels": 0,
+          "right_edge_wave_pixels": 0
+        },
+        {
+          "recording": true,
+          "name_area_wave_pixels": 932,
+          "right_edge_wave_pixels": 284
+        }
+      ],
+      "audio": "dummy"
+    },
+    "recording_palette_check": "Font pixels allowed only inside channel-name strips; outside those strips the entire1920x1080 scope has only waveform/background colors. Names required in both strips.",
+    "recording_visual_review": "Latest recording screenshot reviewed: channel names present, other metadata/title/clock/footer/grid absent",
+    "remote": {
+      "pass": true,
+      "cases": [
+        {
+          "startup_recording": false,
+          "no_auto_open": true,
+          "F12_button_and_shortcut": true,
+          "F9_independent": true,
+          "reuse_child_focus_autorepeat_close": true,
+          "recording_button_and_guide_hidden": true,
+          "nonblocking": true
+        },
+        {
+          "startup_recording": true,
+          "no_auto_open": true,
+          "F12_button_and_shortcut": true,
+          "F9_independent": true,
+          "reuse_child_focus_autorepeat_close": true,
+          "recording_button_and_guide_hidden": true,
+          "nonblocking": true
+        }
+      ],
+      "audio": "dummy",
+      "only_owned_windows_media_settings": true
+    },
+    "hidden_channels": {
+      "pass": true,
+      "cases": [
+        {
+          "normal_and_recording_right_click": true,
+          "hidden_list_selected_and_all_restore": true,
+          "hide_all_safe": true,
+          "automatic_unused_filter_unchanged": true,
+          "mute_gain_unchanged": true,
+          "subsong_stop_play_persist": true,
+          "spectrum_and_toolbar_no_hide": true
+        },
+        {
+          "process_restart_persistence": true
+        },
+        {
+          "other_system_isolation": true
+        },
+        {
+          "split16channel_grid_normal_and_recording": true,
+          "right_column_identity": true,
+          "restore16": true
+        }
+      ],
+      "audio": "dummy",
+      "own_children_settings_media_only": true
+    },
+    "audio_method": "SDLdummy/offscreen own child processes only; no physical listening",
+    "previous_ctest_before_label_restore": {
+      "passed": 9,
+      "failed": 0,
+      "seconds": 27.61,
+      "tests": [
+        "fixtures",
+        "core_audio_channels",
+        "player_presentation",
+        "player_monitor_pacing",
+        "native_recording_visualization_only",
+        "native_fullscreen_repeat",
+        "native_midi_waveforms",
+        "native_es_ay_voice_controls",
+        "waveform_trigger_stability"
+      ],
+      "log_SHA256": "1a3950a6b6c21204ff0129de751a423044d2f99c8f55cab67c7c2cc017ef9e89"
+    },
+    "channel_name_revision": {
+      "passed": 3,
+      "failed": 0,
+      "seconds": 5.46,
+      "tests": [
+        "fixtures",
+        "native_recording_visualization_only",
+        "native_es_ay_voice_controls"
+      ],
+      "log_SHA256": "e927638d79f4915b4f93d1d8848ded58f0d094fb90ec74c50ef38fae060b56e6",
+      "visual_review": "PCM LEFT and PCM RIGHT visible; all other information absent"
+    }
+  },
+  "unchanged_audio_sources": {
+    "src/player/Player.cpp": {
+      "SHA256": "914b3334a04b601fed93542e9c4cf7138cc90e6c155b470c5a86e4dc82040246",
+      "unchanged_from": "beta4 source ZIP"
+    },
+    "src/audio/SdlOutput.cpp": {
+      "SHA256": "e8ac3e44178898ec090f02df0830f11f2a583dbb7e1aabf4989039b5ecd88b38",
+      "unchanged_from": "beta4 source ZIP"
+    },
+    "src/formats/MidiBackend.cpp": {
+      "SHA256": "f8eda418f9d6c3eee69ff9450472d16c4041ee56682b1db33c7a3293b978e379",
+      "unchanged_from": "beta4 source ZIP"
+    },
+    "src/formats/ExtendedVgmBackend.cpp": {
+      "SHA256": "c8c05d80a21cd8ad0fd41f69483308e64724fb39a6f91e07aebb809d31806145",
+      "unchanged_from": "beta4 source ZIP"
+    },
+    "src/formats/LicensedChips.cpp": {
+      "SHA256": "5efcf981c84506a7394bb6f12016019a28a8fd3d609a0bab0ec47c5170a4004e",
+      "unchanged_from": "beta4 source ZIP"
+    }
+  },
+  "failed_candidates": [
+    "Initial fractional bucket coveredN intervals instead ofN-1; final bucket clipped on certain square-wave phases, maxdelta0.0293. Regression caught it; corrected interval span, square-wave phases now exact0. Initial failure log retained.",
+    "Two patch preparation attempts failed atomic context validation before application; corrected patches applied sequentially"
+  ],
+  "limits": [
+    "Polyphonic/noise/attack/pitch-changing music has genuinely changing waveform shape; no frozen or fake waveform",
+    "Very slow signals beyond available trigger history may remain free-running; synthetic lowest tone tested32.1Hz",
+    "Benchmarks are host-dependent, no universal monitor/FPS or physical listening claim",
+    "Recording has channel names but no other in-canvas errors/info; normal view and remote retain controls/status",
+    "Original reported visual behavior requires user feedback on their usual music after testing"
+  ],
+  "new_dependency": false,
+  "assets_distributed": false,
+  "external_upload": false,
+  "same_version_revision": "User explicitly requested beta5 version retained; earlier delivered beta5 artifacts preserved in outputs/NintendoMusicStudio-1.6.3-beta-5-previous"
+}

@@ -1,3 +1,38 @@
+# Test1.6.3-beta 6 corresponding source
+
+YM usage tracks timed key slots, DAC enable/data and actual stream starts; setup/reset alone is not note use. WholeTrackUsage wraps backends with known complete metadata or physical end boundaries, unmuted offline scans, reset/cache, a10s budget and conservative unknown fallback. PSF length tags alone do not prove an execution end. Remote option and console exceptions affect visibility only. No new dependency; all new source/tests included.
+
+# Test1.6.3-beta 6 corresponding source
+
+YM3812/YM3526 primary and auxiliary channels now use a precomputed whole-song key/rhythm usage mask. Late notes are visible before playback; silence/mute/gain do not alter visibility. Decoder channels and real audio remain intact.
+
+Envelope.cpp no longer searches or pins crossings. It uses the newest real window and existing piecewise-linear pixel integration. Window.cpp returns to4096 display history frames; no need for extra trigger history. Decoder/mixer/output CPP code is unchanged. WaveStabilityTests.cpp now verifies free left/middle movement, actual newest offsets and deterministic pause rather than constant phase.
+
+# Test1.6.3-beta 5 corresponding source
+
+Owned Envelope.cpp/hpp implement stateless fractional trigger/raster sampling. Player.hpp exposes an optional display history length; Window.cpp requests additional headroom only at the maximum scope width and uses matching DC scale. Audio decode/mix/output implementations are unchanged. WaveStabilityTests.cpp compares with the owned previous display implementation in tests/LegacyEnvelope.cpp, which is test-only and not linked into the player.
+
+# Test1.6.3-beta 4 corresponding source
+
+MidiBackend.cpp validates Windows default DLS candidates before synthesis, expands registry paths from both views, and falls through to standard Windows locations. Isolated dummy-only test inputs simulate broken registrations without modifying the host registry or installing/removing drivers. MidiTests.cpp adds six fallback/diagnostic cases. Complete code and licenses are supplied; system gm.dls is excluded.
+
+# Test1.6.3-beta 3 corresponding source
+
+The existing GPL2+ OPL core now also builds YM3526. An unchanged, pinned BSD3 SN76496 core plus own functional configuration declarations supports mixed extended-chip files. Exact provenance, full source, and notices are bundled. FurnaceChipTests.cpp contains owned tone/stereo/negative fixtures; supplied music is excluded.
+
+Owned FurnaceEsRate.hpp recognizes only tagged reset sequences. ExtendedVgmBackend.cpp passes the derived tracker divider to LicensedChips.cpp before first synthesis. The vendored ES5506 core is unchanged; no legacy MAME code is included. Native reference tools/media stay private and excluded. EsPitchTests.cpp generates its own8/16bit ROM fixtures. Upstream rationale and verification appear in docs/ES-PITCH-1.6.3-beta-3.json. Full source/licenses/build scripts remain included.
+
+
+# Test1.6.3-beta 2 corresponding source
+
+Owned native remote visibility is independent of recording state. F12 is forwarded only from known application tool windows; autorepeat is ignored. Footer remote button uses matching paint/hit bounds. Tool windows are explicitly destroyed at main teardown. Audio/player/decoder sources remain unchanged. Full source and notices accompany this beta.
+
+
+# Test1.6.3-1 beta corresponding source
+
+New owned src/ui/HiddenChannels.cpp integrates display-only preferences and a native modeless restore list. Audio/player/decoder code is unchanged from stable1.6.2. Both CMake UI targets include the new file. Full source/notices/tests accompany the standalone beta. No new dependencies, user media or settings are redistributed. Previous build details follow.
+
+
 # Nintendo Music Studio1.6.2 — stable corresponding source
 
 Same source tree as test12 plus current-song mixed-gain retention and release identity/docs. Complete dependencies, notices, owned tests and build scripts are included. Test labels going forward must include beta; see docs/VERSIONING.md. Historical build instructions/records follow.

@@ -21,6 +21,7 @@ class StreamBackend final : public IMusicBackend {
     double position_ = 0;
     int rate_ = 0;
     uint32_t mask_ = 0;
+    uint64_t endFrames_=UINT64_MAX;
     void routing(const std::filesystem::path &path, size_t channels) {
         const float groups = float((channels + 1) / 2);
         routing_.resize(channels);
@@ -122,6 +123,7 @@ class StreamBackend final : public IMusicBackend {
             info.sample_rate > 192000 || info.play_samples <= 0)
             throw std::runtime_error("Invalid 3DS stream channels, rate or duration.");
         rate_ = info.sample_rate;
+        if(uint64_t(info.play_samples)<=(UINT64_MAX-uint64_t(rate_)+1)/InternalRate)endFrames_=(uint64_t(info.play_samples)*InternalRate+rate_-1)/rate_;
         routing(path, info.channels);
         for (int c = 0; c < info.channels; c++)
             channels_.push_back({info.channels == 1   ? "MONO"
@@ -137,6 +139,7 @@ class StreamBackend final : public IMusicBackend {
     const std::vector<ChannelInfo> &channels() const override {
         return channels_;
     }
+    bool decodedEndFrame(uint64_t&v)const override{if(endFrames_==UINT64_MAX)return false;v=endFrames_;return true;}
     void selectTrack(int index) override {
         if (index != 0)
             throw std::runtime_error("Stream file contains one track.");

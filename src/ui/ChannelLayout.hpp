@@ -36,7 +36,7 @@ inline ChannelCell channelCell(size_t index, size_t count, bool recording) {
     bool split = count > 8;
     size_t columns=count>48?4:count>32?3:split?2:1;
     size_t rows=(count+columns-1)/columns;
-    int top = recording ? 205 : 276, bottom = recording ? 1064 : 1000;
+    int top = recording ? 16 : 276, bottom = recording ? 1064 : 1000;
     int height = (bottom - top) / int(std::max(size_t(1), rows));
     int column = split ? int(index / rows) : 0;
     int step=1888/int(columns);

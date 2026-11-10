@@ -1,0 +1,134 @@
+{
+  "version": "1.6.3-beta 4",
+  "date": "2026-11-09",
+  "request": "MIDI file open fails on PC without VirtualMIDISynth; exact error unavailable to user now",
+  "cause_status": "Unchecked registered Windows GM bank path is a confirmed code failure condition. Same cause on reporting PC is not yet proven; no exact error/file/Windows version supplied.",
+  "implementation": {
+    "Windows_default": "Candidate registry values from both32/64views, expand variables in bothREG_SZ/EXPAND_SZ, require absolute paths; validated system32/SysWOW64 defaults follow",
+    "fallback": "Skip missing/unreadable/non-DLS registrations and full-decode failures; read real Windows DLS locally; propagate allocation failures",
+    "no_VMS": "Stale saved custom bank/external-output mode ignored as before; real internal synthesis and per-channel waveform retained; F8/default button restrictions unchanged",
+    "missing_all": "Descriptive Windows gm.dls error with decode detail; no fake playback or bundled Windows bank",
+    "installed_VMS": "Explicit selected SF2/DLS/import/live-follow semantics retained; missing VMS active SF2 is not silently replaced",
+    "test_seam": "Isolated NGMV_TEST_SESSION+SDLdummy only GM_PATH/GM_ONLY inputs; no actual registry writes, device/driver removal or hardware output"
+  },
+  "tests": {
+    "ctest": {
+      "passed": 6,
+      "failed": 0,
+      "seconds": 16.6,
+      "tests": [
+        "fixtures",
+        "midi_soundbanks",
+        "native_midi_waveforms",
+        "native_midi_repeat",
+        "midi_device_transport",
+        "native_midi_live_bank"
+      ],
+      "log_SHA256": "b71c491a7a746b629aa4f1e01fda3147fe534863fdaa58f298e96d40f0697c8a"
+    },
+    "new_unit_cases": {
+      "passed": 6,
+      "cases": [
+        "missing registration -> real system DLS",
+        "wrong format registration -> real system DLS",
+        "DLS header but malformed contents -> real system DLS",
+        "owned DLS-only valid input",
+        "no readable candidates -> descriptive failure",
+        "malformed only candidate -> descriptive failure"
+      ],
+      "checks": "Real PCM/channel samples, stale preferences, seek, mute; standard SF2/DLS/tempo/drum/bank tests also pass",
+      "log_SHA256": "54fb4a2f49f427c82f45d3273e9a44f4f43386c5829f4ad382edcd94680a9dac"
+    },
+    "extra_corrupt_registration_UI": {
+      "pass": true,
+      "cases": [
+        {
+          "bank": "windows",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            9403,
+            15656
+          ]
+        },
+        {
+          "bank": "sf2",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            13876,
+            20166
+          ]
+        },
+        {
+          "bank": "dls",
+          "auto_start": true,
+          "separate_channel_wave_pixels": [
+            13879,
+            20168
+          ]
+        }
+      ],
+      "audio": "dummy",
+      "snapshot_forced_play": false
+    },
+    "UI_visual_review": "Windows gm.dls/Channel1+2 nonflat waveforms and disabled gray Windows-default button confirmed in own screenshot",
+    "live_VMS": {
+      "pass": true,
+      "playing_position_before_ms": 810,
+      "playing_position_after_ms": 1525,
+      "paused_position_ms": 3029,
+      "reloads": 4,
+      "pause_mute_gain_preserved": true,
+      "missing_bank_kept_old_decoder": true,
+      "corrupt_bank_kept_playing": true,
+      "recovery_and_same_path_change": true,
+      "audio": "dummy",
+      "only_owned_config_modified": true
+    }
+  },
+  "failures_preserved": [
+    "Initial new test used relative owned-only path; production resolver correctly rejected it; fixture root made absolute and all six cases passed. No product path validation weakened. Earlier unit logs retained."
+  ],
+  "unchanged_chip_evidence_reused": {
+    "src/formats/FurnaceEsRate.hpp": {
+      "SHA256": "c6dca02dec2cb2a0620a7e06baa858eca60b79b7c569669e6982f754f440dd4e",
+      "unchanged_from": "1.6.3-beta 3",
+      "prior_evidence": "docs/ES-PITCH-1.6.3-beta-3.json"
+    },
+    "src/formats/ExtendedVgmBackend.cpp": {
+      "SHA256": "c8c05d80a21cd8ad0fd41f69483308e64724fb39a6f91e07aebb809d31806145",
+      "unchanged_from": "1.6.3-beta 3",
+      "prior_evidence": "docs/ES-PITCH-1.6.3-beta-3.json"
+    },
+    "src/formats/LicensedChips.cpp": {
+      "SHA256": "5efcf981c84506a7394bb6f12016019a28a8fd3d609a0bab0ec47c5170a4004e",
+      "unchanged_from": "1.6.3-beta 3",
+      "prior_evidence": "docs/ES-PITCH-1.6.3-beta-3.json"
+    },
+    "src/formats/LicensedChips.hpp": {
+      "SHA256": "ae87cedb89d870a160419fab402517635939cbb1b0974071125caca2322b1e21",
+      "unchanged_from": "1.6.3-beta 3",
+      "prior_evidence": "docs/ES-PITCH-1.6.3-beta-3.json"
+    },
+    "src/formats/VgmBackend.cpp": {
+      "SHA256": "d006e6175fd2374cd52965aae1ef5ef2430767ba12ed08ca9a6e37838b78b01f",
+      "unchanged_from": "1.6.3-beta 3",
+      "prior_evidence": "docs/ES-PITCH-1.6.3-beta-3.json"
+    },
+    "third_party/licensed-chips/emu/cores/sn76496.c": {
+      "SHA256": "07f754530428c5aca771dac7231592fdf7167e1f1bfea392070fabe6f652ea5f",
+      "unchanged_from": "1.6.3-beta 3",
+      "prior_evidence": "docs/ES-PITCH-1.6.3-beta-3.json"
+    }
+  },
+  "official_API_reference": "https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-reggetvaluew",
+  "limits": [
+    "Reporting PC exact error and final result not yet available",
+    "Absent-VMS condition simulated through existing isolated test hook; installed host driver was not removed",
+    "Windows default gm.dls must actually exist and be decodable somewhere; missing-all remains a clear error",
+    "Native UI uses dummy audio; no physical listening or new32bitOS test",
+    "Registry view/environment expansion code checked against Microsoft API contract; actual host registry was not modified to inject failures"
+  ],
+  "no_new_dependency": true,
+  "Windows_or_user_banks_distributed": false,
+  "external_upload": false
+}

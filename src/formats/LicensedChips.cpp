@@ -4,6 +4,8 @@
 #include "audio/ChipInterpolator.hpp"
 extern "C" {
 #include "licensed-chips/emu/cores/fmopl.h"
+#include "licensed-chips/emu/cores/sn764intf.h"
+#include "licensed-chips/emu/cores/sn76496.h"
 #include "licensed-chips/emu/cores/ym3438.h"
 #include "licensed-chips/emu/cores/okim6295.h"
 #include "licensed-chips/emu/cores/k051649.h"
@@ -38,6 +40,7 @@ struct LicensedChip::State {
     std::unique_ptr<ay8930_device> ay;uint32_t ayMask=0;uint8_t ayStereo=0x3f;
     std::array<double,3> ayPrevious{},ayDc{};double ayPole=0;
     double phase=0;Stereo held{},previous{};bool primed=false;
+    unsigned esFurnaceVoices=0;
     ChipInterpolator esInterpolator;
     std::array<Stereo,33> esNativeVoices{},esOutputVoices{};
     std::array<ChipInterpolator,33> esVoiceInterpolators;
@@ -51,10 +54,12 @@ struct LicensedChip::State {
             else if(esHistoryActive[v])--esHistoryActive[v];
         }
     }
-    explicit State(ChipKind k,uint32_t c,uint8_t flags):kind(k),clock(c){
+    explicit State(ChipKind k,uint32_t c,uint8_t flags,uint16_t taps,uint8_t width):kind(k),clock(c){
         if(k==ChipKind::Ay8930){ay=std::make_unique<ay8930_device>(c,bool(flags&16));ay->set_flags(flags);ay->device_start();ay->device_reset();ayPole=std::exp(-2*3.14159265358979323846*20/(double(c)/4));}
         else if(k==ChipKind::Es5506){valid(flags&128,"ES5505 is not implemented by the licensed ES5506 core.");otto.reset();}
         else if(k==ChipKind::Ym2612){chip=nukedopn2_init(c,InternalRate);valid(chip,"YM2612 allocation failed.");nukedopn2_set_options(chip,0);nukedopn2_reset_chip(chip);}
+        else if(k==ChipKind::Opl1){chip=ym3526_init(c,InternalRate);valid(chip,"OPL1 allocation failed.");ym3526_reset_chip(chip);}
+        else if(k==ChipKind::Sn76489){SN76496_CFG cfg{};cfg._genCfg.clock=c;cfg._genCfg.smplRate=InternalRate;cfg.noiseTaps=taps;cfg.shiftRegWidth=width;cfg.negate=bool(flags&2);cfg.clkDiv=(flags&8)?1:8;cfg.ncrPSG=bool(flags&16);cfg.segaPSG=!(flags&1);cfg.stereo=!(flags&4);valid(!devDef_SN76496_MAME.Start(reinterpret_cast<const DEV_GEN_CFG*>(&cfg),&info)&&info.dataPtr,"SN76489 allocation failed.");chip=info.dataPtr;info.devDef->Reset(chip);}
         else if(k==ChipKind::Opl2){chip=ym3812_init(c,InternalRate);valid(chip,"OPL2 allocation failed.");ym3812_reset_chip(chip);}
         else {
             const auto*d=k==ChipKind::Oki?sndDev_MSM6295.cores[0]:sndDev_K051649.cores[0];
@@ -62,12 +67,12 @@ struct LicensedChip::State {
             valid(!d->Start(&cfg,&info)&&info.dataPtr,"Chip allocation failed.");chip=info.dataPtr;d->Reset(chip);
         }
     }
-    ~State(){if(!chip)return;if(kind==ChipKind::Ym2612)nukedopn2_shutdown(chip);else if(kind==ChipKind::Opl2)ym3812_shutdown(chip);else info.devDef->Stop(chip);}
+    ~State(){if(!chip)return;if(kind==ChipKind::Ym2612)nukedopn2_shutdown(chip);else if(kind==ChipKind::Opl2)ym3812_shutdown(chip);else if(kind==ChipKind::Opl1)ym3526_shutdown(chip);else info.devDef->Stop(chip);}
     template<class F> F function(unsigned type,unsigned rw){
         for(auto*p=info.devDef->rwFuncs;p->funcPtr;++p)if(p->funcType==type&&p->rwType==rw)return reinterpret_cast<F>(p->funcPtr);
         throw std::runtime_error("Required licensed-chip operation unavailable.");
     }
-    double rate(){if(kind==ChipKind::Ay8930)return double(clock)/4;if(kind==ChipKind::Es5506)return otto.rate(clock);if(kind==ChipKind::Oki)return function<uint32_t(*)(void*)>(RWF_SRATE|RWF_READ,DEVRW_VALUE)(chip);if(kind==ChipKind::Scc)return info.sampleRate;return InternalRate;}
+    double rate(){if(kind==ChipKind::Ay8930)return double(clock)/4;if(kind==ChipKind::Es5506)return esFurnaceVoices?double(clock)/(16*esFurnaceVoices):otto.rate(clock);if(kind==ChipKind::Oki)return function<uint32_t(*)(void*)>(RWF_SRATE|RWF_READ,DEVRW_VALUE)(chip);if(kind==ChipKind::Scc||kind==ChipKind::Sn76489)return info.sampleRate;return InternalRate;}
     Stereo native(){
         if(kind==ChipKind::Ay8930){short output[3]{};ay->sound_stream_update(output,1);Stereo sum{};for(unsigned c=0;c<3;c++){double value=output[c]/32768.;ayDc[c]=value-ayPrevious[c]+ayPole*ayDc[c];ayPrevious[c]=value;if(!(ayMask&(1u<<c))){if(ayStereo&(1u<<(c*2)))sum.l+=float(ayDc[c]);if(ayStereo&(2u<<(c*2)))sum.r+=float(ayDc[c]);}}return sum;}
         if(kind==ChipKind::Es5506){
@@ -102,16 +107,19 @@ struct LicensedChip::State {
         int32_t left=0,right=0;int32_t*planes[]={&left,&right};
         if(kind==ChipKind::Ym2612)nukedopn2_update(chip,1,planes);
         else if(kind==ChipKind::Opl2)ym3812_update_one(chip,1,planes);
+        else if(kind==ChipKind::Opl1)ym3526_update_one(chip,1,planes);
         else info.devDef->Update(chip,1,planes);
         return {left/32768.f,right/32768.f};
     }
 };
-LicensedChip::LicensedChip(ChipKind k,uint32_t c,uint8_t flags):state_(std::make_unique<State>(k,c,flags)){}
+LicensedChip::LicensedChip(ChipKind k,uint32_t c,uint8_t flags,uint16_t taps,uint8_t width):state_(std::make_unique<State>(k,c,flags,taps,width)){}
 LicensedChip::~LicensedChip()=default;
 void LicensedChip::write(uint8_t port,uint8_t reg,uint8_t value){
     auto&s=*state_;
     switch(s.kind){
     case ChipKind::Ym2612:nukedopn2_write(s.chip,port*2,reg);nukedopn2_write(s.chip,port*2+1,value);break;
+    case ChipKind::Opl1:ym3526_write(s.chip,0,reg);ym3526_write(s.chip,1,value);break;
+    case ChipKind::Sn76489:s.function<void(*)(void*,uint8_t,uint8_t)>(RWF_REGISTER|RWF_WRITE,DEVRW_A8D8)(s.chip,port,value);break;
     case ChipKind::Opl2:ym3812_write(s.chip,0,reg);ym3812_write(s.chip,1,value);break;
     case ChipKind::Oki:s.function<void(*)(void*,uint8_t,uint8_t)>(RWF_REGISTER|RWF_WRITE,DEVRW_A8D8)(s.chip,reg,value);break;
     case ChipKind::Scc:{auto f=s.function<void(*)(void*,uint8_t,uint8_t)>(RWF_REGISTER|RWF_WRITE,DEVRW_A8D8);f(s.chip,port*2,reg);f(s.chip,port*2+1,value);break;}
@@ -132,7 +140,7 @@ void LicensedChip::rom(uint32_t size,uint32_t offset,const uint8_t*data,size_t l
             dst[(bytes?offset:offset/2)+i]=bytes?uint16_t(data[i])<<8:uint16_t(data[2*i])|uint16_t(data[2*i+1])<<8;
     }else throw std::runtime_error("ROM data targets an incompatible chip.");
 }
-void LicensedChip::mute(uint32_t mask){auto&s=*state_;if(s.kind==ChipKind::Ay8930)s.ayMask=mask;else if(s.kind==ChipKind::Es5506){for(unsigned v=0;v<32;++v)s.otto.set_mute(v,bool(mask&(1u<<v)));}else if(s.kind==ChipKind::Ym2612)nukedopn2_set_mute_mask(s.chip,mask);else if(s.kind==ChipKind::Opl2)opl_set_mute_mask(s.chip,mask);else s.info.devDef->SetMuteMask(s.chip,mask);}
+void LicensedChip::mute(uint32_t mask){auto&s=*state_;if(s.kind==ChipKind::Ay8930)s.ayMask=mask;else if(s.kind==ChipKind::Es5506){for(unsigned v=0;v<32;++v)s.otto.set_mute(v,bool(mask&(1u<<v)));}else if(s.kind==ChipKind::Ym2612)nukedopn2_set_mute_mask(s.chip,mask);else if((s.kind==ChipKind::Opl2||s.kind==ChipKind::Opl1))opl_set_mute_mask(s.chip,mask);else s.info.devDef->SetMuteMask(s.chip,mask);}
 Stereo LicensedChip::sample(){auto&s=*state_;double rate=s.rate();valid(rate>0&&rate<=(s.kind==ChipKind::Ay8930?5000000:1000000),"Invalid native chip rate.");
     if(rate==InternalRate){auto result=s.native();s.esOutputVoices=s.esNativeVoices;return result;}
     if(rate>InternalRate){
@@ -164,6 +172,7 @@ Stereo LicensedChip::sample(){auto&s=*state_;double rate=s.rate();valid(rate>0&&
     return {s.previous.l+float(s.phase)*(s.held.l-s.previous.l),s.previous.r+float(s.phase)*(s.held.r-s.previous.r)};
 }
 const std::array<Stereo,33>& LicensedChip::esVoices()const{return state_->esOutputVoices;}
+void LicensedChip::furnaceEsRate(unsigned voices){valid(state_->kind==ChipKind::Es5506&&!state_->primed&&voices>=5&&voices<=31,"Invalid Furnace ES5506 rate override.");state_->esFurnaceVoices=voices;}
 void LicensedChip::captureEsVoices(){valid(!state_->primed,"Enable ES voice capture before rendering.");state_->esStemCapture=true;}
 uint64_t LicensedChip::programmedEsVoices(){return state_->kind==ChipKind::Es5506?state_->otto.programmed_voice_mask():0;}
 uint64_t LicensedChip::programmedAyVoices(){uint64_t used=0;if(state_->ay)for(unsigned c=0;c<3;c++)if(state_->ay->m_tone[c].volume)used|=uint64_t(1)<<c;return used;}

@@ -33,6 +33,7 @@ struct DEV_DEF {
 struct DEV_DECL {UINT8 deviceID;const char*(*name)(const DEV_GEN_CFG*);
  UINT16(*channelCount)(const DEV_GEN_CFG*);const char**(*channelNames)(const DEV_GEN_CFG*);
  const DEVLINK_IDS*(*linkDevIDs)(const DEV_GEN_CFG*);const DEV_DEF*cores[4];};
+typedef UINT8(*DEVFUNC_START)(const DEV_GEN_CFG*,DEV_INFO*);
 struct DEV_INFO {DEV_DATA*dataPtr;UINT32 sampleRate;const DEV_DEF*devDef;};
 typedef struct {DEVCB_LOG cb;void *user,*chip;} DEV_LOGGER;
 #define INLINE static __inline

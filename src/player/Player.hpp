@@ -39,6 +39,7 @@ class Player {
     std::atomic<bool> continueAfterLength_{false};
     bool exactSourceEnd_=false;
     Format format_=Format::Nsf;
+    bool showAllChannels_=false;
     uint64_t visibleMask_=UINT64_MAX;
     void configureVisibleChannels();
     std::atomic<uint64_t> sourceEndFrame_{UINT64_MAX};
@@ -102,8 +103,10 @@ class Player {
     bool dmcUsed() const {
         return dmcUsed_.load();
     }
+    void showAllChannels(bool v){showAllChannels_=v;}
+    bool showAllChannels()const{return showAllChannels_;}
     bool channelVisible(size_t index)const{
-        return index<channels().size() && index<64 && (visibleMask_&(uint64_t(1)<<index));
+        return index<channels().size() && index<64 && (showAllChannels_ || (visibleMask_&(uint64_t(1)<<index)));
     }
     bool channelUsed(size_t index) const {
         return index < 64 && (usedChannels_.load() & (uint64_t(1) << index));
@@ -141,8 +144,8 @@ class Player {
     float pitch() const { return output_.pitch(); }
     void pitch(float value) { output_.pitch(value); }
     std::vector<ChannelState> states() const;
-    std::vector<std::vector<float>> waveforms() const {
-        return history_.interpolatedSnapshot(base_ + output_.visualConsumed());
+    std::vector<std::vector<float>> waveforms(size_t frames = 4096,uint64_t selected=UINT64_MAX) const {
+        return history_.interpolatedSnapshot(base_ + output_.visualConsumed(), frames,selected);
     }
     uint64_t spectrumSamples(SpectrumAnalyzer::Samples& out)const{return output_.spectrumSamples(out);}
     uint64_t spectrumEpoch()const{return output_.spectrumEpoch();}

@@ -135,8 +135,10 @@ void Player::configureVisibleChannels(){
     uint64_t used=UINT64_MAX;
     if(!backend_||!backend_->channelUsage(used)){visibleMask_=UINT64_MAX;return;}
     // Base console channels remain fixed, even if silent throughout the song.
-    if(format_==Format::Nsf||format_==Format::Nsfe||format_==Format::NesRom)used|=15;
-    else if(format_!=Format::Vgm)used=UINT64_MAX;
+    if(format_==Format::Nsf||format_==Format::Nsfe||format_==Format::NesRom)used|=31;
+    else if(format_==Format::Gbs)used|=15;
+    else if(format_==Format::Spc)used|=255;
+    else if(format_==Format::Gsf||format_==Format::GbaRom)used|=UINT64_MAX&~uint64_t(15); // PCM slots stay visible.
     visibleMask_=used;
 }
 void Player::select(int track) {

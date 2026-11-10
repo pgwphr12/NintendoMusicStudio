@@ -76,6 +76,8 @@ for session in range(2):
         state=lambda a,b=0:send(main,0x8000+74,a,b)
         wait_for(lambda:state(0) and state(1) and state(2)>100,'No playback')
         if not state(15):send(main,0x100,0x78)
+        assert not state(40),'F9 opened remote'
+        send(main,0x100,0x7b)
         remote=wait_for(lambda:windows(p.pid,'NintendoMusicStudioRemote'),'No remote')[0]
         assert u.IsWindowEnabled(main) and u.IsWindowEnabled(remote)
         def press(parent,id):return send(u.GetDlgItem(parent,id),0xf5)

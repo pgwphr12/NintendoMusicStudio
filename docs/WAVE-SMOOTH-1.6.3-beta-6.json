@@ -1,0 +1,105 @@
+{
+  "version": "1.6.3-beta 6",
+  "revision": "2026-11-10-smooth",
+  "changes": [
+    "Replace exhaustive513x96 phase search with fractional candidates from a previous real interior slope, sparse rejection and full correlation. Unchanged input reuses exact offset, no paused jitter.",
+    "Copy only visible channel history; channel-major contiguous interpolation retains fractional samples and zero-padding. Audio worker/mixer unaffected.",
+    "Refresh-time independent12ms display-only exponential interpolation for changed wave shapes and normalized gain; pause bypasses interpolation. No invented waveform oscillation.",
+    "Cache native outlined labels as per-component coverage from black/white renders; composite over NEW waveform, no opaque boxes. Invalidation includes text/color/font/geometry/viewport. Native GDI fallback on allocation failure.",
+    "Fast fill for vertical/horizontal envelope spans; scalar native render timings available only in explicit benchmark output."
+  ],
+  "benchmark_before": [
+    {
+      "all": false,
+      "width": "1920",
+      "height": "1080",
+      "frames": "120",
+      "mean_ms": "8.81946",
+      "p95_ms": "11.6571",
+      "gdi_before": "62",
+      "gdi_after": "62"
+    },
+    {
+      "all": true,
+      "width": "1920",
+      "height": "1080",
+      "frames": "120",
+      "mean_ms": "16.2076",
+      "p95_ms": "20.9922",
+      "gdi_before": "62",
+      "gdi_after": "62"
+    }
+  ],
+  "benchmark_final": {
+    "pass": true,
+    "render": [
+      {
+        "mode": "cached-auto",
+        "width": "1920",
+        "height": "1080",
+        "frames": "120",
+        "mean_ms": "2.48834",
+        "p95_ms": "3.0728",
+        "gdi_before": "62",
+        "gdi_after": "62",
+        "paint_ms": "1.18161",
+        "waves_ms": "0.887987",
+        "labels_ms": "0.0845758"
+      },
+      {
+        "mode": "cached-all",
+        "width": "1920",
+        "height": "1080",
+        "frames": "120",
+        "mean_ms": "3.93884",
+        "p95_ms": "4.8188",
+        "gdi_before": "62",
+        "gdi_after": "62",
+        "paint_ms": "2.54264",
+        "waves_ms": "0.865324",
+        "labels_ms": "0.156706"
+      }
+    ],
+    "label_compare": {
+      "max_channel_error": 3,
+      "mean_channels": [
+        0.003463059413580247,
+        0.004858217592592593,
+        0.005313464506172839
+      ]
+    },
+    "audio": "dummy",
+    "physical_refresh_test": false
+  },
+  "bench_conditions": "Supplied mixed VGM,1080p recording view,120 warmed drawing frames each; auto13 and all44. Dummy audio/offscreen native rendering; physical FPS/VRR not measured.",
+  "unit_log": "PASS 108 periodic refresh/shape/frequency sweeps; tracking/raw error=3.037e-06; arbitrary nonzero edge, pause, noise, silence, source unchanged",
+  "fresh_tests": "6/6 final targeted tests PASS; earlier6core/recording/visibility/wave checks also PASS. Final source reproducible native performance/label baseline test PASS.",
+  "preserved": [
+    "Prior beta6 original artifacts:outputs/NintendoMusicStudio-1.6.3-beta-6-previous",
+    "Prior beta6 first-corrected artifacts:outputs/NintendoMusicStudio-1.6.3-beta-6-before-smooth"
+  ],
+  "failures": [
+    "First slope-candidate version had sub-sample difference on identical paused input; exact input/offset memo fixes it and test passes.",
+    "Initial alignment/history optimization alone retained12ms all-channel cost; phase timings identified8ms text rasterization, fixed via cached label coverage."
+  ],
+  "unchanged": [
+    "GBA whole-song PSG exclusion,PCM always-visible behavior and unknown-driver fallback",
+    "NES/GB/SNES base exceptions and Show all channels preference",
+    "Waveform left/center not pinned to zero",
+    "Audio decoding,original PCM,pitch/tempo/reverb/EQ"
+  ],
+  "limits": [
+    "Rendering CPU cost is not a guarantee of monitor FPS,desktop scheduling or physical smoothness.",
+    "Text cache approximates native ClearType compositing with measured max3/255 component error in paused-reference screenshot.",
+    "12ms display-only smoothing adds small visual response delay; audio unchanged."
+  ],
+  "source_hashes": {
+    "src\\visualizer\\Envelope.cpp": "1967c385fd48f797cc8a7967e3d45771d2fc95f72fe8cd6c85988dcaa3b3d008",
+    "src\\visualizer\\Envelope.hpp": "958420b032b260986641a973e51ece2646678bbd6fe77d8800c443f3af043402",
+    "src\\channels\\ChannelHistory.hpp": "34cc115b2479bf1dc4496f824b395f50645b73f35cc1ca410305f2ad3964e2c7",
+    "src\\ui\\Window.cpp": "5e366f7cfe5ce727b9b3d333e00e7ff02396614a257f24f9985bcc1b07d55f2d",
+    "tests\\WaveTrackingTests.cpp": "011d8034e28855e9345bd56f69deb97acbdaa7cfaaabaa5fd3b64576438bfabc",
+    "tests\\ui_wave_performance.py": "185457aa51b9ff017e66362a129e21f4092b6c7b35cd0e70fb99c521e1ac4732"
+  },
+  "no_user_assets_packaged": true
+}

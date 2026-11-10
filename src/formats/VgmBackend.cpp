@@ -1,3 +1,4 @@
+#include "WholeTrackUsage.hpp"
 #include "GmeBackend.hpp"
 #include <set>
 #include <stdexcept>
@@ -17,12 +18,12 @@ std::unique_ptr<IMusicBackend> makeVgmBackend(const std::vector<uint8_t> &bytes)
     size_t end = uint64_t(le(4)) + 4;
     fail(end >= 65 && end <= bytes.size(), "Invalid VGM file length.");
     uint32_t version = le(8);
-    fail(version >= 0x100 && version <= 0x171, "Unsupported VGM version.");
+    fail(version >= 0x100 && version <= 0x172, "Unsupported VGM version.");
     size_t start = version >= 0x150 && le(0x34) ? uint64_t(le(0x34)) + 0x34 : 0x40;
     fail(start >= 64 && start < end, "Invalid VGM command offset.");
     // Preserve the existing SMS/Mega Drive path; additional chips use the
     // explicitly bounded extended decoder rather than being ignored by GME.
-    for (size_t field : {size_t(0x74),size_t(0x50),size_t(0x98),size_t(0x9c),size_t(0xd0)})
+    for (size_t field : {size_t(0x54),size_t(0x74),size_t(0x50),size_t(0x98),size_t(0x9c),size_t(0xd0)})
         if (field+4<=start && le(field))
             return makeExtendedVgmBackend(bytes);
     for (size_t field : {size_t(12), size_t(16), size_t(44)})
@@ -98,6 +99,6 @@ std::unique_ptr<IMusicBackend> makeVgmBackend(const std::vector<uint8_t> &bytes)
     put(28, 0);
     put(32, 0);
     put(24, uint32_t(ticks));
-    return std::make_unique<GmeBackend>(normalized, Format::Vgm);
+    return withWholeTrackUsage(std::make_unique<GmeBackend>(normalized, Format::Vgm),int((ticks*1000+44099)/44100));
 }
 } // namespace ngmv

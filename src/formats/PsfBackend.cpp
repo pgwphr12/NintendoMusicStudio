@@ -2,6 +2,7 @@
 #include "GbaMixerTap.hpp"
 #include "GbaRomSample.hpp"
 #include "GbaPsgMirror.hpp"
+#include "GbaSongUsage.hpp"
 #include "NintendoMixerTap.hpp"
 #include "UsfVoiceTap.hpp"
 #include <GBA.h>
@@ -419,6 +420,7 @@ class PsfBackend final : public IMusicBackend {
     std::vector<NintendoVoicePool> nintendoPools_;
     int gbaVoiceCount()const{return gbaVoices_?gbaVoices_:nintendoVoices_;}
     uint32_t gbaMixerInfo_=0;
+    int gbaSongPsg_=-1;
     bool continuousEnd_=false;
     bool gbaInspection_=false,gbaMixInspection_=false;
     static int milliseconds(const std::string &text) {
@@ -446,6 +448,10 @@ class PsfBackend final : public IMusicBackend {
     }
 
   public:
+    bool channelUsage(uint64_t&out)const override {
+        if(gbaSongPsg_<0)return false;
+        out=(UINT64_MAX&~uint64_t(15))|unsigned(gbaSongPsg_);return true;
+    }
     void continuousEnd(bool value) override {continuousEnd_=value;}
     bool prepareGbaInspection() override {
         if(image_.format!=Format::Gsf||!gbaVoices_)return false;
@@ -516,6 +522,24 @@ class PsfBackend final : public IMusicBackend {
             // do not collapse the layout merely because no PCM writes occurred.
             if(!std::getenv("NGMV_GBA_HARDWARE_ONLY")&&(gba_[0]->mixer.recognized>32||(directRom&&gba_[0]->mixer.info&&gba_[0]->mixer.voices>0))){gbaVoices_=gba_[0]->mixer.voices;gbaMixerInfo_=gba_[0]->mixer.info;channels_.resize(4);for(int i=0;i<gbaVoices_;i++)channels_.push_back({"PCM VOICE "+std::to_string(i+1)});channels_.push_back({"EFFECTS / OTHER"});}
             if(!std::getenv("NGMV_GBA_HARDWARE_ONLY")&&!gbaVoices_&&gba_[0]->nintendo.recognized>32&&!gba_[0]->nintendo.fault){auto profile=gba_[0]->nintendo.selected;nintendoVoices_=int(profile.count);nintendoPools_={profile};channels_.resize(4);for(int i=0;i<nintendoVoices_;i++)channels_.push_back({"PCM VOICE "+std::to_string(i+1)});channels_.push_back({"EFFECTS / OTHER"});}
+            // Only the verified MP2K linked-player/header layout permits static
+            // whole-sequence PSG exclusion. Never decide from the short probe.
+            if(gba_[0]->mixer.info){
+                auto&g=gba_[0]->system;
+                auto read=[&](uint32_t a,size_t n)->const uint8_t*{
+                    if(a>=0x08000000u&&uint64_t(a)+n<=0x08000000ull+image_.rom.size())return image_.rom.data()+(a-0x08000000u);
+                    return GbaMixerTap::ram(&g,a,unsigned(n));
+                };
+                auto info=read(gba_[0]->mixer.info,0x28);uint32_t current=info?le(info+0x24):0,psg=0;bool valid=current!=0,active=false;std::set<uint32_t>seen;
+                while(valid&&current){
+                    if(!seen.insert(current).second||seen.size()>32){valid=false;break;}
+                    auto p=read(current,0x40);if(!p||le(p+0x34)!=0x68736d53){valid=false;break;}
+                    if((le(p+4)&0xffff)&&p[8]){uint32_t used=0;unsigned failure=0;if(!gbaSongPsgUsage(read,le(p),used,&failure)){if(std::getenv("NGMV_GBA_USAGE_DEBUG"))std::fprintf(stderr,"GBA usage unsupported sequence line=%u tracks=%u\n",failure,p[8]);valid=false;break;}psg|=used;active=true;}
+                    current=le(p+0x3c);
+                }
+                if(valid&&active)gbaSongPsg_=int(psg&15);
+                if(std::getenv("NGMV_GBA_USAGE_DEBUG"))std::fprintf(stderr,"GBA usage valid=%d active=%d players=%zu mask=%d\n",valid,active,seen.size(),gbaSongPsg_);
+            }
             // Do not retain the probe's prefetched, unmuted output in either mode.
             selectTrack(0);
         } else selectTrack(0);
