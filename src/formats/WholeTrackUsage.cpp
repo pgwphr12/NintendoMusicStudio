@@ -61,6 +61,7 @@ public:
  bool decodedEndFrame(uint64_t&v)const override{return core->decodedEndFrame(v);}
  void continuousEnd(bool v)override{core->continuousEnd(v);}
  bool hasDeviceOutput()const override{return core->hasDeviceOutput();}
+ bool usesLocalMidiBank()const override{return core->usesLocalMidiBank();}
  void devicePlayback(uint64_t f,bool p,const std::vector<ChannelState>&s,float m)override{core->devicePlayback(f,p,s,m);}
 };}
 std::unique_ptr<IMusicBackend> withWholeTrackUsage(std::unique_ptr<IMusicBackend>p,int ms){return std::make_unique<WholeTrackUsage>(std::move(p),ms);}

@@ -1,3 +1,9 @@
+## Current test build 1.6.3-beta 7
+
+Exact sibling DLS -> SF2 -> VMS configured font; existing Windows fallback without VMS. DLS2 PCM regions/articulation supported. Local fonts are protected from VMS live replacement. All85NSMB MIDIs tested:80audible and5valid empty originals. No supplied music/banks included. See RELEASE-NOTES-1.6.3-beta-7.md.
+
+### Earlier beta6 notes
+
 ## Beta 6 smooth-render revision
 
 Reduced waveform matching/history overhead, cached outlined label coverage, and refresh-time-based display transitions. Audio remains unchanged. Native1080p rendering benchmark improved; physical refresh/VRR remains unverified. Beta6 label retained.

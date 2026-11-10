@@ -13,14 +13,15 @@ struct MidiSong {
 };
 inline constexpr size_t MidiMaxEvents=16000000;
 MidiSong parseMidi(const std::vector<uint8_t>&,size_t eventLimit=MidiMaxEvents);
-// Empty selection resolves the preferred VirtualMIDISynth single active SF2,
-// otherwise Windows DirectMusic GMFilePath, on each new load.
+// Automatic file opens try exact sibling DLS then SF2 before VMS/default.
+// Explicit bank arguments remain one-off overrides; absent VMS uses Windows GM.
 void midiSoundFont(const std::filesystem::path&);
 std::filesystem::path midiSoundFont();
 std::filesystem::path windowsMidiBank();
 bool virtualMidiInstalled();
 std::vector<std::filesystem::path> virtualMidiFonts(const std::filesystem::path& config);
 std::filesystem::path automaticMidiBank();
+std::vector<std::filesystem::path> localMidiBankCandidates(const std::filesystem::path& midi);
 std::vector<std::filesystem::path> virtualMidiFontsToImport();
 void validateMidiBank(const std::filesystem::path&);
 std::unique_ptr<IMusicBackend> makeMidiBackend(const std::vector<uint8_t>&,

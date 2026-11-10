@@ -1,0 +1,67 @@
+{
+  "version": "1.6.3-beta 7",
+  "date": "2026-11-11",
+  "feature": "Exact sibling DLS -> SF2 -> configured VMS internal bank; Windows default when no VMS. One-off explicit F8 choice remains explicit.",
+  "implementation": [
+    "Exact MIDI basename plus.dls/.sf2 in its own directory; Windows case-insensitive filenames/Unicode preserved. No similar-prefix/unrelated-bank fallback.",
+    "Actually parse each candidate. Decode/read/unsupported-bank errors continue to the next; OOM is not swallowed.",
+    "Local automatic bank has provenance flag and forces internal synthesis, bypassing global/stale/external output selection. VMS live observer never replaces a local bank. Leaving local-bank files re-enables existing VMS live follow.",
+    "DLS2 rgn2/lar2/art2 monoPCM8/16 recognized; EG1/EG2 hold/delay mapping added. Reference: installed Microsoft Windows SDK10.0.28000.0 shared/dls2.h and existing TinySoundFont envelope. Conditional DLS download expressions reject and fall back; custom/unsupported articulation routes remain disclosed.",
+    "Valid metadata/controller-only MIDI loads silently with zero fabricated note channels and explicit track comment. Structural corruption still fails."
+  ],
+  "actual_folder": {
+    "midi_files": 85,
+    "DLS_files": 85,
+    "SF2_files": 85,
+    "selected_local_DLS": 85,
+    "full_song_audible": 80,
+    "valid_empty_silent": 5,
+    "empty_names": [
+      "BGM_AMB_CHIKA.mid",
+      "BGM_AMB_SABAKU.mid",
+      "BGM_AMB_SKY.mid",
+      "BGM_AMB_WATER.mid",
+      "BGM_AMB_YOUGAN.mid"
+    ],
+    "full_song_render_seconds": 2695.8617291666665,
+    "all_files_middle_seek_and_restart": true,
+    "all_matching_SF2_open_and_1second_render": true,
+    "original255_SHA_size_mtime_unchanged": true,
+    "hardware_listening": false
+  },
+  "fresh_tests": {
+    "ctest": "7/7 initial MIDI/recording regressions PASS;3/3 final sibling unit/native+fixture PASS",
+    "owned_cases": "8cases:validDLS2,badDLS->SF2,validDLS/badSF2,SF2only,bothbad->VMS,NoVMS->Windows,explicitbank,emptyMIDI; Unicode/exact-prefix checks",
+    "native": {
+      "pass": true,
+      "local_DLS_and_SF2_protected": true,
+      "unpaired_VMS_live_follow_restored": true,
+      "master_preserved": true,
+      "audio": "dummy",
+      "only_owned_files_changed": true
+    },
+    "actual_empty_native_load_capture_exit": true
+  },
+  "beta6_smooth_render_region_source_identical": true,
+  "failures_preserved": [
+    "Initial own Unicode test source compiled with default non-UTF8 codepage; replaced test-only wide literals with Unicode escapes before actual tests.",
+    "First batch probe requested48000frames at once, exceeding existing8192block cap. Corrected probe to4096chunks; did not loosen decoder limit.",
+    "First85file scan found5valid empty MIDIs rejected by previous no-note policy; added valid silent handling and zero-note test, then85/85passes.",
+    "First native test used synchronous file-drop timeout; use asynchronous owned HDROP with source-type verification. Subsequent VMS recovery test initially selected same already-loaded bank; corrected test sequence to distinct banks and both reloads passed."
+  ],
+  "limits": [
+    "Mono PCM DLS1/DLS2 and existing PCM SF2 subset, not all compressed/conditional/proprietary DLS2 features.",
+    "5empty originals cannot produce their missing music; no samples/notes generated.",
+    "Full-song verification uses internal48kHz render and dummy UI, not physical audio capture/listening."
+  ],
+  "source_hashes": {
+    "src\\formats\\MidiBackend.cpp": "6978232c3ca1ef9d3abea3ffa653c3854ada71bddc1a2f112f75156b0faad05e",
+    "src\\formats\\MidiAutoBank.cpp": "0898b7a12a06bdc30287c0a93a00b1fd48b2889d375e3346db93b47c8fcb6ac3",
+    "src\\formats\\MidiBank.inl": "ae6282c4c0914689e02cc8c71ed2245a1c5c8e5d9c6ca9e6d4d4360a37e9921a",
+    "src\\formats\\MidiParser.cpp": "2f0a59e2b35ec7cc985b3c2a56e86a452911610742832479ac74761dfe4de474",
+    "tests\\MidiLocalBankTests.cpp": "42ed0651a38b9a54fc90f973d21b254016437473cedf3c03fb2cdbf74c62a3ce",
+    "tests\\ui_midi_local.py": "61ced897fe018e8f74b8eb8d89a6dd968734487d0304821199ac0e12f893c9c4"
+  },
+  "original_game_music_banks_distributed": false,
+  "render_comparison_normalization": "CRLF/LF normalized; no renderer semantic changes. Earlier raw text comparison differed on line endings only."
+}

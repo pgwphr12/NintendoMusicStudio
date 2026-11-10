@@ -1,8 +1,8 @@
-# Test1.6.3-beta 6 corresponding source
+# Test1.6.3-beta 7 corresponding source
 
 YM usage tracks timed key slots, DAC enable/data and actual stream starts; setup/reset alone is not note use. WholeTrackUsage wraps backends with known complete metadata or physical end boundaries, unmuted offline scans, reset/cache, a10s budget and conservative unknown fallback. PSF length tags alone do not prove an execution end. Remote option and console exceptions affect visibility only. No new dependency; all new source/tests included.
 
-# Test1.6.3-beta 6 corresponding source
+# Test1.6.3-beta 7 corresponding source
 
 YM3812/YM3526 primary and auxiliary channels now use a precomputed whole-song key/rhythm usage mask. Late notes are visible before playback; silence/mute/gain do not alter visibility. Decoder channels and real audio remain intact.
 

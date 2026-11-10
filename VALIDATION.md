@@ -1,3 +1,7 @@
+## Current beta7 MIDI validation
+
+See docs/MIDI-LOCAL-1.6.3-beta-7.json.85/85 actual whole-song DLS render/seek/restart checks (80audible,5valid-empty) plus85SF2load/1s render.7initial and3final targeted CTest checks PASS, native local/VMS precedence PASS. No hardware listening. Previous evidence below is historical.
+
 ## Beta6 smooth revision
 
 Latest evidence: docs/WAVE-SMOOTH-1.6.3-beta-6.json. Final6focused checks PASS;108synthetic refresh/shape/frequency cases, history/transition tests and native performance/reference comparison PASS. Previous evidence below is historical.

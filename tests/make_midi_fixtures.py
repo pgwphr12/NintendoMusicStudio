@@ -29,6 +29,10 @@ region=listing(b'rgn ',chunk(b'rgnh',struct.pack('<HHHHHH',0,127,0,127,0,0)),chu
 ins=listing(b'ins ',chunk(b'insh',struct.pack('<III',1,0,0)),listing(b'lrgn',region))
 dls=chunk(b'RIFF',b'DLS '+chunk(b'colh',struct.pack('<I',1))+listing(b'lins',ins)+chunk(b'ptbl',struct.pack('<III',8,1,0))+listing(b'wvpl',wave))
 (out/'own.dls').write_bytes(dls)
+art2=chunk(b'art2',struct.pack('<II',8,2)+struct.pack('<HHHHi',0,0,0x20c,0,-3600*65536)+struct.pack('<HHHHi',0,0,4,0,0))
+region2=listing(b'rgn2',chunk(b'rgnh',struct.pack('<HHHHHH',0,127,0,127,0,0)),chunk(b'wlnk',struct.pack('<HHII',0,0,1,0)),listing(b'lar2',art2))
+ins2=listing(b'ins ',chunk(b'insh',struct.pack('<III',1,0,0)),listing(b'lrgn',region2))
+(out/'own2.dls').write_bytes(chunk(b'RIFF',b'DLS '+chunk(b'colh',struct.pack('<I',1))+listing(b'lins',ins2)+chunk(b'ptbl',struct.pack('<III',8,1,0))+listing(b'wvpl',wave)))
 samples=sample+[0]*46+sample2+[0]*46
 smpl=struct.pack('<'+'h'*len(samples),*samples)
 phdr=b''.join(name(n)+struct.pack('<HHHIII',p,b,i,0,0,0) for i,(n,p,b) in enumerate([('Piano',0,0),('Strings',40,0),('Drums',0,128),('EOP',0,0)]))
@@ -69,3 +73,5 @@ empty_loop=bytearray(sf);at=empty_loop.index(b'shdr')+8;struct.pack_into('<II',e
 
 (out/'live.mid').write_bytes(smf([ev([(0,b"\x90\x3c\x64"),(0,b"\x91\x43\x64"),(24000,b"\x80\x3c\0"),(0,b"\x81\x43\0"),(0,b"\xff\x2f\0")])],0))
 alt=bytearray(sf);at=alt.index(b'smpl')+8;alt[at:at+count*2]=struct.pack('<'+'h'*count,*sample2);(out/'alternate.sf2').write_bytes(alt)
+
+(out/"empty.mid").write_bytes(smf([ev([(0,b"\xff\x03\x05empty"),(0,b"\xff\x2f\0")])],0))

@@ -63,4 +63,11 @@ std::filesystem::path automaticMidiBank(){
  }
  auto fonts=virtualMidiFonts(config);if(fonts.size()!=1)throw std::runtime_error("Automatic VirtualMIDISynth import needs one enabled SF2. Select a soundfont with F8 (multiple-bank layering is not supported).");std::error_code ec;if(!std::filesystem::is_regular_file(fonts[0],ec)||ec)throw std::runtime_error("VirtualMIDISynth active SF2 is missing. Choose its file with F8.");return fonts[0];
 }
+std::vector<std::filesystem::path> localMidiBankCandidates(const std::filesystem::path&midi){
+ std::vector<std::filesystem::path> result;if(midi.empty())return result;
+ for(auto extension:{L".dls",L".sf2"}){auto candidate=midi;candidate.replace_extension(extension);std::error_code ec;
+  if(std::filesystem::is_regular_file(candidate,ec)&&!ec)result.push_back(candidate);
+ }
+ return result;
+}
 }

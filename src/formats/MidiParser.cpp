@@ -50,7 +50,8 @@ MidiSong parseMidi(const std::vector<uint8_t>& b,size_t eventLimit){
         // A complete declared track boundary is usable even without optional EOT.
         (void)ended;endTick=std::max(endTick,tick);ranges.push_back({begin,raw.size()});
     }
-    if(!song.used)throw std::runtime_error("MIDI contains no note-on events.");
+    // A structurally valid metadata/controller-only MIDI is a silent track,
+    // not an unsupported file. Never invent notes for it.
     // Each track already has monotonic ticks. Merge only the track heads:
     // O(events*log(tracks)), with no large stable-sort scratch allocation.
     auto later=[&](size_t a,size_t b){return raw[a].tick!=raw[b].tick?raw[a].tick>raw[b].tick:a>b;};

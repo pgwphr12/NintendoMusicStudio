@@ -105,6 +105,7 @@ class Player {
     }
     void showAllChannels(bool v){showAllChannels_=v;}
     bool showAllChannels()const{return showAllChannels_;}
+    bool usesLocalMidiBank()const{return backend_&&backend_->usesLocalMidiBank();}
     bool channelVisible(size_t index)const{
         return index<channels().size() && index<64 && (showAllChannels_ || (visibleMask_&(uint64_t(1)<<index)));
     }

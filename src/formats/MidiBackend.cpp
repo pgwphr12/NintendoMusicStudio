@@ -60,7 +60,7 @@ LoadedFont loadFont(const std::filesystem::path&path){
             if(r.offset>=r.end||r.end>samples||(loop&&(r.loop_start>=samples||r.loop_end>=samples)))throw std::runtime_error("SF2 region exceeds sample data.");
             if(r.loop_mode&&!loop)++result.unsupported;
         }
-    }else throw std::runtime_error("Supported sound banks: PCM SF2 or DLS1 (no SF3/SFZ).");
+    }else throw std::runtime_error("Supported sound banks: PCM SF2 or DLS1/2 (no SF3/SFZ).");
     return result;
 }
 LoadedFont loadWindowsFont(std::filesystem::path&path){
@@ -74,7 +74,7 @@ LoadedFont loadWindowsFont(std::filesystem::path&path){
     throw std::runtime_error("Windows default MIDI sound bank (gm.dls) is missing, unreadable or unsupported. Windows 기본 MIDI 음원(gm.dls)을 찾거나 읽을 수 없습니다. VirtualMIDISynth 설치는 필요하지 않습니다."+(lastError.empty()?std::string{}:" Details: "+lastError));
 }
 class MidiBackend final:public IMusicBackend {
-    MidiSong song_;bool deviceMode_=false;std::unique_ptr<MidiDevice> device_;std::vector<TrackInfo> tracks_;std::vector<ChannelInfo> channels_;
+    MidiSong song_;bool deviceMode_=false,localBank_=false;std::unique_ptr<MidiDevice> device_;std::vector<TrackInfo> tracks_;std::vector<ChannelInfo> channels_;
     Font font_{nullptr,tsf_close};std::vector<Font> synths_;std::array<int,16> slots_{};
     uint64_t position_=0;size_t next_=0;uint32_t mask_=0;std::vector<float> scratch_;
     void reset(){
@@ -102,14 +102,27 @@ class MidiBackend final:public IMusicBackend {
     }
   public:
     MidiBackend(const std::vector<uint8_t>&b,const std::filesystem::path&file,const std::filesystem::path&bank):song_(parseMidi(b)){
-        bool basicOnly=bank.empty()&&!virtualMidiInstalled();auto path=basicOnly?std::filesystem::path{}:bank.empty()?midiSoundFont():bank;bool system=path.empty();deviceMode_=!basicOnly&&system&&midiDeviceOutput();LoadedFont loaded;
+        LoadedFont loaded;std::filesystem::path path;unsigned rejectedLocal=0;
+        // Explicit one-off F8 bank choices remain explicit. Automatic file opens
+        // prefer their own sibling bank, even with a saved global/VMS selection.
+        if(bank.empty())for(const auto&candidate:localMidiBankCandidates(file)){
+            try{loaded=loadFont(candidate);path=candidate;localBank_=true;break;}
+            catch(const std::bad_alloc&){throw;}
+            catch(const std::runtime_error&){++rejectedLocal;}
+        }
+        bool basicOnly=!localBank_&&bank.empty()&&!virtualMidiInstalled();
+        if(!localBank_)path=basicOnly?std::filesystem::path{}:bank.empty()?midiSoundFont():bank;
+        if(!localBank_&&rejectedLocal&&!basicOnly&&bank.empty())path=automaticMidiBank();
+        bool system=path.empty();deviceMode_=!localBank_&&!basicOnly&&system&&midiDeviceOutput();
         // Hidden/dummy test sessions must never emit hardware MIDI notes.
         wchar_t dummy[32]{};if(GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy"))deviceMode_=false;
-        if(!deviceMode_){if(basicOnly)loaded=loadWindowsFont(path);else{if(system)path=automaticMidiBank();loaded=loadFont(path);}font_=std::move(loaded.font);}else device_=std::make_unique<MidiDevice>(song_,windowsMidiPort());
+        if(!deviceMode_){if(!localBank_){if(basicOnly)loaded=loadWindowsFont(path);else{if(system)path=automaticMidiBank();loaded=loadFont(path);}}font_=std::move(loaded.font);}else device_=std::make_unique<MidiDevice>(song_,windowsMidiPort());
         for(unsigned c=0;c<16;c++)if(song_.used&(1<<c))channels_.push_back({"Channel "+std::to_string(c+1)});
         TrackInfo t;t.title=song_.title.empty()?file.stem().u8string():song_.title;t.system="MIDI";t.lengthMs=int((song_.endFrame*1000+InternalRate-1)/InternalRate);
         t.game=path.filename().u8string();
-        t.comment=std::string(basicOnly?"Windows default bank: ":system?"Automatic MIDI bank: ":"Sound bank: ")+path.filename().u8string()+" / internal TinySoundFont synthesis; not MIDI Mapper audio. Release tail2s. Aftertouch/vendor SysEx/custom modulators are limited. Missing bank/program falls back to GM program or first preset.";
+        t.comment=std::string(localBank_?"Same-folder MIDI bank: ":basicOnly?"Windows default bank: ":system?"Automatic MIDI bank: ":"Sound bank: ")+path.filename().u8string()+" / internal TinySoundFont synthesis; not MIDI Mapper audio. Release tail2s. Aftertouch/vendor SysEx/custom modulators are limited. Missing bank/program falls back to GM program or first preset.";
+        if(!song_.used)t.comment+=" / No note-on events: valid silent MIDI; no notes were generated.";
+        if(rejectedLocal)t.comment+=" / Unreadable or unsupported sibling banks skipped: "+std::to_string(rejectedLocal);
         if(deviceMode_)t.comment="Windows default MIDI Mapper output (F8: internal synthesis). Device supplies audio. Internal waveforms/reverb/pitch do not describe or process device output; silent waveform lanes. Default changes re-open output at current position. Custom SysEx forwarded.";
         if(song_.ignoredSysex||loaded.unsupported)t.comment+=" Limited SysEx/bank routes: "+std::to_string(song_.ignoredSysex)+"/"+std::to_string(loaded.unsupported);
         tracks_.push_back(std::move(t));reset();
@@ -119,6 +132,7 @@ class MidiBackend final:public IMusicBackend {
     void selectTrack(int i)override{if(i)throw std::runtime_error("Invalid MIDI track.");reset();}
     void muteMask(uint32_t m)override{mask_=m;}
     bool hasDeviceOutput()const override{return deviceMode_;}
+    bool usesLocalMidiBank()const override{return localBank_;}
     void devicePlayback(uint64_t frame,bool playing,const std::vector<ChannelState>&states,float master)override{if(device_)device_->update(frame,playing,states,master);}
     bool decodedEndFrame(uint64_t&frame)const override{frame=song_.endFrame;return true;}
     void seek(int ms)override{

@@ -126,7 +126,7 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6.3-beta 6\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.3-beta 7\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · VGM/VGZ\r\n"
                 L"일반 오디오: MP3 · WAV · OGG(Vorbis) · FLAC\r\n"
@@ -247,7 +247,7 @@ bool Window::open(const std::filesystem::path &p) {
         file_ = p;
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.6.3-beta 6 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6.3-beta 7 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening audio/MIDI/a supported ROM starts it; folder advance is separate.
         if (format == Format::AudioFile || format == Format::Midi || format == Format::GbaRom || format == Format::NesRom)
@@ -280,7 +280,7 @@ void Window::selectFolder(size_t index, bool play) {
     restoreChannels();
     playlist_.current = index;
     file_ = path;
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3-beta 6 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3-beta 7 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -402,7 +402,7 @@ void Window::saveMidiFontSelection(const std::filesystem::path&selected){
     if(!ok||!MoveFileExW(temp.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))throw std::runtime_error("Cannot save MIDI soundfont selection.");
 }
 void Window::checkVirtualMidi(){
-    if(changing_||!virtualMidiAvailable_||!followVirtualMidi_||midiDeviceOutput()||!player_.loaded()||player_.tracks().empty()||player_.tracks()[0].system!="MIDI")return;
+    if(changing_||player_.usesLocalMidiBank()||!virtualMidiAvailable_||!followVirtualMidi_||midiDeviceOutput()||!player_.loaded()||player_.tracks().empty()||player_.tracks()[0].system!="MIDI")return;
     if(desktop::automatedSession()&&!GetEnvironmentVariableW(L"NGMV_TEST_VMS_CONFIG",nullptr,0))return;
     auto now=GetTickCount64();if(now<virtualMidiNextCheck_)return;virtualMidiNextCheck_=now+500;
     try{
@@ -574,7 +574,7 @@ void Window::paint(HDC dc, int width, int height) {
         button(dc, L"−", 642, 205, 70);
         button(dc, L"+", 722, 205, 70);
         button(dc, L"1.00", 802, 205, 80);
-        button(dc, !virtualMidiAvailable_?L"Windows 기본":midiDeviceOutput()&&midiSoundFont().empty()?L"외부 MIDI (F8)":followVirtualMidi_&&virtualMidiSeen_?L"VMS 음색 자동 (F8)":midiSoundFont().empty()?L"Windows 기본 (F8)":L"MIDI SF2/DLS (F8)", 1435, 1028, 230,false,virtualMidiAvailable_);
+        button(dc, player_.usesLocalMidiBank()?L"같은 폴더 음색":!virtualMidiAvailable_?L"Windows 기본":midiDeviceOutput()&&midiSoundFont().empty()?L"외부 MIDI (F8)":followVirtualMidi_&&virtualMidiSeen_?L"VMS 음색 자동 (F8)":midiSoundFont().empty()?L"Windows 기본 (F8)":L"MIDI SF2/DLS (F8)", 1435, 1028, 230,false,virtualMidiAvailable_);
         button(dc, player_.reverb() ? L"반향 켜짐" : L"반향 꺼짐", 1240, 1028, 180,
                player_.reverb());
         button(dc, speedStep_ == 1 ? L"단위 0.01" : L"단위 0.10", 917, 205, 200);
@@ -1260,6 +1260,8 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 38:return hiddenChannelCount();
             case 39:return b>=0&&size_t(b)<hiddenChannels_.size()&&hiddenChannels_[size_t(b)];
             case 40:return remoteWindow_&&IsWindowVisible(remoteWindow_);
+            case 41:return player_.usesLocalMidiBank();
+            case 42:{if(!player_.usesLocalMidiBank()||player_.tracks().empty())return 0;auto ext=std::filesystem::u8path(player_.tracks()[0].game).extension().wstring();return !_wcsicmp(ext.c_str(),L".dls")?1:!_wcsicmp(ext.c_str(),L".sf2")?2:0;}
             case 25: return virtualMidiReloads_;
             case 26: return !virtualMidiError_.empty();
             case 23: return midiDeviceOutput();
@@ -1546,7 +1548,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3-beta 6", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3-beta 7", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

@@ -1,4 +1,4 @@
-// Owned bounded DLS1/SF2 adapter for the pinned TinySoundFont implementation.
+// Owned bounded DLS1/DLS2/SF2 adapter for the pinned TinySoundFont implementation.
 // Windows sample banks are read locally and never copied to a release package.
 struct BankChunk {size_t p=0,n=0;std::string id,type;std::vector<BankChunk> children;};
 static uint16_t le16(const std::vector<uint8_t>&b,size_t p){if(p>b.size()||b.size()-p<2)throw std::runtime_error("Truncated sound bank.");return uint16_t(b[p]|b[p+1]<<8);}
@@ -44,14 +44,16 @@ static void applyWsmp(tsf_region&r,const std::vector<uint8_t>&b,const BankChunk&
         if(length<2||start>=count||length>count-start)throw std::runtime_error("DLS loop outside sample.");r.loop_mode=TSF_LOOPMODE_CONTINUOUS;r.loop_start=r.offset+start;r.loop_end=r.loop_start+length-1;}
 }
 static void dlsArt(tsf_region&r,const std::vector<uint8_t>&b,const BankChunk&parent,unsigned&unsupported){
-    auto list=findChunk(parent,"LIST","lart");if(!list)return;
-    for(const auto&a:list->children)if(a.id=="art1"){
+    auto list=findChunk(parent,"LIST","lar2");bool level2=list!=nullptr;if(!list)list=findChunk(parent,"LIST","lart");if(!list)return;
+    for(const auto&a:list->children)if(a.id==(level2?"art2":"art1")){
         if(a.n<8)throw std::runtime_error("Truncated DLS articulation.");auto size=le32(b,a.p),n=le32(b,a.p+4);if(size<8||size>a.n||n>(a.n-size)/12)throw std::runtime_error("Invalid DLS articulation table.");
         for(unsigned i=0;i<n;i++){auto p=a.p+size+i*12;auto src=le16(b,p),ctrl=le16(b,p+2),dst=le16(b,p+4),transform=le16(b,p+6);float v=float(int32_t(le32(b,p+8)))/65536.f;
             if(transform){++unsupported;continue;}
             if(src==0&&ctrl==0){switch(dst){
                 case 1:r.attenuation-=v/10.f;break;case 3:r.tune+=int(v);break;case 4:r.pan=std::clamp(v/1000.f,-.5f,.5f);break;
                 case 0x104:r.freqModLFO=int(v);break;case 0x105:r.delayModLFO=v;break;
+                case 0x20b:r.ampenv.delay=v;break;case 0x20c:r.ampenv.hold=v;break;
+                case 0x30f:r.modenv.delay=v;break;case 0x310:r.modenv.hold=v;break;
                 case 0x206:r.ampenv.attack=v;break;case 0x207:r.ampenv.decay=v;break;case 0x209:r.ampenv.release=v;break;
                 case 0x20a:r.ampenv.sustain=std::clamp(v/1000.f,0.f,1.f);break;
                 case 0x30a:r.modenv.attack=v;break;case 0x30b:r.modenv.decay=v;break;case 0x30d:r.modenv.release=v;break;case 0x30e:r.modenv.sustain=std::clamp(v/1000.f,0.f,1.f);break;
@@ -66,7 +68,9 @@ static void dlsArt(tsf_region&r,const std::vector<uint8_t>&b,const BankChunk&par
         }
     }
 }
+static bool bankHasCondition(const BankChunk&c){if(c.id=="cdl ")return true;for(const auto&v:c.children)if(bankHasCondition(v))return true;return false;}
 static tsf* loadDls(const std::vector<uint8_t>&b,const BankChunk&root,unsigned&unsupported){
+    if(bankHasCondition(root))throw std::runtime_error("Conditional DLS download expressions are unsupported.");
     const auto&pool=requireChunk(root,"LIST",0,"wvpl");const auto&pt=requireChunk(root,"ptbl",8);unsigned hs=le32(b,pt.p),cues=le32(b,pt.p+4);
     if(hs<8||hs>pt.n||!cues||cues>65535||cues>(pt.n-hs)/4)throw std::runtime_error("Invalid DLS wave pool table.");
     std::map<size_t,DlsWave> waves;std::vector<float> samples;
@@ -83,7 +87,7 @@ static tsf* loadDls(const std::vector<uint8_t>&b,const BankChunk&root,unsigned&u
         const auto&head=requireChunk(ins,"insh",12),&lrgn=requireChunk(ins,"LIST",0,"lrgn");uint32_t bank=le32(b,head.p+4),program=le32(b,head.p+8);if(program>127)throw std::runtime_error("Invalid DLS program.");
         tsf_preset preset{};preset.preset=tsf_u16(program);preset.bank=tsf_u16((bank&0x80000000)?128:((bank>>8)&127)*128+(bank&127));
         snprintf(preset.presetName,sizeof(preset.presetName),"DLS %u",unsigned(program));std::vector<tsf_region> rr;
-        for(const auto&reg:lrgn.children)if(reg.id=="LIST"&&reg.type=="rgn "){
+        for(const auto&reg:lrgn.children)if(reg.id=="LIST"&&(reg.type=="rgn "||reg.type=="rgn2")){
             const auto&rh=requireChunk(reg,"rgnh",12),&link=requireChunk(reg,"wlnk",12);unsigned wi=le32(b,link.p+8);if(wi>=table.size())throw std::runtime_error("DLS sample reference outside table.");auto wave=table[wi];
             tsf_region v;tsf_region_clear(&v,TSF_FALSE);v.offset=wave.offset;v.end=wave.offset+wave.count;v.sample_rate=wave.rate;v.pitch_keycenter=60;v.group=le16(b,rh.p+10);
             unsigned low=le16(b,rh.p),high=le16(b,rh.p+2),vl=le16(b,rh.p+4),vh=le16(b,rh.p+6);if(low>high||high>127||vl>vh||vh>127)throw std::runtime_error("Invalid DLS key/velocity range.");

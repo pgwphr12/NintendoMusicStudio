@@ -39,6 +39,7 @@ class IMusicBackend {
     virtual bool decodedEndFrame(uint64_t&) const {return false;}
     virtual void continuousEnd(bool) {}
     virtual bool hasDeviceOutput()const {return false;}
+    virtual bool usesLocalMidiBank()const {return false;}
     virtual void devicePlayback(uint64_t,bool,const std::vector<ChannelState>&,float) {}
 };
 Format identify(const std::vector<uint8_t> &bytes, const std::filesystem::path &path = {});

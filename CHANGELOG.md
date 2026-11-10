@@ -1,3 +1,7 @@
+## 1.6.3-beta7 — paired MIDI banks
+
+Prefer exact localDLS,thenSF2,thenVMS;DLS2PCM region/articulation support; protect local banks from live VMS changes; allow valid note-less MIDI as silent tracks.85NSMB files verified. Beta6 smooth rendering retained.
+
 ## 1.6.3-beta6 smooth-render revision
 
 Reduced matching/history cost, cached outlined labels, axis-aligned raster spans and time-based waveform transitions. No audio changes. Same user-requested beta6 label.
