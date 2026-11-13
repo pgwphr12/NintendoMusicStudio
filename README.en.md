@@ -1,6 +1,6 @@
-## Current test build 1.6.3-beta 8
+## Current test build 1.6.3-beta 9
 
-Display-only tails drain to silence when paused/stopped. Horizontal history runs in every view and survives mode/transport changes. The prior channel-cell layout is restored; the F12 remote offers a persistent 0.5×–8× waveform-spacing control that changes waveform shape without widening channel cells. Wii music support is a beta 9 investigation candidate and is not implemented yet. See RELEASE-NOTES-1.6.3-beta-8.md; reference-video similarity is not hardware or full timbre certification.
+Direct stream playback now recognizes Wii BRSTM/BNS and CRI ADX files. The supplied folder's 99 files passed bounded open/render/seek checks. The remote waveform spacing slider offers a global value or per-channel overrides, with 1× steps through 32× and a 0.5× minimum. Repeat restarts at the normal track boundary; after playback ends, Play remains available to start again. No Wii/GameCube disc-image extraction or universal game-format coverage is claimed. See RELEASE-NOTES-1.6.3-beta-9.md.
 
 ### Earlier test notes
 

@@ -88,7 +88,17 @@ class Window {
     void toggleSpectrum();
     bool autoplay_ = true;
     int windowSamples_ = 1024;
+    int waveformZoomStep_ = 2;
+    std::vector<int> channelWaveformZoomSteps_;
+    std::vector<std::wstring> remoteZoomItems_;
+    int selectedWaveZoomChannel_ = -1;
     int speedStep_ = 1;
+    void setWaveformZoomStep(int step);
+    int waveformZoomStepForChannel(size_t channel) const;
+    int waveformSamplesForChannel(size_t channel) const;
+    std::string waveformZoomSettingKey(size_t channel) const;
+    void loadChannelWaveformZooms();
+    void setSelectedWaveformZoomStep(int step);
     desktop::Settings preferences_;
     bool preferencesEnabled_ = false;
     std::string savedPreferences_;

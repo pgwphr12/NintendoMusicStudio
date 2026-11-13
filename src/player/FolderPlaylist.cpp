@@ -30,6 +30,8 @@ FolderPlaylist FolderPlaylist::scan(const std::filesystem::path &file, Format fo
         case Format::Bcstm:
         case Format::Bcwav:
             return ext == L".bcstm" || ext == L".bcwav";
+        case Format::GameStream:
+            return ext == L".brstm" || ext == L".bns" || ext == L".adx";
         default:
             return false;
         }

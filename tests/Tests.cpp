@@ -14,7 +14,9 @@ extern "C" {
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <stdexcept>
+#include <string>
 #include <thread>
 using namespace ngmv;
 static void require(bool yes, const char *message) {
@@ -26,6 +28,55 @@ static double energy(const std::vector<Stereo> &s) {
     for (auto v : s)
         e += v.l * v.l + v.r * v.r;
     return e / std::max(size_t(1), s.size());
+}
+static void gameStreamSmoke(int argc, wchar_t **argv) {
+    require(argc >= 3, "At least one stream path is required");
+    size_t decoded = 0, failed = 0, initiallySilent = 0;
+    std::map<std::wstring, size_t> byExtension;
+    std::filesystem::path firstPath;
+    for (int arg = 2; arg < argc; ++arg) {
+        const std::filesystem::path path(argv[arg]);
+        if (firstPath.empty())
+            firstPath = path;
+        try {
+            auto backend = makeBackend(readMusicFile(path), path);
+            require(backend->tracks().size() == 1, "stream must expose one track");
+            require(!backend->channels().empty() && backend->channels().size() <= 30,
+                    "invalid stream channel count");
+            AudioBlock block;
+            double observedEnergy = 0;
+            for (int i = 0; i < 16; ++i)
+            {
+                backend->render(512, block);
+                for (const auto &sample : block.mix)
+                    observedEnergy += double(sample.l) * sample.l + double(sample.r) * sample.r;
+            }
+            require(block.mix.size() == 512 && block.voices.size() == backend->channels().size(),
+                    "render did not return channel voices");
+            for (const auto &sample : block.mix)
+                require(std::isfinite(sample.l) && std::isfinite(sample.r),
+                        "stream returned a non-finite sample");
+            if (observedEnergy <= 1e-12)
+                ++initiallySilent; // Short cues may intentionally begin with encoded silence.
+            backend->seek(250);
+            backend->render(512, block);
+            ++decoded;
+            ++byExtension[path.extension().wstring()];
+        } catch (const std::exception &e) {
+            ++failed;
+            std::wcerr << L"FAIL " << path.filename().wstring() << L": " << e.what() << L"\n";
+        }
+    }
+    for (const auto &[extension, count] : byExtension)
+        std::wcout << extension << L": " << count << L" decoded\n";
+    auto playlist = FolderPlaylist::scan(firstPath, Format::GameStream);
+    require(playlist.active() && playlist.current < playlist.files.size() &&
+                std::find(playlist.files.begin(), playlist.files.end(),
+                          std::filesystem::absolute(firstPath).lexically_normal()) != playlist.files.end(),
+            "Game stream folder playlist did not include the selected file");
+    std::cout << "Game stream open/render/seek: " << decoded << " pass, " << failed
+              << " fail, " << initiallySilent << " start silent\n";
+    require(failed == 0, "One or more local game streams failed to open/render/seek");
 }
 static void segaTests(const std::filesystem::path &root) {
     for (auto pair : {std::make_pair("sms.vgm", 4),
@@ -113,11 +164,24 @@ static void newAudioTests(const std::filesystem::path &root) {
             "GBA PCM mute lost source waveform");
     auto stream = makeBackend(readMusicFile(root / "stems.bcstm"), root / "stems.bcstm");
     stream->render(4096, pcm);
-    require(pcm.voices.size() == 5 && energy(pcm.voices[4]) > .001, "3DS stored stems disappeared");
-    for (auto v : pcm.voices[4])
+    require(pcm.voices.size() == 3 && stream->channels()[0].name == "TRACK 1" &&
+                stream->channels()[1].name == "TRACK 2" && stream->channels()[2].name == "TRACK 3" &&
+                energy(pcm.voices[2]) > .001,
+            "3DS stored stereo/mono track groups were not separated");
+    for (auto v : pcm.voices[2])
         require(v.l == v.r, "3DS mono stem was routed to one side");
-    require(pcm.voices[0][100].r == 0 && pcm.voices[1][100].l == 0,
-            "3DS stereo stem lost its track-table routing");
+    require(energy(pcm.voices[0]) > .001 && energy(pcm.voices[1]) > .001,
+            "3DS stereo stems were not both exposed");
+    double trackDelta = 0;
+    for (size_t i = 0; i < pcm.mix.size(); ++i) {
+        const float l = pcm.voices[0][i].l + pcm.voices[1][i].l + pcm.voices[2][i].l;
+        const float r = pcm.voices[0][i].r + pcm.voices[1][i].r + pcm.voices[2][i].r;
+        require(std::abs(pcm.mix[i].l - l) < 1e-6 && std::abs(pcm.mix[i].r - r) < 1e-6,
+                "Separated stream tracks no longer reconstruct the stored mix");
+        trackDelta += std::abs(pcm.voices[0][i].l - pcm.voices[1][i].l) +
+                      std::abs(pcm.voices[0][i].r - pcm.voices[1][i].r);
+    }
+    require(trackDelta > .01, "3DS independent stereo stems became copies");
 
     UsfVoiceTap tap;
     hle_t hle{};
@@ -354,6 +418,16 @@ static void folderPlaylistTests(const std::filesystem::path &root) {
             require(path.extension().wstring().find(L"lib") == std::wstring::npos,
                     "Music library entered playlist");
     }
+    const auto streamRoot = root / "playlist-game-streams";
+    std::filesystem::create_directories(streamRoot);
+    for (const char *name : {"01 Track.brstm", "02 Track.bns", "03 Track.adx"}) {
+        std::ofstream(streamRoot / name, std::ios::binary).put('\0');
+    }
+    auto streams = FolderPlaylist::scan(streamRoot / "02 Track.bns", Format::GameStream);
+    require(streams.files.size() == 3 && streams.current == 1 &&
+                streams.files[0].filename() == "01 Track.brstm" &&
+                streams.files[2].filename() == "03 Track.adx",
+            "GameCube/Wii stream playlist extensions or ordering failed");
     std::cout << "Folder playlists, numbered ordering, library exclusion and internal-track "
                  "exceptions: PASS\n";
 }
@@ -383,19 +457,33 @@ static void outputFormatTests(const std::filesystem::path &root) {
     for (auto name : {"channels.usf", "channels.miniusf", "channels.bcstm", "channels.bcwav"}) {
         auto file = root / name;
         auto backend = makeBackend(readMusicFile(file), file);
-        require(backend->channels().size() == 2, "Stereo output channel count wrong");
+        const bool stream = std::string(name) == "channels.bcstm" || std::string(name) == "channels.bcwav";
+        require(backend->channels().size() == 2u,
+                "Logical stream lane count or N64 stereo lane count wrong");
         AudioBlock block;
         for (int i = 0; i < 30; i++)
             backend->render(512, block);
         require(energy(block.mix) > 1e-5 && energy(block.voices[0]) > 1e-5 &&
                     energy(block.voices[1]) > 1e-5,
                 "New output format produced silence");
-        require(block.voices[0][100].r == 0 && block.voices[1][100].l == 0,
-                "Left/right outputs are not independent");
-        double delta = 0;
-        for (size_t i = 0; i < 512; i++)
-            delta += std::abs(block.voices[0][i].l - block.voices[1][i].r);
-        require(delta > .01, "Independent fixture output channels are copies");
+        if (stream) {
+            require(backend->channels()[0].name == "LEFT" && backend->channels()[1].name == "RIGHT",
+                    "Two-channel 3DS audio was not exposed as left/right");
+            require(block.voices[0][100].r == 0 && block.voices[1][100].l == 0,
+                    "3DS left/right output channels are not independent");
+            for(size_t i=0;i<block.mix.size();++i){
+                require(std::abs(block.mix[i].l-(block.voices[0][i].l+block.voices[1][i].l))<1e-6f &&
+                        std::abs(block.mix[i].r-(block.voices[0][i].r+block.voices[1][i].r))<1e-6f,
+                        "3DS left/right channels no longer reconstruct the original mix");
+            }
+        } else {
+            require(block.voices[0][100].r == 0 && block.voices[1][100].l == 0,
+                    "N64 left/right outputs are not independent");
+            double delta = 0;
+            for (size_t i = 0; i < 512; i++)
+                delta += std::abs(block.voices[0][i].l - block.voices[1][i].r);
+            require(delta > .01, "Independent fixture output channels are copies");
+        }
         backend->muteMask(1);
         backend->render(512, block);
         require(block.mix[100].l == 0 && energy(block.voices[0]) > 1e-5,
@@ -674,12 +762,13 @@ static void playerTests(const std::filesystem::path &root) {
     require(!p.playing() && p.seconds() == 0, "Stop did not reset");
     p.select(0);
     p.play();
-    for (int i = 0; i < 200 && !p.ended(); i++)
+    const double metadataEnd=p.tracks()[size_t(p.track())].lengthMs/1000.;
+    for(int i=0;i<350&&!p.ended();i++)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    require(p.ended(), "Metadata-defined end not reached");
-    p.pause();
+    require(p.ended(), "Playback did not stop at metadata length");
+    require(p.seconds() <= metadataEnd + .1, "Playback ran far past metadata length");
     p.play();
-    require(p.playing() && p.seconds() < .1, "Replay after end failed");
+    require(p.playing() && p.seconds() < .1, "Play after end did not restart from the beginning");
     p.pause();
     require(p.error().empty(), "Worker reported failure");
     p.open(root / "fds.nsf");
@@ -715,8 +804,12 @@ static void playerTests(const std::filesystem::path &root) {
     std::cout << "Actual SDL callback, pause/resume, rate switch, channel controls, seek, stop, "
                  "metadata end and replay: PASS\n";
 }
-int main(int argc, char **argv) {
+int wmain(int argc, wchar_t **argv) {
     try {
+        if (argc >= 2 && std::wstring(argv[1]) == L"--stream-smoke") {
+            gameStreamSmoke(argc, argv);
+            return 0;
+        }
         require(argc == 2, "Fixture directory required");
         std::filesystem::path root = argv[1];
         formatTests(root);

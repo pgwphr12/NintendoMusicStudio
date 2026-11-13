@@ -46,7 +46,7 @@ std::filesystem::path executablePath() {
 }
 std::vector<std::wstring> supportedExtensions() {
     return {L".nsf", L".nsfe", L".spc", L".gbs", L".gsf", L".minigsf", L".2sf",
-            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".vgm", L".vgz", L".mp3", L".wav", L".ogg", L".flac", L".mid", L".midi", L".gba", L".nes"};
+            L".mini2sf", L".usf", L".miniusf", L".bcstm", L".bcwav", L".brstm", L".bns", L".adx", L".vgm", L".vgz", L".mp3", L".wav", L".ogg", L".flac", L".mid", L".midi", L".gba", L".nes"};
 }
 bool decodeRequest(const COPYDATASTRUCT *data, std::wstring &result) {
     if (!data || data->dwData != CopyDataTag || !data->lpData ||
@@ -126,8 +126,8 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
             L"Software\\Classes\\Applications\\NintendoMusicStudio.exe\\shell\\open\\command",
             L"", RRF_RT_REG_SZ, nullptr, command, &bytes);
         auto exe = executablePath();
-        if (command != L"\"" + exe.native() + L"\" --play \"%1\"" || preference(L"FileRegistrationRevision") < 1510)
-            {registerFileTypes(HKEY_CURRENT_USER, exe, true);savePreference(L"FileRegistrationRevision",1510);}
+        if (command != L"\"" + exe.native() + L"\" --play \"%1\"" || preference(L"FileRegistrationRevision") < 1511)
+            {registerFileTypes(HKEY_CURRENT_USER, exe, true);savePreference(L"FileRegistrationRevision",1511);}
         return;
     }
     if (!force && preference(L"DontAskDefaultApps")) return;
@@ -144,8 +144,8 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
     dialog.pszWindowTitle = L"Nintendo Music Studio";
     dialog.pszMainInstruction = english ? L"Use this viewer to open supported music files?" : L"지원하는 음악 파일을 이 프로그램으로 열까요?";
     dialog.pszContent = english
-        ? L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, VGM, VGZ, MP3, WAV, OGG, FLAC, MID, MIDI\n\nRegister these 20 types, then choose this viewer in Windows Default apps. Existing defaults stay in place until you select it."
-        : L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, VGM, VGZ, MP3, WAV, OGG, FLAC, MID, MIDI\n\n20개 확장자를 등록한 뒤 Windows 기본 앱 설정에서 이 프로그램을 선택하세요. 기본 앱 변경은 Windows 설정에서 직접 완료해야 합니다.";
+        ? L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, BRSTM, BNS, ADX, VGM, VGZ, MP3, WAV, OGG, FLAC, MID, MIDI, GBA, NES\n\nRegister these 25 types, then choose this viewer in Windows Default apps. Existing defaults stay in place until you select it."
+        : L"NSF, NSFE, SPC, GBS, GSF, MINIGSF, 2SF, MINI2SF, USF, MINIUSF, BCSTM, BCWAV, BRSTM, BNS, ADX, VGM, VGZ, MP3, WAV, OGG, FLAC, MID, MIDI, GBA, NES\n\n25개 확장자를 등록한 뒤 Windows 기본 앱 설정에서 이 프로그램을 선택하세요. 기본 앱 변경은 Windows 설정에서 직접 완료해야 합니다.";
     dialog.pszVerificationText = english ? L"Don't ask again" : L"다시 묻지 않기";
     dialog.cButtons = 2;
     dialog.pButtons = buttons;
@@ -157,7 +157,7 @@ void defaultAppsPrompt(HWND parent, bool force, bool english) {
     if (choice == 100) {
         registerFileTypes(HKEY_CURRENT_USER, executablePath(), true);
         savePreference(L"FileRegistrationConsent", 1);
-        savePreference(L"FileRegistrationRevision",1510);
+        savePreference(L"FileRegistrationRevision",1511);
         savePreference(L"DontAskDefaultApps", 1);
         auto launched = ShellExecuteW(parent, L"open", L"ms-settings:defaultapps?registeredAppUser=NintendoMusicStudio", nullptr, nullptr, SW_SHOWNORMAL);
         if (reinterpret_cast<INT_PTR>(launched) <= 32)
@@ -207,4 +207,5 @@ bool InstanceGate::forwardOrBecomePrimary(const std::filesystem::path &input) {
     throw std::runtime_error("The existing viewer is not responding. Close it and try opening the file again.");
 }
 }
+
 

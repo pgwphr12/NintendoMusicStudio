@@ -36,7 +36,6 @@ class Player {
     uint64_t base_ = 0;
     std::atomic<bool> atEnd_{false};
     std::atomic<bool> repeat_{false};
-    std::atomic<bool> continueAfterLength_{false};
     bool exactSourceEnd_=false;
     Format format_=Format::Nsf;
     bool showAllChannels_=false;
@@ -48,6 +47,7 @@ class Player {
     void prefill();
     void produce();
     void restart(int track, int ms, bool play);
+    uint64_t sourceEndFrame() const;
 
   public:
     Player() : output_(audio_) {}
@@ -82,12 +82,9 @@ class Player {
     }
     const std::vector<TrackInfo> &tracks() const;
     const std::vector<ChannelInfo> &channels() const;
-    double seconds() const {
-        return double(base_ + output_.consumed()) / InternalRate;
-    }
+    double seconds() const;
     bool ended() const;
     bool playbackBoundaryReached() const;
-    void continueAfterLength(bool value) { continueAfterLength_ = value; }
     void repeat(bool b) {
         repeat_ = b;
     }

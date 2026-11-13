@@ -1,0 +1,111 @@
+{
+  "version": "1.6.3-beta 9",
+  "scope": "Direct music stream files only; no GameCube/Wii image or ROM extraction.",
+  "decoder": "Existing statically linked vgmstream through StreamBackend.",
+  "detected_formats": {
+    "Wii": [
+      "RSTM / .brstm",
+      "BNS / .bns, including IMD5-wrapped BNS"
+    ],
+    "GameCube_sample_collection": [
+      "CRI ADX / .adx"
+    ],
+    "Nintendo 3DS": [
+      "BCSTM / .bcstm",
+      "BCWAV / .bcwav"
+    ]
+  },
+  "local_sample_folder": "E:\\fceux-2.3.0-win32\\고전게임 노래",
+  "sample_counts": {
+    "brstm": 88,
+    "bns": 2,
+    "adx": 9
+  },
+  "tests": {
+    "brstm_open_render_seek": "88/88 PASS",
+    "bns_open_render_seek": "2/2 PASS",
+    "adx_open_render_seek": "9/9 PASS",
+    "bounded_render": "8192 frames per file; finite mix samples; each backend sought to 250ms and rendered again",
+    "initial_silence": "5 BRSTM files were silent in first 170ms; accepted because short cues may contain intentional leading silence",
+    "folder_playlist": "Selected stream file remains eligible for same-folder playlist; tested by the stream smoke runner",
+    "audio_hardware_listening": false,
+    "remote_waveform_spacing": "0.5x minimum; whole 1x steps through32x; common value plus independent per-file/per-track/per-channel overrides; override reset inherits common value; persists across application launches",
+    "repeat_playback": "Repeat is an independent toggle. When on, the shared producer loops at the decoded boundary. When off, playback ends normally; a loaded track keeps an enabled Play button that restarts it.",
+    "owned_stream_inventory": {
+      "bcstm": {
+        "files": 99,
+        "logical_lanes": {
+          "1": 70,
+          "2": 2,
+          "3": 26,
+          "4": 1
+        }
+      },
+      "brstm": {
+        "files": 88,
+        "logical_lanes": {
+          "1": 70,
+          "2": 17,
+          "4": 1
+        }
+      },
+      "bns": {
+        "files": 2,
+        "logical_lanes": {
+          "1": 2
+        }
+      },
+      "adx": {
+        "files": 9,
+        "logical_lanes": {
+          "1": 9
+        }
+      },
+      "multi_lane_bounded_render_seek_mute": "47/47 PASS; all emitted samples finite",
+      "metadata_open": "198/198 PASS",
+      "one_lane_meaning": "Mono or stereo mix output; no independently decodable track grouping in the file metadata/output",
+      "lane_meaning": "Independent decoded PCM track groups, not instrument identity or original synthesizer voices"
+    },
+    "repeat_boundary_validation": {
+      "core_audio_channels_release_ctest": "2/2 PASS (fixtures, core_audio_channels)",
+      "all_late_format_ui_fixtures": "15/15 PASS; two wraps each; GSF/MiniGSF/2SF/Mini2SF/USF/MiniUSF/BCSTM/BCWAV/VGM/VGZ/SCC/MP3/WAV/OGG/FLAC",
+      "real_local_wii": {
+        "BRSTM": "2 wraps PASS; fullscreen/recording/windowed phases 5/5 PASS",
+        "BNS": "2 wraps PASS"
+      },
+      "3ds_and_n64": {
+        "BCSTM": "2 wraps and fullscreen/recording/windowed phases PASS",
+        "BCWAV": "2 wraps and fullscreen/recording/windowed phases PASS",
+        "2SF": "2 wraps PASS"
+      },
+      "repeat_state": "playing=true and no decoder error at each boundary; playback clock wraps to source position",
+      "audio": "SDL dummy output; no physical listening test",
+      "stream_fixture_fullscreen_recording_windowed": {
+        "BCSTM": "5/5 phases PASS",
+        "BCWAV": "5/5 phases PASS"
+      },
+      "newer_console_fixture": {
+        "BCSTM": "2 wraps PASS",
+        "BCWAV": "2 wraps PASS",
+        "2SF": "2 wraps PASS"
+      },
+      "repeat_and_play_button_are_separate": {
+        "repeat_on": "Playback remains active while the source position wraps at the track boundary.",
+        "repeat_off": "Playing becomes false at EOF; a loaded file keeps the Play control enabled.",
+        "manual_restart": "On a real local Wii BRSTM, clicking Play after EOF restarted at the beginning; PASS."
+      }
+    },
+    "three_ds_stereo_lane_behavior": {
+      "BCSTM_BCWAV": "If there is one decoded two-channel stream and no distinct groups, display LEFT and RIGHT. Keep explicit decoder track groups when present.",
+      "fixture": "channels.bcstm and channels.bcwav verified independent sides and stereo mix reconstruction; stems.bcstm retains its three decoder groups.",
+      "meaning": "Stereo sides, not recovered instruments or stems."
+    }
+  },
+  "limits": [
+    "This verifies only the formats/files in the supplied folder, not every GameCube or Wii title or codec.",
+    "No game disc/ROM extraction, archive browsing, encryption/key handling, or soundtrack discovery is implemented.",
+    "No original audio, ROM, or disc image is packaged.",
+    "The left/right fallback applies only when the BCSTM/BCWAV decoder reports exactly one two-channel stream. Mono files and explicit track groups keep their decoded layout.",
+    "Repeat and Play control state are separate: repeat-on loops; repeat-off reaches EOF and Play stays available. Dummy-audio tests do not prove gapless sound on a physical output device."
+  ]
+}

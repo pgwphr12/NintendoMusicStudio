@@ -29,6 +29,16 @@ Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path
         return Format::Bcstm;
     if (b.size() >= 64 && !memcmp(b.data(), "CWAV", 4))
         return Format::Bcwav;
+    if (b.size() >= 64 && !memcmp(b.data(), "RSTM", 4))
+        return Format::GameStream;
+    // Wii BNS files in common archives may be wrapped by an IMD5 checksum header.
+    if ((b.size() >= 4 && !memcmp(b.data(), "BNS ", 4)) ||
+        (b.size() >= 36 && !memcmp(b.data(), "IMD5", 4) && !memcmp(b.data() + 32, "BNS ", 4)))
+        return Format::GameStream;
+    // CRI ADX header: 0x8000 offset marker followed by a supported encoding type.
+    if (b.size() >= 8 && b[0] == 0x80 && b[1] == 0x00 &&
+        (b[4] == 3 || b[4] == 4 || b[4] == 5))
+        return Format::GameStream;
     if (b.size() >= 128 && !memcmp(b.data(), "NESM\x1a", 5))
         return Format::Nsf;
     if (b.size() >= 4 && !memcmp(b.data(), "NSFE", 4))
@@ -51,7 +61,7 @@ Format identify(const std::vector<uint8_t> &b, const std::filesystem::path &path
     std::transform(ext.begin(),ext.end(),ext.begin(),[](wchar_t c){return std::towlower(c);});
     if(ext==L".mp3"||ext==L".wav"||ext==L".ogg"||ext==L".flac")return Format::AudioFile;
     throw std::runtime_error("Unsupported or truncated music file. Open NSF / NSFE / SPC / GBS / "
-                             "GSF / 2SF / USF / BCSTM / BCWAV / VGM / VGZ; "
+                             "GSF / 2SF / USF / BCSTM / BCWAV / BRSTM / BNS / ADX / VGM / VGZ; "
                              "MIDI format0/1 / MP3 / WAV / OGG Vorbis / FLAC; verified GBA / NES ROM profiles only.");
 }
 std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
@@ -66,8 +76,13 @@ std::vector<uint8_t> readMusicFile(const std::filesystem::path &p) {
         bool knownGame=!memcmp(header.data(),"NESM\x1a",5)||!memcmp(header.data(),"NSFE",4)||
                        !memcmp(header.data(),"MThd",4)||!memcmp(header.data(),"Vgm ",4)||!memcmp(header.data(),"GBS",3)||
                        !memcmp(header.data(),"PSF",3)||!memcmp(header.data(),"SNES-SPC700 Sound File Data",26);
+        bool stream=!memcmp(header.data(),"CSTM",4)||!memcmp(header.data(),"CWAV",4)||
+                    !memcmp(header.data(),"RSTM",4)||!memcmp(header.data(),"BNS ",4)||
+                    (!memcmp(header.data(),"IMD5",4)&&!memcmp(header.data()+32,"BNS ",4))||
+                    (header[0]==0x80&&header[1]==0x00&&(header[4]==3||header[4]==4||header[4]==5));
+        knownGame=knownGame||stream;
         bool ordinary=false;try{ordinary=!knownGame && identify(header,p)==Format::AudioFile;}catch(const std::exception&){}
-        if (ordinary || !memcmp(header.data(), "CSTM", 4) || !memcmp(header.data(), "CWAV", 4))
+        if (ordinary || stream)
             return header;
     }
     if (n <= 0 || n > 64 * 1024 * 1024)
@@ -119,7 +134,15 @@ std::unique_ptr<IMusicBackend> makeBackend(const std::vector<uint8_t> &b,
         return makeVgmBackend(b);
     case Format::Bcstm:
     case Format::Bcwav:
-        return withWholeTrackUsage(makeStreamBackend(path));
+        return withWholeTrackUsage(makeStreamBackend(path, "Nintendo 3DS · Audio Stream", true, true));
+    case Format::GameStream: {
+        auto ext = path.extension().wstring();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](wchar_t c) { return std::towlower(c); });
+        const char *system = ext == L".brstm" ? "Nintendo Wii · BRSTM"
+                           : ext == L".bns" ? "Nintendo Wii · BNS"
+                                             : "CRI ADX · Game Audio";
+        return withWholeTrackUsage(makeStreamBackend(path, system, true));
+    }
     case Format::Usf:
     case Format::Gsf:
     case Format::TwoSf:

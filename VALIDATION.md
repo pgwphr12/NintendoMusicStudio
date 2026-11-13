@@ -1,3 +1,11 @@
+## Beta9 validation
+
+Fresh evidence: `docs/GAMECUBE-WII-1.6.3-beta-9.json`. Wii/GameCube stream corpus: 88 BRSTM, 2 BNS, 9 ADX all opened, rendered bounded frames, and sought. Remote zoom offers 0.5×, then whole 1× steps through32×; per-channel overrides are independent, saved across relaunch, and reset to the common value on request. The saved infinite-play option continues beyond metadata length/fade while preserving decoder EOF. Focused remote UI test PASS on the final beta9 build. Dummy/offscreen checks only; no physical listening, disc-image extraction, monitor/VRR claim, or universal format coverage.
+
+## Beta8 validation
+
+Fresh evidence: `docs/VISUAL-OPL-1.6.3-beta-8.json`. Stop/pause-to-silence, mode-independent continuous history, recording/fullscreen, restored beta7 channel geometry, 2× default horizontal waveform zoom and persistent F12 remote zoom slider (0.5×–8×); OPL tone/stem/replay checks. Targeted fixture/core/layout CTest3/3, spectrum3506, Furnace clock/stems and extended-VGM, remote volume/EQ/zoom persistence and recording-controls tests PASS. Dummy/offscreen software checks; no physical listening or monitor/VRR claim. Earlier records below are historical.
+
 ## Beta8 validation
 
 Fresh evidence: docs/VISUAL-OPL-1.6.3-beta-8.json. Stop/pause-to-silence, mode-independent continuous history, recording/fullscreen, restored beta7 channel geometry, 2× default horizontal waveform zoom and persistent F12 remote zoom slider (0.5×–8×); OPL tone/stem/replay checks. Targeted fixture/core/layout CTest3/3, spectrum3506, Furnace clock/stems and extended-VGM, remote volume/EQ/zoom persistence and recording-controls tests PASS. Dummy/offscreen software checks; no physical listening or monitor/VRR claim. Earlier records below are historical.
@@ -158,4 +166,10 @@ See `docs/SPECTRUM-1.6.2-9.json`:682FFT/tap/motion checks,4current core tests,4n
 ## 1.6.2-10 spectrum styles / image removal
 
 1698unit checks PASS;3owned stereo UI sessions cover allstyles,60stylechanges,recording remote,pause/resume,persistence and stable GDIover120frames.5fullscreen/recording repeat phases PASS. Eight audio/FFT files are byte-identical to1.6.2-9source ZIP; earlier audio/EQ/ROM checks reused explicitly. Image loader/setting access and extra system image links removed. See docs/SPECTRUM-STYLES-1.6.2-10.json.
+
+## Beta9 GameCube/Wii stream validation
+
+See `docs/GAMECUBE-WII-1.6.3-beta-9.json`. Actual local sample corpus: 88 `.brstm`, 2 `.bns` (including IMD5-wrapped BNS), and 9 `.adx`; all opened, rendered 8192 bounded frames with finite samples, then sought to 250ms and rendered again. Five BRSTM cues begin with encoded silence during the first 170ms and were accepted as valid short cues. The remote waveform slider's 0.5×/1×–32× sample windows, labels and saved/reopened value are covered by `tests/ui_remote_equalizer.py`. No disc images or ROMs were read. No physical audio listening was performed.
+
+The beta 9 remote selects a per-channel waveform-spacing override, saves it per file/track/channel, and clears it back to the common setting. The infinite-playback option has been removed; ordinary track-end behavior remains, the repeat control restarts at the boundary, and Play remains available after playback ends. The player stops at its normal metadata/fade or decoded-file boundary. A focused repeat/UI test and the post-removal runtime test have not yet been run in this refresh.
 

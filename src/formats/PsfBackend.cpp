@@ -13,6 +13,7 @@ extern "C" {
 }
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstring>
 #include <deque>
@@ -421,7 +422,7 @@ class PsfBackend final : public IMusicBackend {
     int gbaVoiceCount()const{return gbaVoices_?gbaVoices_:nintendoVoices_;}
     uint32_t gbaMixerInfo_=0;
     int gbaSongPsg_=-1;
-    bool continuousEnd_=false;
+    std::atomic<bool> continuousEnd_{false};
     bool gbaInspection_=false,gbaMixInspection_=false;
     static int milliseconds(const std::string &text) {
         if (text.empty())
@@ -452,7 +453,7 @@ class PsfBackend final : public IMusicBackend {
         if(gbaSongPsg_<0)return false;
         out=(UINT64_MAX&~uint64_t(15))|unsigned(gbaSongPsg_);return true;
     }
-    void continuousEnd(bool value) override {continuousEnd_=value;}
+    void continuousEnd(bool value) override {continuousEnd_.store(value);}
     bool prepareGbaInspection() override {
         if(image_.format!=Format::Gsf||!gbaVoices_)return false;
         gbaInspection_=true;gbaMixInspection_=false;selectTrack(0);return true;
@@ -638,7 +639,7 @@ class PsfBackend final : public IMusicBackend {
         }
         // Fade tagged files in the original source-time domain, including isolated signals.
         for (size_t i = 0; i < frames; i++, clock_++)
-            if (!continuousEnd_ && fadeStart_ >= 0 && double(clock_) * 1000 / InternalRate >= fadeStart_) {
+            if (!continuousEnd_.load() && fadeStart_ >= 0 && double(clock_) * 1000 / InternalRate >= fadeStart_) {
                 float gain =
                     fadeMs_
                         ? float(std::clamp(

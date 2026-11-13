@@ -1,3 +1,7 @@
+## Test1.6.3-beta 9 corresponding source
+
+`Registry.cpp` signature-detects Wii RSTM/BRSTM, BNS (including IMD5-wrapped BNS), and CRI ADX, then routes them through the existing `StreamBackend`/vgmstream. `FolderPlaylist.cpp` includes `.brstm`, `.bns`, and `.adx`. The F12 remote provides global and per-file/per-track/per-channel waveform spacing, a common-value reset, and a saved metadata-length continuation toggle. True decoder EOF remains authoritative. No new dependency, disc extraction, or user assets.
+
 # Test1.6.3-beta 8 corresponding source
 
 WaveformTail, common UI spectrum servicing, beta7 channel geometry restoration and remote-controlled waveform zoom, native-rate OPL1 adapter, focused unit/native UI tests and reference-render helper. No new dependency. User music and downloaded reference audio remain excluded.
@@ -136,4 +140,8 @@ Owned implementation: `src/visualizer/AudioTap.hpp`, `Spectrum.hpp`, `src/ui/Spe
 ## 1.6.2-10 current spectrum source
 
 `VisualImage.cpp/.hpp` and WIC/msimg32 dependencies were removed. `SpectrumView.cpp` now renders two rows in3styles; `SpectrumTrail.hpp` contains the bounded UI-owned history and curve interpolation. Image paths are no longer read or written. Prior1.6.2-9 description above is historical.
+
+## 1.6.3-beta 9 Wii/GameCube stream files
+
+`Registry.cpp` signature-detects Wii RSTM/BRSTM, BNS (including IMD5-wrapped BNS), and CRI ADX, then routes them through the existing `StreamBackend`/vgmstream. `FolderPlaylist.cpp` includes `.brstm`, `.bns`, and `.adx`. `Window::setWaveformZoomStep` drives the persistent remote 0.5×–32× control in whole 1× steps. No disc-image/ROM extraction, user assets, or new dependency is included. Local corpus evidence is in `docs/GAMECUBE-WII-1.6.3-beta-9.json`.
 

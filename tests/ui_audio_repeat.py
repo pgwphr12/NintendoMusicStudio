@@ -73,6 +73,9 @@ try:
     def click_repeat():
         x=int((rect.right-1920*scale)/2+994*scale);y=int((rect.bottom-1080*scale)/2+165*scale)
         send(main,0x201,1,x|(y<<16));send(main,0x202,0,x|(y<<16))
+    def click_play():
+        x=int((rect.right-1920*scale)/2+587*scale);y=int((rect.bottom-1080*scale)/2+165*scale)
+        send(main,0x201,1,x|(y<<16));send(main,0x202,0,x|(y<<16))
     click_repeat()
     wanted=int(os.environ.get("NGMV_REPEAT_TEST_WRAPS","3"));wraps=0;previous=state(2);maximum=previous;deadline=time.monotonic()+25
     while time.monotonic()<deadline and wraps<wanted:
@@ -88,6 +91,15 @@ try:
     if fixture.stem=='overstated':
         start=state(2);time.sleep(2.3);assert state(2)>start+1800,'Repeat-off still wraps'
         result['repeat_off_clock_continues']=True
+        (out/'result.json').write_text(json.dumps(result,indent=2))
+    if os.environ.get('NGMV_TEST_PLAY_AFTER_END')=='1':
+        wait_for(lambda:not state(1),'Playback did not end with Repeat off',8)
+        result['repeat_off_playing_stopped']=True
+        assert state(13)==0,'Decoder error after Repeat was turned off'
+        click_play()
+        wait_for(lambda:state(1),'Play control did not restart the ended track')
+        assert state(2)<500,'Play after end did not restart at the beginning'
+        result['repeat_off_play_after_end_restart']=True
         (out/'result.json').write_text(json.dumps(result,indent=2))
     send(main,0x113,2);assert p.wait(timeout=10)==0
     assert 'repeat=0' in settings.read_text(), 'Repeat button did not toggle off' 

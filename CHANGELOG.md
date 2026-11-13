@@ -1,3 +1,11 @@
+## 1.6.3-beta 9 — Wii/GameCube streams and finer waveform spacing
+
+- Open and play Wii BRSTM/BNS and CRI ADX stream files through vgmstream. Multi-channel PCM is grouped into independently adjustable stereo tracks; explicit BCSTM track tables map lanes when available. Stereo-only files remain one mix lane, not fake left/right music tracks.
+- Scanned the owned folder's 198 BCSTM/BRSTM/BNS/ADX streams. 47 contain multiple decodable track groups and passed bounded render/seek/mute checks; the other 151 provide only one mono/stereo mix.
+- Set global or per-channel waveform spacing from 0.5× to 32× in whole 1× steps above the minimum; per-channel overrides are saved per file and track and can inherit the common value again.
+- Removed the optional infinite-playback toggle. Repeat remains available at the normal track boundary; Play remains available after the track ends.
+- Verified 88 BRSTM, 2 BNS, and 9 ADX samples by opening, bounded rendering, and seeking. No supplied audio is included.
+
 ## 1.6.3-beta 8 — continuous visuals and low-clock OPL
 
 Stop/pause drains the last waveform to silence. Horizontal history runs in all views without transport/style resets. Restored beta7 channel layout and added saved waveform-spacing zoom in the F12 remote (0.5×–8×). YM3526 native sample cadence preserves low-clock held texture; reference-video comparison retained as software evidence, not perfect Furnace/hardware parity.
@@ -359,4 +367,10 @@ Replaced unassigned VGM framework/resampler with independent app code, extra und
 # # 1.4.15 and earlier player work
 
 Independent pitch/speed, settings/default adjustments, bulk channel gain, recording clock/hidden volume controls, modeless F1, additional tested VGM chips, GBA inspection/individual PCM voices and presentation improvements. The previous editing/composition implementation was removed during the player refocus.
+
+## 1.6.3-beta 9
+
+- Added direct Wii BRSTM/BNS and CRI ADX game-audio streams through the existing vgmstream decoder.
+- Verified 88 BRSTM, 2 BNS and 9 ADX files from the user's local folder with bounded decode and seek checks.
+- Disc-image/ROM music extraction is not included; unsupported game-specific formats remain unsupported.
 

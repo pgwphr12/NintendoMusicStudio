@@ -43,13 +43,17 @@ void Player::open(const std::filesystem::path &path) {
 }
 void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format,uint64_t startFrame,const std::vector<ChannelState>& initialStates) {
     if(!candidate)throw std::runtime_error("No prepared music");
+    candidate->continuousEnd(false);
     output_.pause(true);
     haltWorker();
     if(backend_)backend_->devicePlayback(0,false,states(),master());
     backend_ = std::move(candidate);
     format_=format;
-    exactSourceEnd_=format==Format::AudioFile || format==Format::Midi;
+    uint64_t decodedEnd = UINT64_MAX;
+    const bool hasDecodedEnd = backend_->decodedEndFrame(decodedEnd);
+    exactSourceEnd_=hasDecodedEnd || format==Format::AudioFile || format==Format::Midi;
     sourceEndFrame_=UINT64_MAX;
+    if(hasDecodedEnd)sourceEndFrame_=decodedEnd;
     bool fds = false;
     for (const auto &channel : backend_->channels())
         fds = fds || channel.name == "FDS WAVE";
@@ -170,7 +174,7 @@ void Player::seek(int ms) {
     if (!backend_)
         return;
     int length = tracks()[track_].lengthMs;
-    if (length > 0 && !continueAfterLength_)
+    if (length > 0)
         ms = std::min(ms, length - 1);
     restart(track_, std::max(0, ms), playing_);
 }
@@ -198,18 +202,42 @@ std::string Player::error() const {
 bool Player::ended() const {
     return atEnd_ && output_.drained();
 }
+uint64_t Player::sourceEndFrame() const {
+    if (exactSourceEnd_)
+        return sourceEndFrame_.load();
+    if (!backend_ || track_ < 0 || track_ >= int(tracks().size()) || tracks()[track_].lengthMs <= 0)
+        return UINT64_MAX;
+    return uint64_t(tracks()[track_].lengthMs) * InternalRate / 1000;
+}
+double Player::seconds() const {
+    const uint64_t consumed = output_.consumed();
+    uint64_t position = base_ + consumed;
+    if (repeat_) {
+        uint64_t end = sourceEndFrame();
+        // An exact decoder may only learn EOF while producing the final block.
+        // Keep the clock useful before then by using the displayed duration.
+        if (end == UINT64_MAX && backend_ && track_ >= 0 && track_ < int(tracks().size()) &&
+            tracks()[track_].lengthMs > 0)
+            end = uint64_t(tracks()[track_].lengthMs) * InternalRate / 1000;
+        if (end > base_) {
+            const uint64_t firstPass = end - base_;
+            if (consumed >= firstPass)
+                position = (consumed - firstPass) % end;
+        }
+    }
+    return double(position) / InternalRate;
+}
 bool Player::playbackBoundaryReached() const {
-    if(!backend_)return false;
-    if(exactSourceEnd_){auto end=sourceEndFrame_.load();return end!=UINT64_MAX && base_+output_.consumed()>=end;}
-    auto length=tracks()[track_].lengthMs;
-    return length>0 && seconds()*1000>=length;
+    if(!backend_ || repeat_)return false;
+    const auto end=sourceEndFrame();
+    return end!=UINT64_MAX && base_+output_.consumed()>=end;
 }
 void Player::produce() {
     try {
         AudioBlock block;
         uint64_t produced = base_;
         int length = tracks()[track_].lengthMs;
-        backend_->continuousEnd(continueAfterLength_.load());
+        backend_->continuousEnd(false);
         while (!quit_) {
             serviceDevice();
             const size_t target=output_.speed()!=1 || output_.pitch()!=1 ? 14336 : 8192;
@@ -217,15 +245,26 @@ void Player::produce() {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
                 continue;
             }
-            if (!continueAfterLength_ && (exactSourceEnd_ ? sourceEndFrame_.load()!=UINT64_MAX && produced>=sourceEndFrame_.load() : length > 0 && produced >= uint64_t(length) * InternalRate / 1000)) {
+            const uint64_t endFrame=sourceEndFrame();
+            if (endFrame!=UINT64_MAX && produced>=endFrame) {
+                if (repeat_ && endFrame>0) {
+                    // Repeat inside the decoder producer. The output device and
+                    // playback state stay live; there is no UI-thread stop/play
+                    // gap at each boundary, and every backend follows one path.
+                    backend_->seek(0);
+                    produced=0;
+                    atEnd_=false;
+                    continue;
+                }
                 atEnd_ = true;
                 output_.finished();
                 break;
             }
             size_t frames = 512;
-            if (!continueAfterLength_ && !exactSourceEnd_ && length > 0)
-                frames = size_t(
-                    std::min(uint64_t(frames), uint64_t(length) * InternalRate / 1000 - produced));
+            if(endFrame!=UINT64_MAX)
+                frames=size_t(std::min<uint64_t>(frames,endFrame-produced));
+            else if (!exactSourceEnd_ && length > 0)
+                frames=size_t(std::min(uint64_t(frames),uint64_t(length)*InternalRate/1000-produced));
             auto state = states();
             uint64_t mask = 0;
             bool unity = true;
@@ -245,7 +284,17 @@ void Player::produce() {
             for(const auto& voice:block.voices)
                 if(voice.size()!=frames)
                     throw std::runtime_error("Decoder channel frame count mismatch.");
-            uint64_t decodedEnd=0;if(exactSourceEnd_ && backend_->decodedEndFrame(decodedEnd))sourceEndFrame_=decodedEnd;
+            uint64_t decodedEnd=0;
+            if(exactSourceEnd_ && backend_->decodedEndFrame(decodedEnd)){
+                sourceEndFrame_=decodedEnd;
+                if(decodedEnd<produced)throw std::runtime_error("Decoder end frame moved behind playback position.");
+                if(decodedEnd<produced+frames){
+                    frames=size_t(decodedEnd-produced);
+                    block.mix.resize(frames);
+                    for(auto&voice:block.voices)voice.resize(frames);
+                }
+            }
+            if(!frames)continue;
             uint32_t psg=0;if(backend_->gbaPsgUsed(psg))gbaPsgUsed_=int(psg&15);
             history_.append(block);
             uint64_t active = usedChannels_.load();
@@ -290,6 +339,7 @@ void Player::produce() {
         std::lock_guard<std::mutex> lock(stateMutex_);
         error_ = e.what();
         atEnd_ = true;
+        playing_ = false;
         output_.finished();
     }
 }

@@ -2,14 +2,23 @@
 #include "core/IMusicBackend.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cwchar>
 #include <iostream>
 int wmain(int argc, wchar_t **argv) {
     try {
-        for (int input = 1; input < argc; ++input) {
+        const bool metadataOnly = argc > 1 && std::wcscmp(argv[1], L"--metadata") == 0;
+        const int firstInput = metadataOnly ? 2 : 1;
+        for (int input = firstInput; input < argc; ++input) {
             auto backend = ngmv::makeBackend(ngmv::readMusicFile(argv[input]), argv[input]);
             std::cout << "FILE " << std::filesystem::path(argv[input]).filename().u8string()
                       << " tracks=" << backend->tracks().size()
-                      << " voices=" << backend->channels().size() << '\n';
+                      << " voices=" << backend->channels().size()
+                      << " length_ms=" << (backend->tracks().empty()?0:backend->tracks().front().lengthMs) << '\n';
+            if (metadataOnly) {
+                for (size_t c = 0; c < backend->channels().size(); ++c)
+                    std::cout << "LANE " << c + 1 << ' ' << backend->channels()[c].name << '\n';
+                continue;
+            }
             for (size_t track = 0; track < backend->tracks().size(); ++track) {
                 backend->selectTrack(int(track));
                 ngmv::AudioBlock block;

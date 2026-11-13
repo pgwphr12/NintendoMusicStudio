@@ -39,11 +39,33 @@ void Window::updateRemote(){
  SetWindowTextW(GetDlgItem(remoteWindow_,2111),(mixed?std::wstring(L"모든 채널 혼합"):L"모든 채널 "+std::to_wstring(states.empty()?volume:int(std::lround(states.front().volume*100)))+L"%").c_str());
  int master=int(std::lround(player_.master()*100));SendDlgItemMessageW(remoteWindow_,2112,TBM_SETPOS,TRUE,master);
  SetWindowTextW(GetDlgItem(remoteWindow_,2113),(L"마스터 "+std::to_wstring(master)+L"%").c_str());
- int zoomLevel=int(std::lround(std::log2(4096.0/std::max(256,windowSamples_))));
- zoomLevel=std::clamp(zoomLevel,0,4);
+ int zoomLevel=std::clamp(waveformZoomStep_,0,32);
  SendDlgItemMessageW(remoteWindow_,2116,TBM_SETPOS,TRUE,zoomLevel);
- std::wstring zoomText=zoomLevel==0?L"0.5×":std::to_wstring(1<<(zoomLevel-1))+L"×";
- SetWindowTextW(GetDlgItem(remoteWindow_,2118),(L"파형 간격: "+zoomText).c_str());
+ std::wstring zoomText=zoomLevel==0?L"0.5×":std::to_wstring(zoomLevel)+L"×";
+ int selected=-1;
+ const auto channels=player_.channels();
+ std::vector<std::wstring> items{L"전체 채널 (공통)"};
+ items.reserve(channels.size()+1);
+ for(size_t i=0;i<channels.size();++i)items.push_back(std::to_wstring(i+1)+L": "+wide(channels[i].name));
+ if(items!=remoteZoomItems_){
+  remoteZoomItems_=items;auto combo=GetDlgItem(remoteWindow_,2119);SendMessageW(combo,CB_RESETCONTENT,0,0);
+  for(const auto&item:items)SendMessageW(combo,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(item.c_str()));
+  SendMessageW(combo,CB_SETCURSEL,selectedWaveZoomChannel_+1,0);
+ }
+ selected=selectedWaveZoomChannel_;
+ const int effective=selected>=0&&size_t(selected)<channelWaveformZoomSteps_.size()?waveformZoomStepForChannel(size_t(selected)):waveformZoomStep_;
+ SendDlgItemMessageW(remoteWindow_,2116,TBM_SETPOS,TRUE,effective);
+ zoomText=effective==0?L"0.5×":std::to_wstring(effective)+L"×";
+ bool hasOverride=false;
+ if(selected>=0&&size_t(selected)<channels.size()){
+  hasOverride=channelWaveformZoomSteps_[size_t(selected)]>=0;
+ }
+ SetWindowTextW(GetDlgItem(remoteWindow_,2118),(L"파형 간격: "+zoomText+(hasOverride?L" (개별)":L"")).c_str());
+ SetWindowTextW(GetDlgItem(remoteWindow_,2121),selected<0?L"선택 채널":(std::to_wstring(selected+1)+L"번 채널").c_str());
+ auto combo=GetDlgItem(remoteWindow_,2119);
+ if(int(SendMessageW(combo,CB_GETCURSEL,0,0))!=selected+1)SendMessageW(combo,CB_SETCURSEL,selected+1,0);
+ EnableWindow(GetDlgItem(remoteWindow_,2119),player_.loaded());
+ EnableWindow(GetDlgItem(remoteWindow_,2120),hasOverride);
 }
 void Window::toggleRemote(){
  if(remoteWindow_&&IsWindowVisible(remoteWindow_))ShowWindow(remoteWindow_,SW_HIDE);
@@ -70,7 +92,10 @@ void Window::showRemote(){
    control(h,L"BUTTON",L"모든 채널 표시",WS_TABSTOP|BS_AUTOCHECKBOX,2115,14,298,496,26);
    control(h,L"STATIC",L"파형 간격: 2×",0,2118,14,337,136,24);
    auto zoom=control(h,TRACKBAR_CLASSW,L"",WS_TABSTOP|TBS_HORZ|TBS_AUTOTICKS,2116,158,327,360,34);
-   SendMessageW(zoom,TBM_SETRANGE,TRUE,MAKELPARAM(0,4));SendMessageW(zoom,TBM_SETTICFREQ,1,0);SendMessageW(zoom,TBM_SETLINESIZE,0,1);SendMessageW(zoom,TBM_SETPAGESIZE,0,1);
+   SendMessageW(zoom,TBM_SETRANGE,TRUE,MAKELPARAM(0,32));SendMessageW(zoom,TBM_SETTICFREQ,1,0);SendMessageW(zoom,TBM_SETLINESIZE,0,1);SendMessageW(zoom,TBM_SETPAGESIZE,0,1);
+   control(h,L"STATIC",L"선택 채널",0,2121,14,375,130,24);
+   control(h,WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP|WS_VSCROLL,2119,158,370,330,220);
+   control(h,L"BUTTON",L"개별 해제",WS_TABSTOP,2120,398,370,120,28);
    SetTimer(h,1,200,nullptr);return 0;
   }
   if(!self)return DefWindowProcW(h,m,a,b);
@@ -81,13 +106,15 @@ void Window::showRemote(){
    case 2101:self->nextTrack(-1);break;case 2102:if(self->player_.playing())self->player_.pause();else self->player_.play();break;
    case 2103:self->player_.stop();break;case 2104:self->nextTrack(1);break;case 2105:self->player_.repeat(!self->player_.repeat());break;
    case 2106:PostMessageW(self->hwnd_,WM_KEYDOWN,VK_F9,0);break;case 2107:self->showEqualizer();break;case 2108:self->toggleSpectrum();break;case 2109:self->showSpectrumChoices();break;case 2114:self->showHiddenChannels();break;case 2115:self->player_.showAllChannels(SendDlgItemMessageW(h,2115,BM_GETCHECK,0,0)==BST_CHECKED);self->savePreferences();break;
+   case 2120:if(self->selectedWaveZoomChannel_>=0&&size_t(self->selectedWaveZoomChannel_)<self->channelWaveformZoomSteps_.size()){size_t i=size_t(self->selectedWaveZoomChannel_);self->channelWaveformZoomSteps_[i]=-1;if(self->preferencesEnabled_)self->preferences_.values.erase(self->waveformZoomSettingKey(i));self->savePreferences();}break;
   }self->updateRemote();InvalidateRect(self->hwnd_,nullptr,FALSE);}catch(const std::exception&e){self->report(e);}return 0;}
-  if(m==WM_HSCROLL&&!self->changing_){int id=GetDlgCtrlID(reinterpret_cast<HWND>(b));int v=int(SendMessageW(reinterpret_cast<HWND>(b),TBM_GETPOS,0,0));if(id==2110){self->setAllChannelVolume(v/100.f);self->savePreferences();self->allVolumeDirty_=false;}else if(id==2112){self->player_.master(v/100.f);self->savePreferences();}else if(id==2116){self->windowSamples_=4096>>std::clamp(v,0,4);self->savePreferences();InvalidateRect(self->hwnd_,nullptr,FALSE);}self->updateRemote();return 0;}
+  if(m==WM_COMMAND&&LOWORD(a)==2119&&HIWORD(a)==CBN_SELCHANGE){int choice=int(SendDlgItemMessageW(h,2119,CB_GETCURSEL,0,0));self->selectedWaveZoomChannel_=choice-1;self->updateRemote();return 0;}
+  if(m==WM_HSCROLL&&!self->changing_){int id=GetDlgCtrlID(reinterpret_cast<HWND>(b));int v=int(SendMessageW(reinterpret_cast<HWND>(b),TBM_GETPOS,0,0));if(id==2110){self->setAllChannelVolume(v/100.f);self->savePreferences();self->allVolumeDirty_=false;}else if(id==2112){self->player_.master(v/100.f);self->savePreferences();}else if(id==2116){self->setSelectedWaveformZoomStep(v);self->savePreferences();InvalidateRect(self->hwnd_,nullptr,FALSE);}self->updateRemote();return 0;}
   if(m==WM_CLOSE){ShowWindow(h,SW_HIDE);InvalidateRect(self->hwnd_,nullptr,FALSE);return 0;}if(m==WM_DESTROY){KillTimer(h,1);self->remoteWindow_=nullptr;return 0;}
   return DefWindowProcW(h,m,a,b);
  };
  if(!RegisterClassW(&wc)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot create recording remote.");
- RECT r{};GetWindowRect(hwnd_,&r);remoteWindow_=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT,wc.lpszClassName,L"Nintendo Music Studio · 리모컨",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,r.right-570,r.bottom-450,560,430,hwnd_,nullptr,wc.hInstance,this);
+ RECT r{};GetWindowRect(hwnd_,&r);remoteWindow_=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT,wc.lpszClassName,L"Nintendo Music Studio · 리모컨",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,r.right-570,r.bottom-500,560,500,hwnd_,nullptr,wc.hInstance,this);
  if(!remoteWindow_)throw std::runtime_error("Cannot open recording remote.");updateRemote();ShowWindow(remoteWindow_,screenshot_.empty()?SW_SHOWNORMAL:SW_SHOWNOACTIVATE);
 }
 void Window::showSpectrumChoices(){
