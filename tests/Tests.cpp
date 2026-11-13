@@ -85,6 +85,9 @@ static void segaTests(const std::filesystem::path &root) {
                 require(cell.waveRight() > cell.waveLeft() &&
                             cell.volumeY() + cell.buttonSize() <= cell.y + cell.height,
                         "Channel controls clipped");
+                require(recording ? cell.waveLeft(true)==cell.x+4&&cell.waveRight(true)==cell.x+cell.width
+                                  : cell.waveLeft()==(cell.split?cell.x+176:280)&&cell.waveRight()==cell.x+cell.width-32,
+                        "Waveform geometry does not match its view");
                 require(!recording || cell.waveLeft(true)<cell.labelX(),"Recording wave did not extend into label area");
                 require(!recording || cell.waveRight(true)==cell.x+cell.width,"Recording wave does not match channel cell edge");
                 if (count > 8)

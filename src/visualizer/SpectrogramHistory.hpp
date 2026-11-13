@@ -5,7 +5,8 @@
 #include <limits>
 namespace ngmv {
 // Fixed memory, UI-thread-only log-frequency history. Horizontal position is
-// elapsed playback time, not frequency or the number of repaint requests.
+// monotonic display time (including stopped silence), not frequency or the
+// number of repaint requests. View/transport changes do not erase the history.
 class SpectrogramHistory {
 public:
     static constexpr size_t Columns=640,Bins=SpectrumAnalyzer::DetailBins;

@@ -1,0 +1,192 @@
+{
+  "version": "1.6.3-beta 8",
+  "date": "2026-11-13",
+  "display": {
+    "stop": "Last observed channel samples move left into zeros, then remain silent. Decoder/audio time does not advance. Pause and stop tested.",
+    "horizontal": "UI-frame service runs in waveform and all spectrum styles. Native wall time includes stopped silence. Mode/epoch/transport changes retain fixed640x256x2 history; no unbounded full-song buffer.",
+    "width": "Beta7 channel-cell, label and control geometry restored. Main waveform shape uses a persistent remote time-window control: 4096/2048/1024/512/256 samples map to 0.5x/1x/2x/4x/8x; default 1024 samples is 2x. Recording view retains its full-cell width."
+  },
+  "slogic": {
+    "source_URL": "https://www.youtube.com/watch?v=fd57z6y4_4A",
+    "reference_title": "CAPSULE - Samurai logic (OPL Cover)",
+    "reference_used": "User-provided YouTube audio for private comparison only; not packaged",
+    "original_SHA256": "3c5359904516ea87a22391aded6520057d3796c875f14fcafc2781f06d81071c",
+    "original_unchanged": true,
+    "chip": "YM3526",
+    "recorded_clock_Hz": 335582,
+    "native_synthesis_rate_Hz": 4661,
+    "change": "FM core native cadence rounded(clock/72), held native samples below output rate; existing cell integration above output rate. Header clock and event timing retained; no arbitrary8bit quantization or transpose. Other chip synthesis paths unchanged.",
+    "comparison_method": "Mono log-frequency STFT magnitude cosine, per-frame normalization, bounded time lag search. Measures spectral similarity, not perceptual certainty or phase-accurate identity.",
+    "comparison": [
+      {
+        "candidate": "current.f32",
+        "best_log_spectral_cosine": 0.9551036953926086,
+        "lag_seconds": 0.0,
+        "strong_spectral_Hz": [
+          152.34375,
+          1048.828125,
+          158.203125,
+          1394.53125,
+          931.640625,
+          1242.1875,
+          310.546875,
+          1042.96875
+        ]
+      },
+      {
+        "candidate": "native.f32",
+        "best_log_spectral_cosine": 0.9681996703147888,
+        "lag_seconds": 0.0,
+        "strong_spectral_Hz": [
+          1048.828125,
+          931.640625,
+          1242.1875,
+          175.78125,
+          152.34375,
+          158.203125,
+          1042.96875,
+          310.546875
+        ]
+      },
+      {
+        "candidate": "native-held.f32",
+        "best_log_spectral_cosine": 0.9805808067321777,
+        "lag_seconds": 0.0,
+        "strong_spectral_Hz": [
+          931.640625,
+          1048.828125,
+          175.78125,
+          152.34375,
+          1242.1875,
+          158.203125,
+          310.546875,
+          1042.96875
+        ]
+      },
+      {
+        "candidate": "clock10.f32",
+        "best_log_spectral_cosine": 0.15344732999801636,
+        "lag_seconds": 0.8106666666666666,
+        "strong_spectral_Hz": [
+          1746.09375,
+          3105.46875,
+          3656.25,
+          421.875,
+          427.734375,
+          1951.171875,
+          1558.59375,
+          1552.734375
+        ]
+      },
+      {
+        "candidate": "standard.f32",
+        "best_log_spectral_cosine": 0.14733698964118958,
+        "lag_seconds": 0.0,
+        "strong_spectral_Hz": [
+          1658.203125,
+          1664.0625,
+          4699.21875,
+          2876.953125,
+          861.328125,
+          2882.8125,
+          855.46875,
+          1253.90625
+        ]
+      }
+    ],
+    "rejected_or_unselected": [
+      "10x/standard-clock overrides were poor spectral matches; never applied to original file or production",
+      "Native linear interpolation improved score less and sounded like the opposite of user intended direction; retained privately as unselected candidate"
+    ],
+    "full_timeline_render": "63.483s including final silence, stem sum/restart/seek/allmute/unmute, actual dummy player progression PASS; see private full-final.log",
+    "physical_listening_or_Furnace_project_parity": false
+  },
+  "tests": {
+    "ctest": "11/11 PASS,14.11s, focused spectrum/common-volume/extended-VGM/ordinary+MIDI waveform/ES pitch/OPL clock and wave tracking/free-motion. Older unchanged ROM/GBA matrices not rerun.",
+    "native_UI": {
+      "pass": true,
+      "history_collected_in_waveform_mode": true,
+      "pause_drains_waveform_to_zero": true,
+      "audio_clock_frozen_while_paused": true,
+      "mode_styles": [
+        0,
+        1,
+        3
+      ],
+      "recording_and_fullscreen_clock_continues": true,
+      "stop_resets_audio_only_and_preserves_history": true,
+      "history_columns_at_end": 117,
+      "visual_time_ms": 2422,
+      "source_and_user_settings_unchanged": true,
+      "audio": "dummy; owned offscreen process only",
+      "fresh_beta8_executable": "tests/ui_smoke.py: 11/11 native snapshots pass (NSF, GBS, SPC, GSF, 2SF, USF, BCSTM, BCWAV; 1280x720 through 3840x2160)."
+    },
+    "buttons": {
+      "pass": true,
+      "audio": "dummy",
+      "offscreen": true,
+      "user_app_operated": false,
+      "recording_clock_pixels": 0,
+      "recording_volume_pixels": 0,
+      "cases": [
+        {
+          "defaults_migrated": true,
+          "pitch_speed_independent_buttons": true,
+          "step001_default": true,
+          "group_gain_preserved_mute_master": true,
+          "live_audio_no_underruns": true
+        },
+        {
+          "saved_reopened": true,
+          "recording_hidden_controls_inert": true
+        }
+      ]
+    },
+    "unit_spectrum": "3506checks including zero-tail/fractional samples/60,144,240Hz/source unchanged",
+    "clock_tone_stems": "YM3526 clock=3579545 Hz=219.6 expected=219.995 stemError=0\nYM3526 clock=335582 Hz=20.4 expected=20.6245 stemError=0\nNative OPL held ratio=0.905798\nSN76489 clock=3579545 Hz=430.8 expected=430.234 stemError=0\nPASS 3 clock/tone cases, stereo, stems, mute, replay and 34 bounded negatives\n",
+    "visual_review": "Beta7 geometry verified by existing focused 3/3 layout checks and fresh 11/11 native UI snapshots. Remote spacing slider and saved values verified in two fresh offscreen sessions. PrintWindow does not paint every modeless child control, so screenshot was not used as visual proof.",
+    "failed_candidates": [
+      "Old ui_controls.py still expected a large recording clock from before the user removed metadata. Actual controls passed; stale clock expectation failed at0pixels, preserved log. Updated only test expectation to current names-only requirement, then passed.",
+      "Earlier beta8 package had incorrect widened cell geometry; preserved under work/slogic-video-private/beta8-wrong-cell-width-candidate and replaced with corrected package."
+    ],
+    "remote_waveform_spacing": {
+      "pass": true,
+      "sessions": 2,
+      "sample_windows": [
+        4096,
+        2048,
+        1024,
+        512,
+        256,
+        512
+      ],
+      "labels": [
+        "0.5x",
+        "1x",
+        "2x",
+        "4x",
+        "8x",
+        "4x"
+      ],
+      "default_samples": 1024,
+      "persisted_samples_after_relaunch": 512,
+      "persisted_zoom_level": 3,
+      "controls_api_visible_and_within_client": true,
+      "main_responsive": true,
+      "audio": "dummy"
+    }
+  },
+  "log_SHA256": {
+    "final-ctest.log": "f9ff5979f5895dcbcbd035a3068201b4e21a085eb526e5c9e20b5b4e08e68046",
+    "furnace-final.log": "20978ccfd7119f6837bd2ab88411450340bf26c8a76d4698daf2fe334437b565",
+    "full-final.log": "1498f96ffed680c2fd439e655a17cf5d92eac619fc0aabd06d4f6389b8f8d2ed",
+    "ui-controls.log": "1693dd4af8bd8f453a3d86a0ce24f34e89dc859f1210efeb295bdff428fc9c83",
+    "ui-controls-final.log": "f1f030e5129b5caedc783d4d53376cec9a8bc776c2ab6c9bc153f7b189c3f701"
+  },
+  "limits": [
+    "Reference is compressed video audio, not original Furnace project or lossless export. Full timbre identity and hardware accuracy not claimed",
+    "Native held low-clock OPL changes sampling texture; ordinary OPL clock pitch/stems/replay tested, not every OPL game",
+    "Display clock/history is fixed-size and does not keep full-song history",
+    "No physical monitor/VRR or sound-device listening verification"
+  ]
+}

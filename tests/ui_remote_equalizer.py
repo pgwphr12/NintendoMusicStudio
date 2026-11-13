@@ -81,7 +81,20 @@ for session in range(2):
         remote=wait_for(lambda:windows(p.pid,'NintendoMusicStudioRemote'),'No remote')[0]
         assert u.IsWindowEnabled(main) and u.IsWindowEnabled(remote)
         def press(parent,id):return send(u.GetDlgItem(parent,id),0xf5)
+        zoom=u.GetDlgItem(remote,2116);assert zoom and u.IsWindowVisible(zoom)
+        assert send(zoom,0x402)==4,send(zoom,0x402)
+        remote_rect=W.RECT();u.GetWindowRect(remote,ctypes.byref(remote_rect));assert remote_rect.bottom-remote_rect.top>=420
+        client=W.RECT();u.GetClientRect(remote,ctypes.byref(client))
+        for control_id in (2109,2114,2115,2116,2118):
+            child=u.GetDlgItem(remote,control_id);assert child and u.IsWindowVisible(child),control_id
+            child_rect=W.RECT();u.GetWindowRect(child,ctypes.byref(child_rect))
+            points=(W.POINT*2)(W.POINT(child_rect.left,child_rect.top),W.POINT(child_rect.right,child_rect.bottom))
+            u.MapWindowPoints(None,remote,points,2)
+            assert points[0].x>=0 and points[0].y>=0 and points[1].x<=client.right and points[1].y<=client.bottom,(control_id,points[1].x,points[1].y,client.right,client.bottom)
         if session==0:
+            assert state(45)==1024
+            label=u.GetDlgItem(remote,2118);text=ctypes.create_unicode_buffer(80);u.GetWindowTextW(label,text,80)
+            assert text.value=='파형 간격: 2×',text.value
             press(remote,2102);assert not state(1)
             press(remote,2102);assert state(1)
             old=state(29);press(remote,2104);assert state(29)!=old
@@ -90,8 +103,14 @@ for session in range(2):
             slider=u.GetDlgItem(remote,2110);send(slider,0x405,1,65);send(remote,0x114,8,slider)
             assert all(state(19,c)==65 for c in range(state(17)))
             slider=u.GetDlgItem(remote,2112);send(slider,0x405,1,30);send(remote,0x114,8,slider);assert state(3)==30
+            label=u.GetDlgItem(remote,2118);text=ctypes.create_unicode_buffer(80)
+            for pos,samples,caption in [(0,4096,'0.5×'),(1,2048,'1×'),(2,1024,'2×'),(3,512,'4×'),(4,256,'8×'),(3,512,'4×')]:
+                send(zoom,0x405,1,pos);send(remote,0x114,8,zoom)
+                u.GetWindowTextW(label,text,80)
+                assert state(45)==samples and text.value=='파형 간격: '+caption,(pos,send(zoom,0x400),state(45),text.value)
+            assert 'windowSamples=512' in settings.read_text() and 'waveformZoom=3' in settings.read_text()
         else:
-            assert all(state(19,c)==65 for c in range(state(17))) and state(3)==30
+            assert all(state(19,c)==65 for c in range(state(17))) and state(3)==30 and state(45)==512
         press(remote,2107);eq=wait_for(lambda:windows(p.pid,'NintendoMusicStudioEqualizer'),'No EQ')[0]
         for i in range(20):assert u.GetDlgItem(eq,2300+i)
         if session==0:
@@ -110,7 +129,10 @@ for session in range(2):
         before=state(2);time.sleep(.15);assert state(2)>before and not state(13)
         if session==0:
             # Capture separate windows through their own client painting, never the desktop.
-            from PIL import Image
+            try:
+                from PIL import Image
+            except ModuleNotFoundError:
+                Image=None
             g=ctypes.WinDLL('gdi32',use_last_error=True)
             u.GetDC.restype=W.HDC;g.CreateCompatibleDC.argtypes=[W.HDC];g.CreateCompatibleDC.restype=W.HDC
             g.CreateCompatibleBitmap.argtypes=[W.HDC,ctypes.c_int,ctypes.c_int];g.CreateCompatibleBitmap.restype=W.HBITMAP
@@ -126,7 +148,13 @@ for session in range(2):
                     assert u.PrintWindow(h,memory,3);g.SelectObject(memory,previous)
                     info=Header(ctypes.sizeof(Header),width,-height,1,32,0,width*height*4,0,0,0,0);data=ctypes.create_string_buffer(width*height*4)
                     assert g.GetDIBits(memory,bitmap,0,height,data,ctypes.byref(info),0)==height
-                    Image.frombytes('RGB',(width,height),data.raw,'raw','BGRX').save(out/(name+'.png'))
+                    if Image:
+                        Image.frombytes('RGB',(width,height),data.raw,'raw','BGRX').save(out/(name+'.png'))
+                    else:
+                        import struct
+                        pixels=data.raw;file_header=struct.pack('<2sIHHI',b'BM',54+len(pixels),0,0,54)
+                        info_header=struct.pack('<IiiHHIIiiII',40,width,-height,1,32,0,len(pixels),0,0,0,0)
+                        (out/(name+'.bmp')).write_bytes(file_header+info_header+pixels)
                 finally:g.DeleteObject(bitmap);g.DeleteDC(memory);u.ReleaseDC(h,dc)
         press(remote,2106);wait_for(lambda:not state(15),'Cannot leave recording')
         assert u.IsWindowEnabled(main)

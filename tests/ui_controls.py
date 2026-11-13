@@ -118,8 +118,8 @@ for index in range(2):
 image=Image.open(out/'recording.bmp').convert('RGB')
 clock=sum(1 for pixel in image.crop((40,125,1300,197)).getdata() if pixel==(232,206,122))
 volume=sum(1 for pixel in image.crop((1540,125,1919,199)).getdata() if pixel==(80,203,180))
-assert clock>1200,('Clock is not large',clock)
+assert clock==0,('Clock drawn in names-only recording view',clock)
 assert volume==0,('Master volume drawn in recording view',volume)
-result={'pass':True,'audio':'dummy','offscreen':True,'user_app_operated':False,'large_clock_pixels':clock,'recording_volume_pixels':volume,'cases':results}
+result={'pass':True,'audio':'dummy','offscreen':True,'user_app_operated':False,'recording_clock_pixels':clock,'recording_volume_pixels':volume,'cases':results}
 (out/'result.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
 print(json.dumps(result))

@@ -25,6 +25,7 @@ static void tone(bool sn,bool low){auto data=fixture(sn,low);auto core=sn?makeEx
  if(sn){crossings=0;double mid=(*std::min_element(values.begin()+8000,values.end())+*std::max_element(values.begin()+8000,values.end()))/2;for(size_t i=8001;i<values.size();i++)if(values[i-1]<=mid&&values[i]>mid)crossings++;}
  double expected=sn?3579545./(32*260):(low?335582.:3579545.)/72*580*8/1048576;
  double hz=crossings*48000./40000;std::cout<<(sn?"SN76489":"YM3526")<<" clock="<<(low?335582:3579545)<<" Hz="<<hz<<" expected="<<expected<<" stemError="<<err<<'\n';need(std::abs(hz-expected)<3,"New-chip pitch mismatch");need(err<.001,"New-chip stems/mix mismatch");
+ if(!sn&&low){size_t held=0;for(size_t i=8001;i<values.size();++i)held+=values[i]==values[i-1];double ratio=double(held)/(values.size()-8001);need(ratio>.8&&ratio<.99,"Low-clock OPL native sample hold was smoothed or frozen");std::cout<<"Native OPL held ratio="<<ratio<<'\n';}
  core->muteMask64(UINT64_MAX);core->seek(0);core->render(4096,b);for(auto v:b.mix)need(v.l==0&&v.r==0,"New-chip mute");
  core->muteMask64(0);core->seek(0);core->render(4096,b);auto first=b.mix;core->seek(0);core->render(4096,b);for(size_t i=0;i<first.size();i++)need(first[i].l==b.mix[i].l&&first[i].r==b.mix[i].r,"New-chip restart mismatch");
  if(sn){auto left=data;left[0x100+14+1]=0x10;auto c=makeExtendedVgmBackend(left);c->render(4096,b);double energy=0;for(auto v:b.mix){energy+=v.l*v.l;need(v.r==0,"SN stereo right not muted");}need(energy>0,"SN stereo left silent");}

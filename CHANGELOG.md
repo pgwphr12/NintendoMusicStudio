@@ -1,3 +1,7 @@
+## 1.6.3-beta 8 — continuous visuals and low-clock OPL
+
+Stop/pause drains the last waveform to silence. Horizontal history runs in all views without transport/style resets. Restored beta7 channel layout and added saved waveform-spacing zoom in the F12 remote (0.5×–8×). YM3526 native sample cadence preserves low-clock held texture; reference-video comparison retained as software evidence, not perfect Furnace/hardware parity.
+
 ## 1.6.3-beta7 — paired MIDI banks
 
 Prefer exact localDLS,thenSF2,thenVMS;DLS2PCM region/articulation support; protect local banks from live VMS changes; allow valid note-less MIDI as silent tracks.85NSMB files verified. Beta6 smooth rendering retained.
@@ -355,3 +359,4 @@ Replaced unassigned VGM framework/resampler with independent app code, extra und
 # # 1.4.15 and earlier player work
 
 Independent pitch/speed, settings/default adjustments, bulk channel gain, recording clock/hidden volume controls, modeless F1, additional tested VGM chips, GBA inspection/individual PCM voices and presentation improvements. The previous editing/composition implementation was removed during the player refocus.
+

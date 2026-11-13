@@ -366,6 +366,8 @@ endif()
 
 if(BUILD_TESTING)
  add_executable(furnace_chip_tests tests/FurnaceChipTests.cpp)
+ add_executable(vgm_reference_render tests/VgmReferenceRender.cpp)
+ target_link_libraries(vgm_reference_render PRIVATE viewer_core)
  target_link_libraries(furnace_chip_tests PRIVATE viewer_core)
  add_test(NAME furnace_new_chips COMMAND furnace_chip_tests)
  set_tests_properties(furnace_new_chips PROPERTIES TIMEOUT 60)

@@ -1,3 +1,9 @@
+## Current test build 1.6.3-beta 8
+
+Display-only tails drain to silence when paused/stopped. Horizontal history runs in every view and survives mode/transport changes. The prior channel-cell layout is restored; the F12 remote offers a persistent 0.5×–8× waveform-spacing control that changes waveform shape without widening channel cells. Wii music support is a beta 9 investigation candidate and is not implemented yet. See RELEASE-NOTES-1.6.3-beta-8.md; reference-video similarity is not hardware or full timbre certification.
+
+### Earlier test notes
+
 ## Current test build 1.6.3-beta 7
 
 Exact sibling DLS -> SF2 -> VMS configured font; existing Windows fallback without VMS. DLS2 PCM regions/articulation supported. Local fonts are protected from VMS live replacement. All85NSMB MIDIs tested:80audible and5valid empty originals. No supplied music/banks included. See RELEASE-NOTES-1.6.3-beta-7.md.

@@ -1,5 +1,6 @@
 #include "visualizer/SpectrogramHistory.hpp"
 #include "visualizer/Spectrum.hpp"
+#include "visualizer/WaveformTail.hpp"
 #include "visualizer/AudioTap.hpp"
 #include "visualizer/SpectrumCurve.hpp"
 #include <iostream>
@@ -56,5 +57,11 @@ int main(){try{
  dl.fill(std::numeric_limits<float>::quiet_NaN());history.push(dl,dr,40000);
  check(history.size()==1);for(auto v:history.column(2000)->left)check(v==0);
  history.clear();check(history.size()==0&&!history.column(2000));
+ WaveformTail tail;std::vector<std::vector<float>>source{{1,2,3,4},{-1,-2,-3,-4},{}};tail.replace(source);
+ tail.drain(.0015,1000);check(tail.active()&&tail.values()[0]==std::vector<float>({2,3,4,0}));
+ tail.drain(.0015,1000);check(tail.values()[0]==std::vector<float>({4,0,0,0}));
+ tail.drain(.001,1000);check(!tail.active()&&tail.peak()==0);check(source[0][0]==1&&source[1][3]==-4);
+ for(unsigned refresh:{60u,144u,240u}){tail.replace({std::vector<float>(4096,1)});for(unsigned n=0;n<refresh;n++)tail.drain(1./refresh,48000);check(!tail.active()&&tail.peak()==0);}
+ tail.replace(source);tail.drain(0,48000);check(tail.peak()==4);tail.clear();check(tail.values().empty());
  std::cout<<"PASS spectrum "<<checks<<" checks: stereo/anti-phase/silence/NaN/6 rates/lock-free tap/concurrent wrap/reset/60-144Hz motion\n";return 0;
  }catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}

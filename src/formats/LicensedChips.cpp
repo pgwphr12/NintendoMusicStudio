@@ -58,7 +58,9 @@ struct LicensedChip::State {
         if(k==ChipKind::Ay8930){ay=std::make_unique<ay8930_device>(c,bool(flags&16));ay->set_flags(flags);ay->device_start();ay->device_reset();ayPole=std::exp(-2*3.14159265358979323846*20/(double(c)/4));}
         else if(k==ChipKind::Es5506){valid(flags&128,"ES5505 is not implemented by the licensed ES5506 core.");otto.reset();}
         else if(k==ChipKind::Ym2612){chip=nukedopn2_init(c,InternalRate);valid(chip,"YM2612 allocation failed.");nukedopn2_set_options(chip,0);nukedopn2_reset_chip(chip);}
-        else if(k==ChipKind::Opl1){chip=ym3526_init(c,InternalRate);valid(chip,"OPL1 allocation failed.");ym3526_reset_chip(chip);}
+        // YM3526 produces one native sample per72clocks. Rendering directly at
+        //48k oversamples the synthesis itself and removes low-clock texture.
+        else if(k==ChipKind::Opl1){chip=ym3526_init(c,unsigned(std::max(1.,std::round(c/72.))));valid(chip,"OPL1 allocation failed.");ym3526_reset_chip(chip);}
         else if(k==ChipKind::Sn76489){SN76496_CFG cfg{};cfg._genCfg.clock=c;cfg._genCfg.smplRate=InternalRate;cfg.noiseTaps=taps;cfg.shiftRegWidth=width;cfg.negate=bool(flags&2);cfg.clkDiv=(flags&8)?1:8;cfg.ncrPSG=bool(flags&16);cfg.segaPSG=!(flags&1);cfg.stereo=!(flags&4);valid(!devDef_SN76496_MAME.Start(reinterpret_cast<const DEV_GEN_CFG*>(&cfg),&info)&&info.dataPtr,"SN76489 allocation failed.");chip=info.dataPtr;info.devDef->Reset(chip);}
         else if(k==ChipKind::Opl2){chip=ym3812_init(c,InternalRate);valid(chip,"OPL2 allocation failed.");ym3812_reset_chip(chip);}
         else {
@@ -72,7 +74,7 @@ struct LicensedChip::State {
         for(auto*p=info.devDef->rwFuncs;p->funcPtr;++p)if(p->funcType==type&&p->rwType==rw)return reinterpret_cast<F>(p->funcPtr);
         throw std::runtime_error("Required licensed-chip operation unavailable.");
     }
-    double rate(){if(kind==ChipKind::Ay8930)return double(clock)/4;if(kind==ChipKind::Es5506)return esFurnaceVoices?double(clock)/(16*esFurnaceVoices):otto.rate(clock);if(kind==ChipKind::Oki)return function<uint32_t(*)(void*)>(RWF_SRATE|RWF_READ,DEVRW_VALUE)(chip);if(kind==ChipKind::Scc||kind==ChipKind::Sn76489)return info.sampleRate;return InternalRate;}
+    double rate(){if(kind==ChipKind::Opl1)return std::max(1.,std::round(clock/72.));if(kind==ChipKind::Ay8930)return double(clock)/4;if(kind==ChipKind::Es5506)return esFurnaceVoices?double(clock)/(16*esFurnaceVoices):otto.rate(clock);if(kind==ChipKind::Oki)return function<uint32_t(*)(void*)>(RWF_SRATE|RWF_READ,DEVRW_VALUE)(chip);if(kind==ChipKind::Scc||kind==ChipKind::Sn76489)return info.sampleRate;return InternalRate;}
     Stereo native(){
         if(kind==ChipKind::Ay8930){short output[3]{};ay->sound_stream_update(output,1);Stereo sum{};for(unsigned c=0;c<3;c++){double value=output[c]/32768.;ayDc[c]=value-ayPrevious[c]+ayPole*ayDc[c];ayPrevious[c]=value;if(!(ayMask&(1u<<c))){if(ayStereo&(1u<<(c*2)))sum.l+=float(ayDc[c]);if(ayStereo&(2u<<(c*2)))sum.r+=float(ayDc[c]);}}return sum;}
         if(kind==ChipKind::Es5506){
@@ -157,6 +159,11 @@ Stereo LicensedChip::sample(){auto&s=*state_;double rate=s.rate();valid(rate>0&&
             s.phase+=weight;left-=weight;
         }
         return {float(l/total),float(r/total)};
+    }
+    if(s.kind==ChipKind::Opl1){
+        if(!s.primed){s.held=s.native();s.primed=true;}
+        s.phase+=rate/InternalRate;while(s.phase>=1){s.held=s.native();s.phase-=1;}
+        return s.held;
     }
     if(s.kind==ChipKind::Es5506){
         if(!s.primed){s.pushEs();s.primed=true;}

@@ -1,3 +1,7 @@
+## Beta8 validation
+
+Fresh evidence: docs/VISUAL-OPL-1.6.3-beta-8.json. Stop/pause-to-silence, mode-independent continuous history, recording/fullscreen, restored beta7 channel geometry, 2× default horizontal waveform zoom and persistent F12 remote zoom slider (0.5×–8×); OPL tone/stem/replay checks. Targeted fixture/core/layout CTest3/3, spectrum3506, Furnace clock/stems and extended-VGM, remote volume/EQ/zoom persistence and recording-controls tests PASS. Dummy/offscreen software checks; no physical listening or monitor/VRR claim. Earlier records below are historical.
+
 ## Current beta7 MIDI validation
 
 See docs/MIDI-LOCAL-1.6.3-beta-7.json.85/85 actual whole-song DLS render/seek/restart checks (80audible,5valid-empty) plus85SF2load/1s render.7initial and3final targeted CTest checks PASS, native local/VMS precedence PASS. No hardware listening. Previous evidence below is historical.
@@ -154,3 +158,4 @@ See `docs/SPECTRUM-1.6.2-9.json`:682FFT/tap/motion checks,4current core tests,4n
 ## 1.6.2-10 spectrum styles / image removal
 
 1698unit checks PASS;3owned stereo UI sessions cover allstyles,60stylechanges,recording remote,pause/resume,persistence and stable GDIover120frames.5fullscreen/recording repeat phases PASS. Eight audio/FFT files are byte-identical to1.6.2-9source ZIP; earlier audio/EQ/ROM checks reused explicitly. Image loader/setting access and extra system image links removed. See docs/SPECTRUM-STYLES-1.6.2-10.json.
+

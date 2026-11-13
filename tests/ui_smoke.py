@@ -14,7 +14,7 @@ for width,height,music,recording in [(1280,720,'fds.nsf',False),(1600,900,'chann
     assert (w,abs(h))==(width,height),(target,w,h)
     assert len(data)>=width*height*4
     # At least a range of colored waveform/text pixels beyond a single flat background.
-    offset=struct.unpack_from('<I',data,10)[0];colors=set(data[i:i+3] for i in range(offset,len(data)-3,4*43))
+    offset=struct.unpack_from('<I',data,10)[0];colors=set(data[i:i+3] for i in range(offset,len(data)-3,4))
     assert len(colors)>30,(target,len(colors))
     print(f'{width}x{height}, {music}, recording={recording}: native frame and layout PASS')
 

@@ -3,9 +3,11 @@
 #include "player/FolderPlaylist.hpp"
 #include "player/Player.hpp"
 #include "DisplayPacer.hpp"
+#include "ChannelLayout.hpp"
 #include "visualizer/SpectrumCurve.hpp"
 #include "visualizer/Envelope.hpp"
 #include "visualizer/SpectrogramHistory.hpp"
+#include "visualizer/WaveformTail.hpp"
 #include <filesystem>
 #include <deque>
 #include <chrono>
@@ -44,6 +46,7 @@ class Window {
     std::vector<WaveformTracker> waveformTrackers_;
     std::vector<WaveformTransition> waveformTransitions_;
     std::chrono::steady_clock::time_point waveformPaintTime_{};
+    WaveformTail waveformTail_;
     unsigned long *bufferPixels_ = nullptr;
     struct OverlayText {std::wstring value;int x,y,w,h,size;COLORREF color;bool bold;};
     std::vector<OverlayText> overlayText_;
@@ -68,7 +71,6 @@ class Window {
     int spectrumStyle_=3;
     SpectrogramHistory spectrogram_;
     uint64_t spectrogramTimeMs_=0;
-    bool spectrogramWasPlaying_=false;
     std::vector<uint32_t> spectrogramRaster_;
     SpectrumAnalyzer spectrum_;
     SpectrumMotion spectrumMotion_;
@@ -78,13 +80,14 @@ class Window {
     uint64_t spectrumEpoch_=0;
     float spectrumPeak_=0;
     void paintSpectrum(HDC);
+    void updateSpectrum();
     void paintScrollingSpectrum(HDC,int,int);
     void showSpectrumChoices();
     void setSpectrumStyle(int);
     void loadVisualPreferences();
     void toggleSpectrum();
     bool autoplay_ = true;
-    int windowSamples_ = 2048;
+    int windowSamples_ = 1024;
     int speedStep_ = 1;
     desktop::Settings preferences_;
     bool preferencesEnabled_ = false;

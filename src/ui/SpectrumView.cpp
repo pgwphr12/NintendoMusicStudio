@@ -17,28 +17,29 @@ struct Palette{
 };
 void block(HDC dc,RECT r,HBRUSH b){if(r.right>r.left&&r.bottom>r.top)FillRect(dc,&r,b);}
 }
-void Window::paintSpectrum(HDC dc){
-    static thread_local Palette palette;
+void Window::updateSpectrum(){
     const ULONGLONG now=GetTickCount64();
-    if(spectrumLastPaint_&&spectrogramWasPlaying_&&player_.playing())spectrogramTimeMs_+=now-spectrumLastPaint_;
-    spectrogramWasPlaying_=player_.playing();
+    if(spectrumLastPaint_&&player_.loaded())spectrogramTimeMs_+=now-spectrumLastPaint_;
     const auto epoch=player_.spectrumEpoch();
     if(epoch!=spectrumEpoch_){
         spectrumEpoch_=epoch;spectrumLastSample_=0;spectrum_.left.fill(0);spectrum_.right.fill(0);
-        spectrumMotion_={};spectrogram_.clear();spectrogramTimeMs_=0;
+        spectrumMotion_={};
     }
     if(now-spectrumLastAnalysis_>=16){
         const auto end=player_.spectrumSamples(spectrumSamples_);
         if(player_.playing()&&end!=spectrumLastSample_){
             spectrum_.analyze(spectrumSamples_,player_.rate());spectrumLastSample_=end;spectrumLastAudio_=now;
-            spectrogram_.push(spectrum_.detailLeft,spectrum_.detailRight,spectrogramTimeMs_);
-        }else if(!player_.playing()||now-spectrumLastAudio_>250){spectrum_.left.fill(0);spectrum_.right.fill(0);}
+        }else if(!player_.playing()||now-spectrumLastAudio_>250){spectrum_.left.fill(0);spectrum_.right.fill(0);spectrum_.detailLeft.fill(0);spectrum_.detailRight.fill(0);}
+        if(player_.loaded())spectrogram_.push(spectrum_.detailLeft,spectrum_.detailRight,spectrogramTimeMs_);
         spectrumLastAnalysis_=now;
     }
     const double elapsed=spectrumLastPaint_?double(now-spectrumLastPaint_)/1000.:1./60.;
     spectrumMotion_.step(spectrum_.left,spectrum_.right,elapsed);spectrumLastPaint_=now;
     spectrumPeak_=0;
     for(size_t i=0;i<SpectrumAnalyzer::Bands;++i)spectrumPeak_=std::max({spectrumPeak_,spectrumMotion_.left[i],spectrumMotion_.right[i]});
+}
+void Window::paintSpectrum(HDC dc){
+    static thread_local Palette palette;
     const int top=recording_?16:280,bottom=recording_?1064:990;
     if(spectrumStyle_==3){paintScrollingSpectrum(dc,top,bottom);return;}
     const int gap=28,row=(bottom-top-gap)/2;
@@ -106,13 +107,12 @@ void Window::paintScrollingSpectrum(HDC dc,int top,int bottom){
     }
 }
 void Window::toggleSpectrum(){
-    spectrumMode_=!spectrumMode_;spectrumLastPaint_=0;
-    if(spectrumMode_){spectrogram_.clear();spectrogramTimeMs_=0;spectrumLastSample_=0;}
+    spectrumMode_=!spectrumMode_;waveformTail_.clear();
     savePreferences();InvalidateRect(hwnd_,nullptr,FALSE);
 }
 void Window::setSpectrumStyle(int style){
     if(style!=0&&style!=1&&style!=3)return;
-    if(!spectrumMode_){spectrogram_.clear();spectrogramTimeMs_=0;spectrumLastPaint_=0;spectrumLastSample_=0;}
+    if(!spectrumMode_)waveformTail_.clear();
     spectrumStyle_=style;spectrumMode_=true;
     savePreferences();updateRemote();InvalidateRect(hwnd_,nullptr,FALSE);
 }

@@ -1,3 +1,7 @@
+# Test1.6.3-beta 8 corresponding source
+
+WaveformTail, common UI spectrum servicing, beta7 channel geometry restoration and remote-controlled waveform zoom, native-rate OPL1 adapter, focused unit/native UI tests and reference-render helper. No new dependency. User music and downloaded reference audio remain excluded.
+
 # Test1.6.3-beta 7 corresponding source
 
 YM usage tracks timed key slots, DAC enable/data and actual stream starts; setup/reset alone is not note use. WholeTrackUsage wraps backends with known complete metadata or physical end boundaries, unmuted offline scans, reset/cache, a10s budget and conservative unknown fallback. PSF length tags alone do not prove an execution end. Remote option and console exceptions affect visibility only. No new dependency; all new source/tests included.
@@ -132,3 +136,4 @@ Owned implementation: `src/visualizer/AudioTap.hpp`, `Spectrum.hpp`, `src/ui/Spe
 ## 1.6.2-10 current spectrum source
 
 `VisualImage.cpp/.hpp` and WIC/msimg32 dependencies were removed. `SpectrumView.cpp` now renders two rows in3styles; `SpectrumTrail.hpp` contains the bounded UI-owned history and curve interpolation. Image paths are no longer read or written. Prior1.6.2-9 description above is historical.
+
