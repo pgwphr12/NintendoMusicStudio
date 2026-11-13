@@ -47,6 +47,8 @@ class Window {
     std::vector<WaveformTransition> waveformTransitions_;
     std::chrono::steady_clock::time_point waveformPaintTime_{};
     WaveformTail waveformTail_;
+    std::chrono::steady_clock::time_point eofVisualTime_{};
+    double eofVisualFraction_=0;
     unsigned long *bufferPixels_ = nullptr;
     struct OverlayText {std::wstring value;int x,y,w,h,size;COLORREF color;bool bold;};
     std::vector<OverlayText> overlayText_;

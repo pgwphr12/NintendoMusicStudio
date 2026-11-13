@@ -1,3 +1,7 @@
+## Test 1.6.3-beta 10 corresponding source
+
+The EOF UI timer advances display-only silence in `ChannelHistory`; audio buffers and decoder output are unchanged. The timer advances only after output drain and while transport remains active. Version resources and current README/release metadata identify beta 10. Track/file auto-play behavior is retained from beta 9. No new dependency or user audio is included.
+
 ## Test1.6.3-beta 9 corresponding source
 
 `Registry.cpp` signature-detects Wii RSTM/BRSTM, BNS (including IMD5-wrapped BNS), and CRI ADX, then routes them through the existing `StreamBackend`/vgmstream. `FolderPlaylist.cpp` includes `.brstm`, `.bns`, and `.adx`. The F12 remote provides global and per-file/per-track/per-channel waveform spacing, a common-value reset, and a saved metadata-length continuation toggle. True decoder EOF remains authoritative. No new dependency, disc extraction, or user assets.

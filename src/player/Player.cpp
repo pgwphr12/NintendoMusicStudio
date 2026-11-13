@@ -72,6 +72,7 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
     track_ = 0;
     configureVisibleChannels();
     base_ = startFrame;
+    visualSilenceFrames_ = 0;
     playing_ = false;
     atEnd_ = false;
     audio_.reset();
@@ -118,6 +119,7 @@ void Player::restart(int track, int ms, bool play) {
             backend_->seek(ms);
         track_ = track;
         base_ = uint64_t(ms) * InternalRate / 1000;
+        visualSilenceFrames_ = 0;
         audio_.reset();
         output_.reset();
         history_.reset(backend_->channels().size(), base_);
@@ -148,7 +150,8 @@ void Player::configureVisibleChannels(){
 void Player::select(int track) {
     if (!backend_ || track < 0 || track >= int(tracks().size()))
         return;
-    restart(track, 0, playing_);
+    // Choosing another song is an explicit play action even after Pause/Stop.
+    restart(track, 0, true);
 }
 void Player::play() {
     if (!backend_)

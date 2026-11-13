@@ -93,9 +93,16 @@ try:
         result['repeat_off_clock_continues']=True
         (out/'result.json').write_text(json.dumps(result,indent=2))
     if os.environ.get('NGMV_TEST_PLAY_AFTER_END')=='1':
-        wait_for(lambda:not state(1),'Playback did not end with Repeat off',8)
-        result['repeat_off_playing_stopped']=True
+        previous=state(2);stable=0;deadline=time.monotonic()+10
+        while time.monotonic()<deadline and stable<8:
+            current=state(2)
+            assert state(1),'Transport stopped at EOF with Repeat off'
+            stable=stable+1 if abs(current-previous)<=20 else 0
+            previous=current;time.sleep(.12)
+        assert stable>=8,'Source clock did not settle at EOF'
+        result['repeat_off_silent_transport_stays_playing']=True
         assert state(13)==0,'Decoder error after Repeat was turned off'
+        click_play();wait_for(lambda:not state(1),'Pause control did not pause the EOF transport')
         click_play()
         wait_for(lambda:state(1),'Play control did not restart the ended track')
         assert state(2)<500,'Play after end did not restart at the beginning'

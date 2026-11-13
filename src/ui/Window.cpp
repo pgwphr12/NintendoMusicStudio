@@ -177,7 +177,7 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6.3-beta 9\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.3-beta 10\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · BRSTM/BNS · ADX · VGM/VGZ\r\n"
                 L"Wii/GameCube: 검증된 BRSTM/BNS/ADX 스트림 파일만. 디스크 이미지/ROM 음악 추출은 미지원\r\n"
@@ -300,11 +300,10 @@ bool Window::open(const std::filesystem::path &p) {
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         loadChannelWaveformZooms();
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.6.3-beta 9 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6.3-beta 10 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
-        // Opening audio/MIDI/a supported ROM starts it; folder advance is separate.
-        if (format == Format::AudioFile || format == Format::Midi || format == Format::GbaRom || format == Format::NesRom)
-            player_.play();
+        // Opening any supported music file, including a dropped stream, starts playback.
+        player_.play();
 
         drag_ = -1;
         message_.clear();
@@ -334,7 +333,7 @@ void Window::selectFolder(size_t index, bool play) {
     playlist_.current = index;
     file_ = path;
     loadChannelWaveformZooms();
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3-beta 9 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3-beta 10 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -351,7 +350,7 @@ void Window::nextTrack(int direction, bool automatic) {
         auto size = playlist_.files.size();
         size_t next =
             direction > 0 ? (playlist_.current + 1) % size : (playlist_.current + size - 1) % size;
-        selectFolder(next, automatic || player_.playing());
+        selectFolder(next, true);
     } else if (!automatic && !player_.tracks().empty()) {
         int size = int(player_.tracks().size());
         player_.select((player_.track() + size + direction) % size);
@@ -403,7 +402,7 @@ void Window::tracksMenu() {
     DestroyMenu(menu);
     if (chosen >= 1000) {
         if (playlist_.active())
-            selectFolder(chosen - 1000, player_.playing());
+            selectFolder(chosen - 1000, true);
         else{
             player_.select(chosen - 1000);
             waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
@@ -510,16 +509,28 @@ void Window::updatePlayback(){
     if(changing_)return;
     checkVirtualMidi();
     player_.serviceDevice();
-    if(!player_.playing())return;
+    if(!player_.playing()){eofVisualTime_={};eofVisualFraction_=0;return;}
     // Repeated playback is a continuous producer-side loop. Do not pause and
     // recreate the output stream on the UI timer at each song boundary.
-    if(player_.repeat())return;
+    if(player_.repeat()){eofVisualTime_={};eofVisualFraction_=0;return;}
     const bool scheduledEnd=player_.playbackBoundaryReached();
     const bool advance=autoplay_ && playlist_.active() && playlist_.current+1<playlist_.files.size();
-    if(!player_.ended() && !(scheduledEnd && advance))return;
-    player_.pause();
-    if(autoplay_ && playlist_.active() && playlist_.current+1<playlist_.files.size())nextTrack(1,true);
-    else message_=L"Track ended";
+    if(!player_.ended() && !(scheduledEnd && advance)){eofVisualTime_={};eofVisualFraction_=0;return;}
+    if(advance){eofVisualTime_={};eofVisualFraction_=0;nextTrack(1,true);return;}
+    // EOF ends the audio, not the active transport state. Keep the playback
+    // toggle in its playing state until the user pauses/stops or changes track.
+    if(player_.ended()){
+        const auto now=std::chrono::steady_clock::now();
+        if(eofVisualTime_.time_since_epoch().count()){
+            const double elapsed=std::clamp(std::chrono::duration<double>(now-eofVisualTime_).count(),0.,.1);
+            const double exact=elapsed*InternalRate+eofVisualFraction_;
+            const auto frames=uint64_t(std::floor(exact));
+            eofVisualFraction_=exact-double(frames);
+            player_.advanceSilentVisual(frames);
+        }
+        eofVisualTime_=now;
+        message_=L"Track ended";
+    }else{eofVisualTime_={};eofVisualFraction_=0;}
 }
 void Window::toggleFullscreen() {
     fullscreen_ = !fullscreen_;
@@ -600,8 +611,8 @@ void Window::paint(HDC dc, int width, int height) {
         button(dc, L"파일 열기", 42, 141, 155);
         button(dc, L"Tracks", 212, 141, 155);
         button(dc, L"이전", 382, 141, 115);
-        // Playing is the toggle/label state; availability depends only on a
-        // loaded track, so the user can restart it after non-repeat EOF.
+        // Repeat controls looping; EOF without Repeat silences audio while
+        // keeping the transport active until the user pauses or stops it.
         button(dc, player_.playing() ? L"일시정지" : L"재생", 512, 141, 150,
                player_.playing(), player_.loaded());
         button(dc, L"정지", 677, 141, 115);
@@ -1639,7 +1650,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3-beta 9", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3-beta 10", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

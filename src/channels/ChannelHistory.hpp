@@ -23,6 +23,15 @@ class ChannelHistory {
                     (block.voices[ch][i].l + block.voices[ch][i].r) * .5f;
         end_ += block.mix.size();
     }
+    void appendSilence(size_t frames) {
+        if (!frames)
+            return;
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (auto &channel : data_)
+            for (size_t i = 0; i < frames; i++)
+                channel[(end_ + i) % Capacity] = 0;
+        end_ += frames;
+    }
     std::vector<std::vector<float>> interpolatedSnapshot(double consumed,size_t frames=4096,uint64_t selected=UINT64_MAX)const{
         std::lock_guard<std::mutex>lock(mutex_);std::vector<std::vector<float>>out(data_.size());
         double endpoint=std::min(consumed,double(end_));uint64_t oldest=std::max(base_,end_>Capacity?end_-Capacity:uint64_t(0));

@@ -42,6 +42,7 @@ class Player {
     uint64_t visibleMask_=UINT64_MAX;
     void configureVisibleChannels();
     std::atomic<uint64_t> sourceEndFrame_{UINT64_MAX};
+    std::atomic<uint64_t> visualSilenceFrames_{0};
     void haltWorker();
     void startWorker();
     void prefill();
@@ -85,8 +86,16 @@ class Player {
     double seconds() const;
     bool ended() const;
     bool playbackBoundaryReached() const;
+    void advanceSilentVisual(uint64_t frames) {
+        if (!frames || !playing_.load() || !atEnd_.load())
+            return;
+        history_.appendSilence(size_t(frames));
+        visualSilenceFrames_.fetch_add(frames);
+    }
     void repeat(bool b) {
-        repeat_ = b;
+        const bool wasRepeating = repeat_.exchange(b);
+        if (b && !wasRepeating && playing_.load() && atEnd_.load())
+            restart(track_, 0, true);
     }
     bool repeat() const {
         return repeat_;
@@ -143,7 +152,7 @@ class Player {
     void pitch(float value) { output_.pitch(value); }
     std::vector<ChannelState> states() const;
     std::vector<std::vector<float>> waveforms(size_t frames = 4096,uint64_t selected=UINT64_MAX) const {
-        return history_.interpolatedSnapshot(base_ + output_.visualConsumed(), frames,selected);
+        return history_.interpolatedSnapshot(base_ + output_.visualConsumed() + visualSilenceFrames_.load(), frames,selected);
     }
     uint64_t spectrumSamples(SpectrumAnalyzer::Samples& out)const{return output_.spectrumSamples(out);}
     uint64_t spectrumEpoch()const{return output_.spectrumEpoch();}

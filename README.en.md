@@ -1,6 +1,6 @@
-## Current test build 1.6.3-beta 9
+## Current test build 1.6.3-beta 10
 
-Direct stream playback now recognizes Wii BRSTM/BNS and CRI ADX files. The supplied folder's 99 files passed bounded open/render/seek checks. The remote waveform spacing slider offers a global value or per-channel overrides, with 1× steps through 32× and a 0.5× minimum. Repeat restarts at the normal track boundary; after playback ends, Play remains available to start again. No Wii/GameCube disc-image extraction or universal game-format coverage is claimed. See RELEASE-NOTES-1.6.3-beta-9.md.
+After a non-repeating track reaches EOF, the audio becomes silent while the waveform history continues scrolling with silence; the transport remains in its playing state. Repeat still loops at the track boundary. Selecting another track, opening a supported file, or dropping one into the player starts playback. See RELEASE-NOTES-1.6.3-beta-10.md.
 
 ### Earlier test notes
 

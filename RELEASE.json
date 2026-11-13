@@ -1,12 +1,12 @@
 {
   "product": "Nintendo Music Studio",
-  "version": "1.6.3-beta 9",
-  "file_version": "1.6.3.9",
-  "release_date": "2026-11-13",
+  "version": "1.6.3-beta 10",
+  "file_version": "1.6.3.10",
+  "release_date": "2026-11-14",
   "platform": "Windows x64",
   "entrypoint": "NintendoMusicStudio.exe",
   "runtime_library": "Statically linked GME; Windows system DLLs only",
-  "corresponding_source": "NintendoMusicStudio-1.6.3-beta-9-Source.zip",
+  "corresponding_source": "NintendoMusicStudio-1.6.3-beta-10-Source.zip",
   "license_notices": "THIRD_PARTY_NOTICES.md",
   "contains_user_music": false,
   "digital_signature": false,
@@ -24,8 +24,8 @@
   "common_channel_gain": "Saved allChannelVolume0..200; priority before prefill and each new file/subsong/reset; mute/master independent",
   "recording_remote": "Independent F12 or normal-view remote button; F9 changes view only",
   "equalizer": "MesenCE4b8a196 Orfanidis Butterworth20parallel bands; +/-20dB integer/numeric edits; same label15kHz / actual13kHz center as upstream; canonical PCM16 stage exact reference tested at48kHz",
-  "latest_feature": "Direct Wii BRSTM/BNS and CRI ADX stream playback; per-channel waveform spacing; metadata-length continuation toggle; no disc-image or ROM extraction",
+  "latest_feature": "EOF waveform history keeps flowing into silence while transport stays active; selecting a track or opening/dropping a supported file starts playback",
   "future_test_version_format": "X.Y.Z-beta N",
-  "test_iteration": 9,
-  "previous_test": "1.6.3-beta 8"
+  "test_iteration": 10,
+  "previous_test": "1.6.3-beta 9"
 }

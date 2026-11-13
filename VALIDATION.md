@@ -1,3 +1,7 @@
+## Beta 10 validation status
+
+Version metadata and the EOF waveform continuation change were added for 1.6.3-beta 10. The change appends display-only silent frames after decoded output is drained; it does not alter playback audio. The final Visual Studio Release build completed with 0 warnings and 0 errors. The player was not launched and runtime behavior/test-suite results are not claimed in this update. Output executable SHA256: `95875E7A3008DAB7D97E37F8E4D846F3A7F51E9863F396CD9F9D490F1EAACFEF`.
+
 ## Beta9 validation
 
 Fresh evidence: `docs/GAMECUBE-WII-1.6.3-beta-9.json`. Wii/GameCube stream corpus: 88 BRSTM, 2 BNS, 9 ADX all opened, rendered bounded frames, and sought. Remote zoom offers 0.5×, then whole 1× steps through32×; per-channel overrides are independent, saved across relaunch, and reset to the common value on request. The saved infinite-play option continues beyond metadata length/fade while preserving decoder EOF. Focused remote UI test PASS on the final beta9 build. Dummy/offscreen checks only; no physical listening, disc-image extraction, monitor/VRR claim, or universal format coverage.

@@ -1,3 +1,11 @@
+## 1.6.3-beta 10 — EOF waveform continuation
+
+- Keep the waveform history moving after a non-repeating song ends by appending silent visual frames. Audio remains silent and the transport stays active, as requested.
+- Keep repeat behavior separate: repeat loops at the song boundary; repeat off reaches silent EOF.
+- Choosing another track or opening/dropping a supported audio file starts playback.
+- Version label corrected to beta 10.
+- Build status and runtime verification are recorded in `VALIDATION.md`.
+
 ## 1.6.3-beta 9 — Wii/GameCube streams and finer waveform spacing
 
 - Open and play Wii BRSTM/BNS and CRI ADX stream files through vgmstream. Multi-channel PCM is grouped into independently adjustable stereo tracks; explicit BCSTM track tables map lanes when available. Stereo-only files remain one mix lane, not fake left/right music tracks.
