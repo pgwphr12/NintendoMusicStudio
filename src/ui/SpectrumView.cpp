@@ -17,6 +17,20 @@ struct Palette{
 };
 void block(HDC dc,RECT r,HBRUSH b){if(r.right>r.left&&r.bottom>r.top)FillRect(dc,&r,b);}
 }
+void Window::resetSpectrum(){
+    spectrogram_.clear();
+    spectrogramTimeMs_=0;
+    spectrogramRaster_.clear();
+    spectrum_=SpectrumAnalyzer{};
+    spectrumMotion_={};
+    spectrumSamples_.fill(0);
+    spectrumLastSample_=0;
+    spectrumLastAudio_=0;
+    spectrumLastAnalysis_=0;
+    spectrumLastPaint_=GetTickCount64();
+    spectrumEpoch_=player_.spectrumEpoch();
+    spectrumPeak_=0;
+}
 void Window::updateSpectrum(){
     const ULONGLONG now=GetTickCount64();
     if(spectrumLastPaint_&&player_.loaded())spectrogramTimeMs_+=now-spectrumLastPaint_;

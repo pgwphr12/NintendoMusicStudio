@@ -104,7 +104,7 @@ void Window::showRemote(){
   if(m==WM_COMMAND&&HIWORD(a)==BN_CLICKED&&!self->changing_){try{switch(LOWORD(a)){
    case IDCANCEL:self->toggleRemote();break;
    case 2101:self->nextTrack(-1);break;case 2102:if(self->player_.playing())self->player_.pause();else self->player_.play();break;
-   case 2103:self->player_.stop();break;case 2104:self->nextTrack(1);break;case 2105:self->player_.repeat(!self->player_.repeat());break;
+   case 2103:self->player_.stop();self->resetSpectrum();break;case 2104:self->nextTrack(1);break;case 2105:self->player_.repeat(!self->player_.repeat());break;
    case 2106:PostMessageW(self->hwnd_,WM_KEYDOWN,VK_F9,0);break;case 2107:self->showEqualizer();break;case 2108:self->toggleSpectrum();break;case 2109:self->showSpectrumChoices();break;case 2114:self->showHiddenChannels();break;case 2115:self->player_.showAllChannels(SendDlgItemMessageW(h,2115,BM_GETCHECK,0,0)==BST_CHECKED);self->savePreferences();break;
    case 2120:if(self->selectedWaveZoomChannel_>=0&&size_t(self->selectedWaveZoomChannel_)<self->channelWaveformZoomSteps_.size()){size_t i=size_t(self->selectedWaveZoomChannel_);self->channelWaveformZoomSteps_[i]=-1;if(self->preferencesEnabled_)self->preferences_.values.erase(self->waveformZoomSettingKey(i));self->savePreferences();}break;
   }self->updateRemote();InvalidateRect(self->hwnd_,nullptr,FALSE);}catch(const std::exception&e){self->report(e);}return 0;}

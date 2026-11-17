@@ -294,6 +294,7 @@ bool Window::open(const std::filesystem::path &p) {
         if (!prepared)
             return false;
         player_.openPrepared(std::move(prepared), format);
+        resetSpectrum();
         waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
         restoreChannels();
         file_ = p;
@@ -328,6 +329,7 @@ void Window::selectFolder(size_t index, bool play) {
     if (!prepared)
         return;
     player_.openPrepared(std::move(prepared), identify(readMusicFile(path),path));
+    resetSpectrum();
     waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
     restoreChannels();
     playlist_.current = index;
@@ -354,6 +356,7 @@ void Window::nextTrack(int direction, bool automatic) {
     } else if (!automatic && !player_.tracks().empty()) {
         int size = int(player_.tracks().size());
         player_.select((player_.track() + size + direction) % size);
+        resetSpectrum();
         waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
         refreshHiddenChannels();
         loadChannelWaveformZooms();
@@ -405,6 +408,7 @@ void Window::tracksMenu() {
             selectFolder(chosen - 1000, true);
         else{
             player_.select(chosen - 1000);
+            resetSpectrum();
             waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
             refreshHiddenChannels();
         }
@@ -931,8 +935,10 @@ void Window::click(int x, int y) {
                     player_.pause();
                 else
                     player_.play();
-            } else if (lx >= 677 && lx < 792)
+            } else if (lx >= 677 && lx < 792) {
                 player_.stop();
+                resetSpectrum();
+            }
             else if (lx >= 807 && lx < 922 && player_.loaded())
                 nextTrack(1);
             else if (lx >= 937 && lx < 1052)

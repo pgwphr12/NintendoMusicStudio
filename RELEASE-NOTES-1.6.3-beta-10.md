@@ -11,6 +11,9 @@
 
 - Selecting another track starts it even when the previous track was paused or stopped.
 - Opening a supported file or dropping one onto the player starts playback.
+- Clear spectrum history when changing songs or pressing Stop. Pause keeps the current spectrum history.
+
+This update keeps the existing **1.6.3-beta 10** label.
 
 ## Verification status
 

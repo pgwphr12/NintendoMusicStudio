@@ -83,6 +83,7 @@ class Window {
     float spectrumPeak_=0;
     void paintSpectrum(HDC);
     void updateSpectrum();
+    void resetSpectrum();
     void paintScrollingSpectrum(HDC,int,int);
     void showSpectrumChoices();
     void setSpectrumStyle(int);

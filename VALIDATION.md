@@ -1,6 +1,8 @@
-## Beta 10 validation status
+## Beta 10 validation — spectrum reset revision
 
-Version metadata and the EOF waveform continuation change were added for 1.6.3-beta 10. The change appends display-only silent frames after decoded output is drained; it does not alter playback audio. The final Visual Studio Release build completed with 0 warnings and 0 errors. The player was not launched and runtime behavior/test-suite results are not claimed in this update. Output executable SHA256: `95875E7A3008DAB7D97E37F8E4D846F3A7F51E9863F396CD9F9D490F1EAACFEF`.
+The **1.6.3-beta 10** label is unchanged. Spectrum history is cleared after a song/file switch and on Stop from either the main window or remote. Pause does not call the reset path. The Release build completed with 0 errors; it emitted one C4819 warning from the existing third-party SDL joystick source. The already-running player was left untouched, so the updated build was linked to a separate output path. The player was not launched and no runtime UI check or test suite was run. Executable SHA256: `EAD03F092AD9E87669B0FA39BB5604B36642A522615E96E990CFB23A3A6FA857` (5,349,376 bytes).
+
+The prior EOF waveform continuation remains display-only: audio ends normally while silent frames keep the waveform history moving and the transport remains active.
 
 ## Beta9 validation
 

@@ -24,7 +24,7 @@
   "common_channel_gain": "Saved allChannelVolume0..200; priority before prefill and each new file/subsong/reset; mute/master independent",
   "recording_remote": "Independent F12 or normal-view remote button; F9 changes view only",
   "equalizer": "MesenCE4b8a196 Orfanidis Butterworth20parallel bands; +/-20dB integer/numeric edits; same label15kHz / actual13kHz center as upstream; canonical PCM16 stage exact reference tested at48kHz",
-  "latest_feature": "EOF waveform history keeps flowing into silence while transport stays active; selecting a track or opening/dropping a supported file starts playback",
+  "latest_feature": "EOF waveform history continues into silence while transport stays active; spectrum history clears on song change or Stop and is preserved on Pause; selecting a track or opening/dropping a supported file starts playback",
   "future_test_version_format": "X.Y.Z-beta N",
   "test_iteration": 10,
   "previous_test": "1.6.3-beta 9"

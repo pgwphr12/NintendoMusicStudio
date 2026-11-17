@@ -1,5 +1,6 @@
 ## 1.6.3-beta 10 — EOF waveform continuation
 
+- Clear the spectrum display when switching songs or pressing Stop; Pause preserves its current history.
 - Keep the waveform history moving after a non-repeating song ends by appending silent visual frames. Audio remains silent and the transport stays active, as requested.
 - Keep repeat behavior separate: repeat loops at the song boundary; repeat off reaches silent EOF.
 - Choosing another track or opening/dropping a supported audio file starts playback.
