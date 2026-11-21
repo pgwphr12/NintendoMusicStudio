@@ -1,5 +1,11 @@
 #include "Window.hpp"
+#include "audio/StemExport.hpp"
+#include "app/WindowsIntegration.hpp"
+#include "formats/StreamBackend.hpp"
 #include <commctrl.h>
+#include <shlobj.h>
+#include <cwchar>
+#include <cwctype>
 #include <stdexcept>
 #include <string>
 namespace ngmv {
@@ -22,6 +28,64 @@ static void paintToolClient(HWND h,HDC dc){
  printing=false;
 }
 static std::wstring clockText(double v){int n=std::max(0,int(v));return std::to_wstring(n/60)+L":"+(n%60<10?L"0":L"")+std::to_wstring(n%60);}
+void Window::syncExportTrack(){
+ if(!exportWindow_||!player_.loaded()||exportRunning_)return;
+ int track=player_.track();if(track<0||size_t(track)>=player_.tracks().size())return;if(file_==exportInput_&&track==exportTrack_)return;
+ exportInput_=file_;exportTrack_=track;int ms=player_.tracks().at(size_t(track)).lengthMs;
+ SetDlgItemTextW(exportWindow_,2703,ms>0?std::to_wstring((ms+999)/1000).c_str():L"180");SetDlgItemTextW(exportWindow_,2705,L"0");
+ if(desktop::automatedSession()){wchar_t n[8]{};if(GetEnvironmentVariableW(L"NGMV_TEST_EXPORT_REPEATS",n,8))SetDlgItemTextW(exportWindow_,2705,n);}
+}
+void Window::startExport(){
+ if(exportRunning_||!player_.loaded())return;
+ syncExportTrack();
+ wchar_t durationText[32]{},playsText[32]{};GetDlgItemTextW(exportWindow_,2703,durationText,32);GetDlgItemTextW(exportWindow_,2705,playsText,32);
+ wchar_t* end=nullptr;double seconds=std::wcstod(durationText,&end);if(end==durationText||*end||!std::isfinite(seconds)||seconds<=0||seconds>3600)throw std::runtime_error("Enter a duration between 0 and 3600 seconds.");
+ end=nullptr;unsigned long repeats=std::wcstoul(playsText,&end,10);if(end==playsText||*end||repeats>99)throw std::runtime_error("Enter a repeat count between 0 and 99.");
+ std::filesystem::path output;
+ if(desktop::automatedSession()){wchar_t testFolder[32768]{};auto n=GetEnvironmentVariableW(L"NGMV_TEST_EXPORT_DIR",testFolder,32768);if(n>0&&n<32768)output=testFolder;}
+ if(output.empty()){BROWSEINFOW bi{};bi.hwndOwner=exportWindow_;bi.lpszTitle=L"WAV를 저장할 폴더 선택";bi.ulFlags=BIF_RETURNONLYFSDIRS|BIF_NEWDIALOGSTYLE;
+  auto item=SHBrowseForFolderW(&bi);if(!item)return;wchar_t folder[MAX_PATH]{};bool ok=SHGetPathFromIDListW(item,folder)!=FALSE;CoTaskMemFree(item);if(!ok)throw std::runtime_error("Cannot use the selected folder.");output=folder;}
+ const auto input=file_;const int track=player_.track();const uint64_t frames=uint64_t(std::llround(seconds*InternalRate));const bool mixed=SendDlgItemMessageW(exportWindow_,2701,CB_GETCURSEL,0,0)==1;
+ if(exportThread_.joinable())exportThread_.join();exportCancel_=false;exportProgress_=0;exportRunning_=true;
+ {std::lock_guard<std::mutex>lock(exportMutex_);exportMessage_=L"준비 중…";}
+ try{exportThread_=std::thread([this,input,output,track,frames,repeats,mixed]{
+  std::filesystem::path stage;bool owned=false;
+  try{
+   auto bytes=readMusicFile(input);uint64_t exportFrames=frames;auto format=identify(bytes,input);std::unique_ptr<IMusicBackend> backend;
+   if(repeats&&format==Format::Vgm)bytes=expandVgmLoops(bytes,unsigned(repeats),exportFrames);
+   else if(repeats&&(format==Format::Bcstm||format==Format::Bcwav||format==Format::GameStream)){
+    const bool is3ds=format!=Format::GameStream;auto ext=input.extension().wstring();std::transform(ext.begin(),ext.end(),ext.begin(),[](wchar_t c){return std::towlower(c);});
+    const char* system=is3ds?"Nintendo 3DS · Audio Stream":ext==L".brstm"?"Nintendo Wii · BRSTM":ext==L".bns"?"Nintendo Wii · BNS":"CRI ADX · Game Audio";
+    backend=makeLoopingStreamBackend(input,system,true,is3ds,unsigned(repeats));if(!backend->decodedEndFrame(exportFrames)||!exportFrames)throw std::runtime_error("Cannot determine the looped stream duration.");
+   }else if(repeats)throw std::runtime_error(u8"기록된 루프 반복은 현재 VGM/VGZ와 일부 게임 오디오 스트림만 지원합니다.");
+   if(!backend)backend=makeBackend(bytes,input);
+   for(unsigned i=0;i<1000;++i){stage=output/(L".nms-export-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(i));if(std::filesystem::create_directory(stage)){owned=true;break;}}
+   if(!owned)throw std::runtime_error("Cannot create an export staging folder.");
+   auto result=exportStems(*backend,stage,{track,1,exportFrames,mixed},exportCancel_,[this](unsigned p){exportProgress_=p;});
+   if(exportCancel_)throw std::runtime_error("Export cancelled");if(!result.written)throw std::runtime_error("No audible channels were found within the selected duration.");
+   auto base=input.stem().wstring()+L"_channels";std::filesystem::path final;
+   for(unsigned i=0;i<1000;++i){final=output/(base+(i?L"_"+std::to_wstring(i):L""));if(!std::filesystem::exists(final)){std::filesystem::rename(stage,final);owned=false;break;}}
+   if(owned)throw std::runtime_error("Cannot find an unused output folder name.");
+   std::lock_guard<std::mutex>lock(exportMutex_);exportMessage_=L"완료: "+std::to_wstring(result.written)+L"개 WAV\n"+final.wstring();
+  }catch(const std::exception&e){if(owned){std::error_code ec;std::filesystem::remove_all(stage,ec);}std::lock_guard<std::mutex>lock(exportMutex_);exportMessage_=exportCancel_.load()?L"내보내기를 취소했습니다.":L"내보내기 실패: "+wide(e.what());}
+  exportRunning_=false;
+ });}catch(...){exportRunning_=false;throw;}
+}
+void Window::showExport(){
+ if(!player_.loaded())return;if(exportWindow_&&IsWindow(exportWindow_)){syncExportTrack();ShowWindow(exportWindow_,SW_SHOWNORMAL);SetForegroundWindow(exportWindow_);return;}
+ WNDCLASSW wc{};wc.hInstance=GetModuleHandleW(nullptr);wc.lpszClassName=L"NintendoMusicStudioExport";wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_BTNFACE+1);
+ wc.lpfnWndProc=[](HWND h,UINT m,WPARAM a,LPARAM b)->LRESULT{
+  auto self=reinterpret_cast<Window*>(GetWindowLongPtrW(h,GWLP_USERDATA));if(m==WM_NCCREATE){self=static_cast<Window*>(reinterpret_cast<CREATESTRUCTW*>(b)->lpCreateParams);SetWindowLongPtrW(h,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
+  if(m==WM_CREATE){control(h,L"STATIC",L"내보내기 방식",0,2700,14,14,145,25);auto mode=control(h,WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,2701,170,10,310,120);SendMessageW(mode,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"사용 중인 채널별 WAV"));SendMessageW(mode,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"원본 믹스 WAV (효과 제외)"));SendMessageW(mode,CB_SETCURSEL,0,0);control(h,L"STATIC",L"길이: 0회 반복 시 초",0,2702,14,50,150,24);control(h,L"EDIT",L"",WS_TABSTOP|WS_BORDER|ES_AUTOHSCROLL,2703,170,46,120,26);control(h,L"STATIC",L"기록된 루프 반복",0,2704,14,88,150,24);control(h,L"EDIT",L"0",WS_TABSTOP|WS_BORDER|ES_NUMBER,2705,170,84,120,26);control(h,L"STATIC",L"",0,2706,14,158,470,65);control(h,L"BUTTON",L"폴더 선택 후 내보내기",WS_TABSTOP,2707,14,120,270,30);control(h,L"BUTTON",L"취소",WS_TABSTOP,2708,300,120,100,30);SetTimer(h,1,200,nullptr);return 0;}
+  if(!self)return DefWindowProcW(h,m,a,b);
+  if(m==WM_TIMER){self->syncExportTrack();std::wstring msg;{std::lock_guard<std::mutex>lock(self->exportMutex_);msg=self->exportMessage_;}if(self->exportRunning_)msg=L"내보내는 중: "+std::to_wstring(self->exportProgress_.load())+L"%";SetDlgItemTextW(h,2706,msg.c_str());EnableWindow(GetDlgItem(h,2707),!self->exportRunning_&&self->player_.loaded());EnableWindow(GetDlgItem(h,2708),self->exportRunning_);return 0;}
+  if(m==WM_COMMAND&&HIWORD(a)==BN_CLICKED){try{if(LOWORD(a)==2707)self->startExport();else if(LOWORD(a)==2708)self->exportCancel_=true;}catch(const std::exception&e){self->report(e);}return 0;}
+  if(m==WM_CLOSE){ShowWindow(h,SW_HIDE);return 0;}if(m==WM_DESTROY){KillTimer(h,1);self->exportWindow_=nullptr;return 0;}return DefWindowProcW(h,m,a,b);
+ };
+ if(!RegisterClassW(&wc)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot create export window.");
+ exportWindow_=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT,wc.lpszClassName,L"Nintendo Music Studio · 내보내기",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,CW_USEDEFAULT,CW_USEDEFAULT,520,280,hwnd_,nullptr,wc.hInstance,this);
+ if(!exportWindow_)throw std::runtime_error("Cannot open export window.");exportInput_.clear();exportTrack_=-1;syncExportTrack();ShowWindow(exportWindow_,SW_SHOWNORMAL);
+}
 void Window::setRecording(bool v){recording_=v;updateRemote();}
 void Window::updateRemote(){
  if(!remoteWindow_||!IsWindow(remoteWindow_))return;
@@ -32,6 +96,7 @@ void Window::updateRemote(){
  SetWindowTextW(GetDlgItem(remoteWindow_,2105),player_.repeat()?L"반복 켜짐":L"반복 꺼짐");
  SetWindowTextW(GetDlgItem(remoteWindow_,2109),spectrumStyle_==0?L"종류: 막대형… (F7)":spectrumStyle_==1?L"종류: 선형… (F7)":L"종류: 가로흐름… (F7)");
  SendDlgItemMessageW(remoteWindow_,2115,BM_SETCHECK,player_.showAllChannels()?BST_CHECKED:BST_UNCHECKED,0);
+ SendDlgItemMessageW(remoteWindow_,2122,BM_SETCHECK,legacyWaveformMotion_?BST_CHECKED:BST_UNCHECKED,0);
  SetWindowTextW(GetDlgItem(remoteWindow_,2114),(L"숨긴 채널 ("+std::to_wstring(hiddenChannelCount())+L")…").c_str());
  float common=player_.commonChannelVolume();auto states=player_.states();if(common<0)common=states.empty()?1:states[0].volume;
  int volume=int(std::lround(common*100));SendDlgItemMessageW(remoteWindow_,2110,TBM_SETPOS,TRUE,volume);
@@ -96,6 +161,7 @@ void Window::showRemote(){
    control(h,L"STATIC",L"선택 채널",0,2121,14,375,130,24);
    control(h,WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP|WS_VSCROLL,2119,158,370,330,220);
    control(h,L"BUTTON",L"개별 해제",WS_TABSTOP,2120,398,370,120,28);
+   control(h,L"BUTTON",L"이전 파형 움직임 (1.6.2)",WS_TABSTOP|BS_AUTOCHECKBOX,2122,14,410,496,26);
    SetTimer(h,1,200,nullptr);return 0;
   }
   if(!self)return DefWindowProcW(h,m,a,b);
@@ -107,6 +173,7 @@ void Window::showRemote(){
    case 2103:self->player_.stop();self->resetSpectrum();break;case 2104:self->nextTrack(1);break;case 2105:self->player_.repeat(!self->player_.repeat());break;
    case 2106:PostMessageW(self->hwnd_,WM_KEYDOWN,VK_F9,0);break;case 2107:self->showEqualizer();break;case 2108:self->toggleSpectrum();break;case 2109:self->showSpectrumChoices();break;case 2114:self->showHiddenChannels();break;case 2115:self->player_.showAllChannels(SendDlgItemMessageW(h,2115,BM_GETCHECK,0,0)==BST_CHECKED);self->savePreferences();break;
    case 2120:if(self->selectedWaveZoomChannel_>=0&&size_t(self->selectedWaveZoomChannel_)<self->channelWaveformZoomSteps_.size()){size_t i=size_t(self->selectedWaveZoomChannel_);self->channelWaveformZoomSteps_[i]=-1;if(self->preferencesEnabled_)self->preferences_.values.erase(self->waveformZoomSettingKey(i));self->savePreferences();}break;
+   case 2122:self->legacyWaveformMotion_=SendDlgItemMessageW(h,2122,BM_GETCHECK,0,0)==BST_CHECKED;self->waveformTrackers_.clear();self->waveformTransitions_.clear();self->savePreferences();break;
   }self->updateRemote();InvalidateRect(self->hwnd_,nullptr,FALSE);}catch(const std::exception&e){self->report(e);}return 0;}
   if(m==WM_COMMAND&&LOWORD(a)==2119&&HIWORD(a)==CBN_SELCHANGE){int choice=int(SendDlgItemMessageW(h,2119,CB_GETCURSEL,0,0));self->selectedWaveZoomChannel_=choice-1;self->updateRemote();return 0;}
   if(m==WM_HSCROLL&&!self->changing_){int id=GetDlgCtrlID(reinterpret_cast<HWND>(b));int v=int(SendMessageW(reinterpret_cast<HWND>(b),TBM_GETPOS,0,0));if(id==2110){self->setAllChannelVolume(v/100.f);self->savePreferences();self->allVolumeDirty_=false;}else if(id==2112){self->player_.master(v/100.f);self->savePreferences();}else if(id==2116){self->setSelectedWaveformZoomStep(v);self->savePreferences();InvalidateRect(self->hwnd_,nullptr,FALSE);}self->updateRemote();return 0;}

@@ -4,6 +4,10 @@ After a non-repeating track reaches EOF, the audio becomes silent while the wave
 
 ### Earlier test notes
 
+## Nintendo Music Studio 1.6.3
+
+The remote can select the 1.6.2 waveform motion. Export creates individual audible channel WAVs or a dry mix; output is 48 kHz stereo PCM16. Recorded loop repeats are supported for VGM/VGZ and supported game audio streams. VGM loop segments containing data blocks and recorded loops in other formats are not yet supported. User audio and sound banks are not included. See RELEASE-NOTES-1.6.3.md for details.
+
 ## Current test build 1.6.3-beta 7
 
 Exact sibling DLS -> SF2 -> VMS configured font; existing Windows fallback without VMS. DLS2 PCM regions/articulation supported. Local fonts are protected from VMS live replacement. All85NSMB MIDIs tested:80audible and5valid empty originals. No supplied music/banks included. See RELEASE-NOTES-1.6.3-beta-7.md.

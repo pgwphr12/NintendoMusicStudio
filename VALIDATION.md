@@ -179,3 +179,11 @@ See `docs/GAMECUBE-WII-1.6.3-beta-9.json`. Actual local sample corpus: 88 `.brst
 
 The beta 9 remote selects a per-channel waveform-spacing override, saves it per file/track/channel, and clears it back to the common setting. The infinite-playback option has been removed; ordinary track-end behavior remains, the repeat control restarts at the boundary, and Play remains available after playback ends. The player stops at its normal metadata/fade or decoded-file boundary. A focused repeat/UI test and the post-removal runtime test have not yet been run in this refresh.
 
+# 1.6.3 — 2026-11-20
+
+- Built the player and the new export tests with MSVC Release. Existing free-motion and tracking tests passed. The old waveform crossing is checked against a known 1.6.2-style example. A private modeless UI test opened Export, exported a synthetic looped VGM to WAV, and saved the remote waveform option; the test uses dummy audio and an injected temporary output folder rather than the native folder browser.
+- Export fixture verified late notes, silent and known initialization-only channel exclusion, stereo PCM16 headers, cancellation and VGM intro/loop command order. Real supplied VGM, GSF, GB and NES short excerpts produced channel WAVs. These short excerpts do not prove all formats or songs.
+- VGM loop expansion in two supplied files opened successfully. For `JoyfulStart`, isolated VGMPlay with two loop passes and no fade produced 6,336,800 samples at 48 kHz, equal to the expanded duration. The original and loop-expanded first pass were sample-identical in this player; the expanded stream was audible after its recorded loop boundary. This does not establish identical sound to VGMPlay.
+- One real BCSTM and one BRSTM showed the exact duration predicted by their stored loop points and had unchanged decoded introductions. The original native folder chooser, other stream variants, long-duration disk failure, and actual hardware/listening were not tested. VGM loops with data blocks inside the loop and recorded loops for other formats remain unsupported.
+- An initial `ctest` run could not import Pillow for two UI tests using the default Python. Both tests subsequently passed with the bundled Python and dummy audio; no user app was controlled. See the release notes for scope and limitations.
+

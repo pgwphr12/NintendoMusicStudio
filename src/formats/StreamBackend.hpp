@@ -3,4 +3,5 @@
 #include <string>
 namespace ngmv {
 std::unique_ptr<IMusicBackend> makeStreamBackend(const std::filesystem::path &, const std::string &system = "Nintendo 3DS · Audio Stream", bool groupStereoTracks = false, bool splitTwoChannelStereo = false);
+std::unique_ptr<IMusicBackend> makeLoopingStreamBackend(const std::filesystem::path &, const std::string &system, bool groupStereoTracks, bool splitTwoChannelStereo, unsigned repeats);
 }

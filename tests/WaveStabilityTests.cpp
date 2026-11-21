@@ -8,6 +8,10 @@
 using namespace ngmv;
 void need(bool b,const char*s){if(!b)throw std::runtime_error(s);}
 int main(){try{
+ {const std::vector<float> samples={-1,-1,-.5f,.25f,-.5f,-1,.5f,1};
+  auto old=legacyEnvelope(samples,4,4);need(old.size()==4&&old[0].center==.25f&&old[1].center==-.5f&&old[2].center==-1.f&&old[3].center==.5f,"Legacy crossing selection differs from 1.6.2");
+  auto current=envelope(samples,4,4);need(current[0].center!=old[0].center,"Legacy and current viewports unexpectedly identical");
+  auto quiet=legacyEnvelope(std::vector<float>(16,0.f),8,8);for(auto p:quiet)need(p.center==0,"Legacy silence unstable");}
  unsigned cases=0;
  for(int shape=0;shape<4;shape++)for(size_t window:{256u,2048u,4096u})for(int refresh:{60,144}){
   std::vector<float>input(4096);float firstMin=10,firstMax=-10,midMin=10,midMax=-10;

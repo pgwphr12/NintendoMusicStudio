@@ -12,6 +12,7 @@ struct EnvelopeScale {
 };
 std::vector<EnvelopePoint> envelope(const std::vector<float> &samples, size_t columns,
                                     size_t window = 2048, EnvelopeScale *scale = nullptr, double offset = -1);
+std::vector<EnvelopePoint> legacyEnvelope(const std::vector<float>& samples, size_t columns, size_t window);
 // Match the previous real shape, not an edge/center zero crossing. Noise and
 // changed notes immediately fall back to current audio; no invented motion.
 class WaveformTracker {

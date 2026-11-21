@@ -1,3 +1,10 @@
+## 1.6.3 — Waveform choice and WAV export
+
+- Choose 1.6.2 waveform motion in the remote; the selection is saved.
+- Export audible channels or the dry mix to WAV from a separate window. A known whole-track usage mask filters initialization-only channels.
+- Repeat recorded VGM/VGZ and supported game-stream loops; unsupported loop structures and formats report an error. Export uses an independent decoder and can be cancelled.
+- Preserve the beta 8–10 visualization, Wii/3DS stream and playback updates. See `RELEASE-NOTES-1.6.3.md` for tests and limits.
+
 ## 1.6.3-beta 10 — EOF waveform continuation
 
 - Clear the spectrum display when switching songs or pressing Stop; Pause preserves its current history.

@@ -17,6 +17,7 @@ shutil.copy2(EXE,runtime/'NintendoMusicStudio.exe')
 for n in ['README.md','README.en.md','LICENSE','THIRD_PARTY_NOTICES.md','SOURCE.md','VALIDATION.md','RELEASE.json','CHANGELOG.md','LICENSE-REVIEW.md','LICENSE-INVENTORY.json','RELEASE-NOTES-1.6.md','RELEASE-NOTES-1.6.1h.md','RELEASE-NOTES-1.6.2.md','RELEASE-NOTES-1.6.3-1-beta.md','RELEASE-NOTES-1.6.3-beta-2.md','RELEASE-NOTES-1.6.3-beta-10.md','RELEASE-NOTES-1.6.3-beta-9.md','RELEASE-NOTES-1.6.3-beta-8.md','RELEASE-NOTES-1.6.3-beta-7.md','RELEASE-NOTES-1.6.3-beta-6.md','RELEASE-NOTES-1.6.3-beta-5.md','RELEASE-NOTES-1.6.3-beta-4.md','RELEASE-NOTES-1.6.3-beta-3.md','RELEASE-NOTES-1.6.2-2.md','RELEASE-NOTES-1.6.2-3.md','RELEASE-NOTES-1.6.2-4.md','RELEASE-NOTES-1.6.2-5.md','RELEASE-NOTES-1.6.2-6.md','RELEASE-NOTES-1.6.2-7.md','RELEASE-NOTES-1.6.2-8.md','RELEASE-NOTES-1.6.2-9.md','RELEASE-NOTES-1.6.2-10.md','RELEASE-NOTES-1.6.2-11.md','RELEASE-NOTES-1.6.2-12.md']:
  shutil.copy2(SRC/n,runtime/n)
 shutil.copytree(SRC/'licenses',runtime/'licenses',dirs_exist_ok=True)
+if version=='1.6.3':shutil.copy2(SRC/'RELEASE-NOTES-1.6.3.md',runtime/'RELEASE-NOTES-1.6.3.md')
 shutil.copy2(SRC/'docs/ROADMAP-BETA-9-WII.md',runtime/'ROADMAP-BETA-9-WII.md')
 validation=OUT/(PACKAGE+'-validation');validation.mkdir(exist_ok=True)
 subprocess.run([os.sys.executable,str(SRC/'tools/check_standalone.py'),str(runtime/'NintendoMusicStudio.exe')],check=True)
@@ -53,6 +54,7 @@ dirs={'src','tests','third_party','docs','licenses','samples','.github','tools'}
 files={'CMakeLists.txt','.clang-format','.gitignore','LICENSE','README.md','README.en.md','SOURCE.md','THIRD_PARTY_NOTICES.md','VALIDATION.md','RELEASE.json','CHANGELOG.md','LICENSE-REVIEW.md','LICENSE-INVENTORY.json','RELEASE-NOTES-1.6.md','RELEASE-NOTES-1.6.1h.md','RELEASE-NOTES-1.6.2.md','RELEASE-NOTES-1.6.3-1-beta.md','RELEASE-NOTES-1.6.3-beta-2.md','RELEASE-NOTES-1.6.3-beta-10.md','RELEASE-NOTES-1.6.3-beta-9.md','RELEASE-NOTES-1.6.3-beta-8.md','RELEASE-NOTES-1.6.3-beta-7.md','RELEASE-NOTES-1.6.3-beta-6.md','RELEASE-NOTES-1.6.3-beta-5.md','RELEASE-NOTES-1.6.3-beta-4.md','RELEASE-NOTES-1.6.3-beta-3.md','RELEASE-NOTES-1.6.2-2.md','RELEASE-NOTES-1.6.2-3.md','RELEASE-NOTES-1.6.2-4.md','RELEASE-NOTES-1.6.2-5.md','RELEASE-NOTES-1.6.2-6.md','RELEASE-NOTES-1.6.2-7.md','RELEASE-NOTES-1.6.2-8.md','RELEASE-NOTES-1.6.2-9.md','RELEASE-NOTES-1.6.2-10.md','RELEASE-NOTES-1.6.2-11.md','RELEASE-NOTES-1.6.2-12.md'}
 original_hashes={'3c5359904516ea87a22391aded6520057d3796c875f14fcafc2781f06d81071c','45557026edc32018b5125c4e62c3cb45af71f5fd99db8692c7175f44b01df9c1','cdb68939395b828d90fc58abcc57b2b98555f78fba20a6fb218f7a85292fb805','03bbf089a707366253f647c8ff6c29bfe7f7d5967058f72739826babadd4b9e2','b8cb756ab0c23bfc8827d43f82de03fe7c83e49334a17137c715217d3c3bd6a6'}
 files.add("RELEASE-NOTES-1.6.3-beta-8.md")
+if version=='1.6.3':files.add('RELEASE-NOTES-1.6.3.md')
 results=[]
 for root,stem in [(runtime,NAME),(SRC,PACKAGE+'-Source')]:
  target=OUT/(stem+'.zip')
@@ -61,6 +63,7 @@ for root,stem in [(runtime,NAME),(SRC,PACKAGE+'-Source')]:
    rel=f.relative_to(root)
    if not f.is_file() or any(p in rel.parts for p in ['.git','__pycache__']):continue
    if root==SRC and rel.parts[0] not in dirs|files:continue
+   if root==SRC and f.suffix.lower()=='.dll':continue # Disabled optional vgmstream prebuilt codecs.
    assert 'editor' not in rel.parts
    assert f.name not in ['slogic.vgm','1794124986077.vgm','뷁.vgm','1793424975458.vgm','ay8930.vgm','끄투엔 로비mp3.mp3']
    assert f.suffix.lower() not in ['.nes','.mp3','.minigsf','.gsflib','.gba','.nds','.miniusf','.usflib','.sf2','.dls','.mid','.midi']

@@ -2,6 +2,19 @@
 #include <algorithm>
 #include <cmath>
 namespace ngmv {
+std::vector<EnvelopePoint> legacyEnvelope(const std::vector<float>& s,size_t columns,size_t window){
+    std::vector<EnvelopePoint> out(columns);
+    if(s.empty()||!columns||!window)return out;
+    window=std::min(window,s.size());size_t begin=s.size()-window;
+    size_t lo=begin>window/2?begin-window/2:0;
+    for(size_t i=begin;i>lo;--i)if(s[i-1]<=0&&s[i]>0){begin=i;break;}
+    for(size_t x=0;x<columns;++x){
+        if(window<columns){double at=begin+double(x)*(window-1)/std::max(size_t(1),columns-1);size_t a=size_t(at),b=std::min(a+1,s.size()-1);float f=float(at-a),v=s[a]*(1-f)+s[b]*f;out[x]={v,v,v};continue;}
+        size_t a=begin+x*window/columns,b=std::min(s.size(),begin+(x+1)*window/columns);b=std::min(std::max(a+1,b),s.size());
+        float mn=s[a],mx=mn,sum=0;for(size_t i=a;i<b;++i){mn=std::min(mn,s[i]);mx=std::max(mx,s[i]);sum+=s[i];}out[x]={mn,mx,sum/float(b-a)};
+    }
+    return out;
+}
 std::vector<EnvelopePoint> envelope(const std::vector<float> &s, size_t columns, size_t window, EnvelopeScale *scale, double offset) {
     std::vector<EnvelopePoint> out(columns);
     if (scale) *scale = {};

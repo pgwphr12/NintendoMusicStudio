@@ -124,7 +124,7 @@ class StreamBackend final : public IMusicBackend {
 
   public:
     explicit StreamBackend(const std::filesystem::path &path, std::string system, bool groupStereoTracks,
-                           bool splitTwoChannelStereo)
+                           bool splitTwoChannelStereo, unsigned exportRepeats = 0)
         : groupStereoTracks_(groupStereoTracks), splitTwoChannelStereo_(splitTwoChannelStereo),
           system_(std::move(system)) {
         using File = std::unique_ptr<libstreamfile_t, decltype(&libstreamfile_close)>;
@@ -133,13 +133,16 @@ class StreamBackend final : public IMusicBackend {
             throw std::runtime_error("Cannot open game audio stream.");
         libvgmstream_config_t config{};
         config.force_sfmt = LIBVGMSTREAM_SFMT_FLOAT;
-        config.ignore_loop = true;
+        config.ignore_loop = exportRepeats == 0;
         config.ignore_fade = true;
         config.disable_config_override = true;
+        if(exportRepeats)config.loop_count=double(exportRepeats)+1.;
         core_.reset(libvgmstream_create(file.get(), 0, &config));
         if (!core_)
             throw std::runtime_error("Unsupported or damaged game stream codec.");
         const auto &info = *core_->format;
+        if(exportRepeats&&(!info.loop_flag||info.loop_start<0||info.loop_end<=info.loop_start))
+            throw std::runtime_error("This stream has no supported recorded loop points.");
         if (info.channels < 1 || info.channels > 30 || info.sample_rate < 8000 ||
             info.sample_rate > 192000 || info.play_samples <= 0)
             throw std::runtime_error("Invalid game stream channels, rate or duration.");
@@ -256,5 +259,10 @@ class StreamBackend final : public IMusicBackend {
 std::unique_ptr<IMusicBackend> makeStreamBackend(const std::filesystem::path &path, const std::string &system,
                                                  bool groupStereoTracks, bool splitTwoChannelStereo) {
     return std::make_unique<StreamBackend>(path, system, groupStereoTracks, splitTwoChannelStereo);
+}
+std::unique_ptr<IMusicBackend> makeLoopingStreamBackend(const std::filesystem::path &path,const std::string &system,
+                                                        bool groupStereoTracks,bool splitTwoChannelStereo,unsigned repeats){
+    if(!repeats||repeats>99)throw std::runtime_error("Invalid recorded loop count.");
+    return std::make_unique<StreamBackend>(path,system,groupStereoTracks,splitTwoChannelStereo,repeats);
 }
 } // namespace ngmv

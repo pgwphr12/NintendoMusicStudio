@@ -1,3 +1,7 @@
+## 1.6.3 corresponding source
+
+`src/audio/StemExport.*` provides bounded WAV export, source-loop expansion for a verified VGM command subset, silence and known-usage filtering, and cancellation. `StreamBackend.cpp` adds an export-only recorded-loop configuration. `src/visualizer/Envelope.*` and the remote contain the selectable 1.6.2 waveform movement. The native tests exercise synthetic recorded loops, WAV output, export window and preference storage. Full application source and existing notices are included; user-supplied media and sound banks are excluded.
+
 ## Test 1.6.3-beta 10 corresponding source
 
 The EOF UI timer advances display-only silence in `ChannelHistory`; audio buffers and decoder output are unchanged. The timer advances only after output drain and while transport remains active. Version resources and current README/release metadata identify beta 10. Track/file auto-play behavior is retained from beta 9. No new dependency or user audio is included.

@@ -177,7 +177,7 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6.3-beta 10\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.3\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · BRSTM/BNS · ADX · VGM/VGZ\r\n"
                 L"Wii/GameCube: 검증된 BRSTM/BNS/ADX 스트림 파일만. 디스크 이미지/ROM 음악 추출은 미지원\r\n"
@@ -301,7 +301,7 @@ bool Window::open(const std::filesystem::path &p) {
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         loadChannelWaveformZooms();
         SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.6.3-beta 10 — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6.3 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening any supported music file, including a dropped stream, starts playback.
         player_.play();
@@ -335,7 +335,7 @@ void Window::selectFolder(size_t index, bool play) {
     playlist_.current = index;
     file_ = path;
     loadChannelWaveformZooms();
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3-beta 10 — " + file_.filename().wstring()).c_str());
+    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -590,7 +590,7 @@ void Window::paint(HDC dc, int width, int height) {
         player_.loaded() ? (info.title.empty() ? L"Track " + std::to_wstring(player_.track() + 1)
                                                : wide(info.title))
                          : (recording_ ? L"Open a music file" : L"음악 파일을 열어 주세요");
-    if(!recording_)text(dc, title, 42, 22, 1000, 62, 46, RGB(235, 240, 249), true);
+    if(!recording_)text(dc, title, 42, 22, 860, 62, 46, RGB(235, 240, 249), true);
     if (!recording_){
         button(dc,spectrumMode_?L"스펙트럼 (F6)":L"파형 (F6)",1080,22,190,spectrumMode_);
         button(dc,spectrumStyle_==0?L"막대형 ▾ (F7)":spectrumStyle_==1?L"선형 ▾ (F7)":L"가로흐름 ▾ (F7)",1285,22,195,spectrumMode_);
@@ -714,6 +714,7 @@ void Window::paint(HDC dc, int width, int height) {
             overlayText_.push_back({label,cell.labelX(),y+2,w,h,size,color,true});
         }
         if(!recording_){
+        button(dc,L"내보내기",910,22,155,false,player_.loaded());
         std::wstring label = channelLabel(channels[c].name, recording_);
         if (cell.compact && channels[c].name == "EFFECTS / OTHER")
             label = L"FX / OTHER";
@@ -763,14 +764,16 @@ void Window::paint(HDC dc, int width, int height) {
         }
         EnvelopeScale scale;
         const size_t channelWindowSamples = size_t(waveformSamplesForChannel(c));
-        auto offset = waveformTrackers_[c].locate(waves[c], channelWindowSamples);
-        auto env = envelope(waves[c], size_t(x1 - x0), channelWindowSamples, &scale, offset);
+        auto offset = legacyWaveformMotion_ ? -1. : waveformTrackers_[c].locate(waves[c], channelWindowSamples);
+        auto env = legacyWaveformMotion_ ? legacyEnvelope(waves[c], size_t(x1-x0), channelWindowSamples) : envelope(waves[c], size_t(x1 - x0), channelWindowSamples, &scale, offset);
         // A sliding-window mean makes a steady bass note bob. Use the same
         // DC-relative midpoint for triggering and vertical centering.
         float mean = scale.center;
-        float gain = scale.amplitude > .0001f ? std::min(64.f, .65f / scale.amplitude) : 1;
+        float amplitude=scale.amplitude;
+        if(legacyWaveformMotion_){mean=0;amplitude=0;for(float v:waves[c]){mean+=v;amplitude=std::max(amplitude,std::abs(v));}mean/=float(std::max(size_t(1),waves[c].size()));}
+        float gain = amplitude > .0001f ? std::min(64.f, .65f / amplitude) : 1;
         for(auto&p:env){p.minimum=(p.minimum-mean)*gain;p.maximum=(p.maximum-mean)*gain;p.center=(p.center-mean)*gain;}
-        waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
+        if(!legacyWaveformMotion_)waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
         int previous = center;
         for (size_t x = 0; x < env.size(); x++) {
             auto point = env[x];
@@ -848,6 +851,7 @@ void Window::click(int x, int y) {
         return;
     int lx = int((x - offsetX_) / scale_), ly = int((y - offsetY_) / scale_);
     try {
+        if(!recording_ && ly>=22 && ly<72 && lx>=910 && lx<1065){showExport();return;}
         if(!recording_ && ly>=22 && ly<72 && lx>=1080 && lx<1270){toggleSpectrum();return;}
         if(!recording_ && ly>=22 && ly<72 && lx>=1285 && lx<1480){showSpectrumChoices();return;}
         if (!recording_ && ly >= 22 && ly < 72 && lx >= 1495 && lx < 1870) {
@@ -995,6 +999,8 @@ void Window::click(int x, int y) {
     }
 }
 Window::~Window() {
+    exportCancel_=true;
+    if(exportThread_.joinable())exportThread_.join();
     framePacer_.stop();
     releaseBuffer();
 }
@@ -1069,6 +1075,7 @@ void Window::savePreferences() {
     v.erase("infinitePlayback");
     v["windowSamples"] = windowSamples_;
     v["waveformZoomStep"] = waveformZoomStep_;
+    v["legacyWaveformMotion"] = legacyWaveformMotion_;
     v["waveformZoom"] = int(std::clamp(std::lround(std::log2(4096.0 / std::max(64, windowSamples_))), 0l, 6l));
     v["showAllChannels"] = player_.showAllChannels()?1:0;
     v["spectrumView"]=spectrumMode_;
@@ -1354,6 +1361,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 45:return windowSamples_;
             case 46:return selectedWaveZoomChannel_;
             case 47:return b>=0&&size_t(b)<channelWaveformZoomSteps_.size()?waveformZoomStepForChannel(size_t(b)):-1;
+            case 48:return exportWindow_&&IsWindow(exportWindow_)?GetDlgItemInt(exportWindow_,2703,nullptr,FALSE):-1;
             case 25: return virtualMidiReloads_;
             case 26: return !virtualMidiError_.empty();
             case 23: return midiDeviceOutput();
@@ -1568,6 +1576,7 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
         DestroyWindow(hwnd_);
         return 0;
     case WM_DESTROY:
+        if(exportWindow_&&IsWindow(exportWindow_))DestroyWindow(exportWindow_);
         if(hiddenChannelsWindow_&&IsWindow(hiddenChannelsWindow_))DestroyWindow(hiddenChannelsWindow_);
         if(spectrumChoiceWindow_&&IsWindow(spectrumChoiceWindow_))DestroyWindow(spectrumChoiceWindow_);
         if(remoteWindow_&&IsWindow(remoteWindow_))DestroyWindow(remoteWindow_);
@@ -1614,6 +1623,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                             10.f);
         player_.repeat(preferences_.get("repeat", 0, 0, 1) != 0);
         autoplay_ = preferences_.get("autoplay", 1, 0, 1) != 0;
+        legacyWaveformMotion_ = preferences_.get("legacyWaveformMotion", 0, 0, 1) != 0;
         preferences_.values.erase("infinitePlayback");
         recording_ = recording || preferences_.get("recording", 0, 0, 1) != 0;
         int zoomStep = preferences_.get("waveformZoomStep", -1, 0, 32);
@@ -1656,7 +1666,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3-beta 10", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

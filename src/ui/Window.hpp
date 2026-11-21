@@ -11,6 +11,8 @@
 #include <filesystem>
 #include <deque>
 #include <chrono>
+#include <atomic>
+#include <thread>
 #include <windows.h>
 namespace ngmv {
 class Window {
@@ -27,6 +29,17 @@ class Window {
     void hideChannelAt(int,int);
     size_t hiddenChannelCount() const;
     HWND remoteWindow_ = nullptr, equalizerWindow_ = nullptr;
+    HWND exportWindow_ = nullptr;
+    std::thread exportThread_;
+    std::atomic<bool> exportCancel_{false}, exportRunning_{false};
+    std::atomic<unsigned> exportProgress_{0};
+    std::mutex exportMutex_;
+    std::wstring exportMessage_;
+    std::filesystem::path exportInput_;
+    int exportTrack_ = -1;
+    void showExport();
+    void syncExportTrack();
+    void startExport();
     void showRemote();
     void toggleRemote();
     void updateRemote();
@@ -90,6 +103,7 @@ class Window {
     void loadVisualPreferences();
     void toggleSpectrum();
     bool autoplay_ = true;
+    bool legacyWaveformMotion_ = false;
     int windowSamples_ = 1024;
     int waveformZoomStep_ = 2;
     std::vector<int> channelWaveformZoomSteps_;
