@@ -1,3 +1,17 @@
+## Nintendo Music Studio 1.6.3.1h
+
+- Internal MIDI synthesis supports master, common and individual channel gains up to **500%**. Other formats and direct MIDI device output keep their existing limits; high gains can clip.
+- Manual **SF2/DLS selection** works without VirtualMIDISynth and persists across restarts. Only VMS import/follow actions require VMS.
+- The F8 menu has a persistent **Search same-folder sound banks** option, on by default (DLS then SF2). Turn it off to use your selected bank. Selecting a bank manually turns it off; it can be enabled again. Toggling reloads the current MIDI from the beginning.
+
+Corrscope display scaling reduces differences between songs, retaining the NSF 4x reference and applying a single gain to the trace. Held envelopes preserve note releases and silence; shape, timing, DC offset, audio and trigger inputs stay intact. The remote opens and reopens within the monitor work area, clear of the taskbar.
+
+The remote now offers **Corrscope waveform** below the legacy option, using a native translation of the actual corrscope 0.11.1 default correlation/period/pitch-tracking code on a separate worker. The middle **Language** selector switches Korean/English immediately and saves the choice. Existing standard and legacy waveform paths stay separate.
+
+Standard waveform motion is restored to stable 1.6.3. Legacy keeps its original integer rising-edge trigger and pixel buckets, with the reference search moved to the center and a small free range rather than a fixed zero-height center. Tool window overlaps, DPI sizing and duplicated text rendering were also fixed.
+
+Export uses the modern Windows folder picker, starting beside the source music. Results go into a song-named subfolder, with a numeric suffix if it already exists. Used-channel WAV exports now include the decoder's original `master.wav`, with the same duration and loops. Export remains dry 48kHz stereo PCM16. See RELEASE-NOTES-1.6.3.1h.md.
+
 ## Current test build 1.6.3-beta 10
 
 After a non-repeating track reaches EOF, the audio becomes silent while the waveform history continues scrolling with silence; the transport remains in its playing state. Repeat still loops at the track boundary. Selecting another track, opening a supported file, or dropping one into the player starts playback. See RELEASE-NOTES-1.6.3-beta-10.md.

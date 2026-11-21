@@ -1,3 +1,7 @@
+## Corrscope waveform integration (1.6.3.1h)
+
+Corrscope 0.11.1 by nyanpasu64, BSD-2-Clause, pinned commit 6838a0d30057543b928565df29c57ea50eba9359. The default CorrelationTrigger, period estimator and log-frequency pitch tracking are translated to C++ in `src/visualizer/Corrscope.cpp`. Original complete source archive and reference Python modules are in `third_party/corrscope/`; copyright/terms are in `licenses/Corrscope-BSD-2-Clause.txt`. The reference source includes SciPy-derived utilities with their original notices; `licenses/Corrscope-SciPy-BSD-3-Clause.txt` reproduces those conditions. Native FFT, host renderer, live-history adapter and bounded worker are integration code. Python, NumPy and Qt are test/reference dependencies only; no Python/Qt/NumPy binary is required or shipped. This is not an upstream endorsement or its unmodified GUI renderer.
+
 ## YM3526 and mixed SN76489 integration (1.6.3-beta 3)
 
 YM3526 uses the existing GPL-2.0-or-later fmopl core. SN76496 by Nicola Salmoria, BSD-3-Clause, pinned libvgm commit61b62d64455e039de2a1d01498afa9e9b5f1cb88, is unchanged. Own bounded scheduler and minimal functional declarations; no libvgm player/framework linked. Full notice in licenses/selected-chips-BSD-3-Clause.txt and source provenance in third_party/licensed-chips/UPSTREAM.json.

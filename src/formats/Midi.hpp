@@ -15,6 +15,8 @@ inline constexpr size_t MidiMaxEvents=16000000;
 MidiSong parseMidi(const std::vector<uint8_t>&,size_t eventLimit=MidiMaxEvents);
 // Automatic file opens try exact sibling DLS then SF2 before VMS/default.
 // Explicit bank arguments remain one-off overrides; absent VMS uses Windows GM.
+void midiLocalBankSearch(bool);
+bool midiLocalBankSearch();
 void midiSoundFont(const std::filesystem::path&);
 std::filesystem::path midiSoundFont();
 std::filesystem::path windowsMidiBank();

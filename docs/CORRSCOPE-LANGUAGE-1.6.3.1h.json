@@ -1,0 +1,92 @@
+{
+  "version": "1.6.3.1h",
+  "date": "2026-11-21",
+  "option_KO": "코르스코프 파형",
+  "option_EN": "Corrscope waveform",
+  "placement": "below legacy; KO/EN language selector in middle of remote",
+  "upstream_commit": "6838a0d30057543b928565df29c57ea50eba9359",
+  "upstream_version": "0.11.1",
+  "license": "BSD-2-Clause, source/reference SciPy notices retained",
+  "configuration": {
+    "trigger_samples": 1920,
+    "rate": 48000,
+    "edge_strength": 1,
+    "buffer_strength": 1,
+    "responsiveness": 0.5,
+    "mean_responsiveness": 0,
+    "reset_below": 0.3,
+    "pitch_tracking": "upstream LogFreqSpectrum defaults",
+    "post_trigger": null
+  },
+  "reference": {
+    "pass": true,
+    "cases": 8,
+    "frames": 880,
+    "exact_trigger_and_period": 845,
+    "equivalent_period_ties": 35,
+    "max_period_tie_mean_wave_error": 0.0,
+    "max_period_tie_changed_sample_fraction": 0.0,
+    "note": "Power-of-two/mixed-radix native FFT rounding may choose the adjacent identical periodic peak; exact binary/UI pixel identity is not claimed. Original failures and comparisons retained privately."
+  },
+  "UI": {
+    "pass": true,
+    "sessions": [
+      {
+        "session": 0,
+        "pass": true,
+        "corrscope_frames": 18
+      },
+      {
+        "session": 1,
+        "pass": true,
+        "corrscope_frames": 0
+      }
+    ],
+    "audio": "dummy",
+    "live_language_and_inputs_preserved": true,
+    "placement": "corrscope below legacy; language in middle"
+  },
+  "worker": "separate thread; latest pending request only; epoch reset discards old results; created lazily; own thread joined on exit",
+  "localization": "KO/EN switches native and drawn UI in place; editable values preserved; settings saved; window caption records removed on destruction; music metadata remains unchanged",
+  "regressions": [
+    "legacy/new paths retained",
+    "export master/recorded-loop UI PASS",
+    "two-session remote/master/common/EQ PASS",
+    "six native tool layouts PASS"
+  ],
+  "runtime_dependencies": "No Python, NumPy, Qt or third-party DLL required",
+  "audio": "dummy UI tests; audio decoder/renderer code unchanged; no physical listening or all-format/monitor proof",
+  "limits": [
+    "Native translation of default trigger, not entire original GUI/renderer or arbitrary Corrscope project configuration",
+    "Real-time history adapter uses available past audio; rendering width follows host waveform spacing",
+    "Periodic ties described above and floating point rounding exist",
+    "Heavy many-channel files/physical refresh/multi-monitor DPI not fully exercised"
+  ],
+  "external_upload": false,
+  "display_height_fix": {
+    "version": "1.6.3.1h unchanged",
+    "automatic_gain": true,
+    "reference_gain": 4,
+    "reference_amplitude": 0.1625,
+    "common_target_height": 0.65,
+    "warmup_seconds": 0.1,
+    "envelope_hold_seconds": 0.75,
+    "reference_release_seconds": 4,
+    "gain_up_seconds": 0.4,
+    "gain_down_seconds": 0.08,
+    "target_gain_bounds": [
+      0.125,
+      256
+    ],
+    "clipping_guard": ".95 / max(raw absolute peak, rendered trace peak), one common scalar",
+    "silence": "hold previous gain below AC amplitude .0001",
+    "audio_and_trigger_inputs_changed": false,
+    "tests": "common heights across .01/.03/.1/.2/.4 amplitudes; reference4; silence; release envelope; DC/ratios; 60/144Hz; native PASS",
+    "reference": "Earlier upstream trigger differential reused: trigger unchanged"
+  },
+  "tool_placement": {
+    "change": "Fit new native tools inside nearest monitor rcWork with DPI-aware size cap; clamp remote on reopen",
+    "tests": "PASS actual initial/reopen bounds after intentional offscreen move, native six-tool layout regression, four synthetic bottom/top/left taskbar and negative-monitor cases",
+    "Windows_settings_changed": false
+  }
+}

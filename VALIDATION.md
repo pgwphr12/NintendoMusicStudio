@@ -1,3 +1,23 @@
+# 1.6.3.1h — optional banks, internal MIDI500%, uniform display heights
+
+Latest evidence supersedes the older display-height records below. Native internal MIDI500%/actual synthetic PCM5x, format caps, return preferences and11 bank cases PASS. Two owned dummy-audio UI sessions prove no-VMS manual playback, VMS-only disabled menu actions, live local-search toggles and restart persistence. Existing local-bank/VMS-follow and Corrscope/language/taskbar UI checks PASS. The 15-file private corpus was tested for36s/track0 before and after, originals SHA/size/mtime unchanged; no whole-song or physical listening claim. See docs/DISPLAY-MIDI-1.6.3.1h.json.
+
+# Slow display zoom and taskbar-safe remote, unchanged 1.6.3.1h
+
+Native tests pass: 4x ordinary-signal reference, gradual quiet zoom, silence hold, unchanged waveform ratios/DC, clipping guard and 60/144Hz independence. Actual remote initial/reopen work-area bounds, four synthetic monitor/taskbar placements and six tool layouts passed. No Windows setting was changed. Trigger differential results are reused because the algorithm/input is unchanged.
+
+# Corrscope display height correction, same 1.6.3.1h
+
+Corrscope uses fixed 4x display zoom without automatic amplitude normalization or DC recentering; no audio gain or trigger input is changed. Fixed-scale/relative-amplitude/DC/silence checks passed. Earlier original-trigger differential checks are reused because the trigger is unchanged.
+
+# Corrscope + language addition, same 1.6.3.1h
+
+Unmodified upstream 0.11.1 differential reference: 8 generated signals / 880 frames, 845 exact trigger/period matches and 35 period-equivalent square-wave peak ties within the recorded waveform error bound. Existing modern/legacy paths stay separate. Live KO/EN switching, field preservation, mode exclusivity, option placement, restart persistence, background processing, six tool layouts, export and remote/EQ regressions passed with owned processes/dummy audio. Physical audio/refresh and all files were not tested. See `docs/CORRSCOPE-LANGUAGE-1.6.3.1h.json`.
+
+# 1.6.3.1h verification
+
+Modern folder dialog selection/cancel, source-parent default, song-named output and collision protection, channel WAV + decoder master PCM16, 64 voices + master, cancellation, recorded loop UI, centered legacy integer-trigger tests, restored stable default waveform tests (108 tracking sweeps) and six native tool layouts passed. Remote/EQ captures visually checked. Tests used owned processes, synthetic fixtures and dummy audio. Full previous decoder suite and independent clean source rebuild not rerun. See `docs/EXPORT-HOTFIX-1.6.3.1h.json`.
+
 ## Beta 10 validation — spectrum reset revision
 
 The **1.6.3-beta 10** label is unchanged. Spectrum history is cleared after a song/file switch and on Stop from either the main window or remote. Pause does not call the reset path. The Release build completed with 0 errors; it emitted one C4819 warning from the existing third-party SDL joystick source. The already-running player was left untouched, so the updated build was linked to a separate output path. The player was not launched and no runtime UI check or test suite was run. Executable SHA256: `EAD03F092AD9E87669B0FA39BB5604B36642A522615E96E990CFB23A3A6FA857` (5,349,376 bytes).

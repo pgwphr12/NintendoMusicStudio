@@ -1,4 +1,6 @@
 #include "Window.hpp"
+#include "ToolLayout.hpp"
+#include "UiLanguage.hpp"
 #include "ChannelLayout.hpp"
 #include <map>
 #include <stdexcept>
@@ -62,7 +64,7 @@ void Window::updateHiddenChannels(){
     SendMessageW(list,LB_SETHORIZONTALEXTENT,extent,0);
     SendMessageW(list,WM_SETREDRAW,TRUE,0);InvalidateRect(list,nullptr,TRUE);
     const auto message=count?L"직접 숨긴 채널입니다. 선택한 채널을 다시 표시할 수 있습니다.":L"직접 숨긴 채널이 없습니다.";
-    SetWindowTextW(GetDlgItem(hiddenChannelsWindow_,2703),message);
+    setUiText(GetDlgItem(hiddenChannelsWindow_,2703),message);
     EnableWindow(GetDlgItem(hiddenChannelsWindow_,2701),count!=0);
     EnableWindow(GetDlgItem(hiddenChannelsWindow_,2702),count!=0);
 }
@@ -79,6 +81,7 @@ void Window::showHiddenChannels(){
         if(m==WM_CREATE){
             auto control=[&](const wchar_t* cls,const wchar_t* text,DWORD style,int id,int x,int y,int w,int height){
                 auto c=CreateWindowExW(0,cls,text,WS_CHILD|WS_VISIBLE|style,x,y,w,height,h,reinterpret_cast<HMENU>(INT_PTR(id)),GetModuleHandleW(nullptr),nullptr);
+                setUiText(c,text);
                 SendMessageW(c,WM_SETFONT,reinterpret_cast<WPARAM>(GetStockObject(DEFAULT_GUI_FONT)),TRUE);return c;
             };
             control(L"STATIC",L"",0,2703,16,14,488,34);
@@ -113,7 +116,7 @@ void Window::showHiddenChannels(){
     AdjustWindowRectEx(&rect,WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,FALSE,WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT);
     hiddenChannelsWindow_=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT,wc.lpszClassName,L"숨긴 채널",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,
         owner.left+20,owner.top+20,rect.right-rect.left,rect.bottom-rect.top,hwnd_,nullptr,wc.hInstance,this);
-    if(!hiddenChannelsWindow_)throw std::runtime_error("Cannot open hidden channel list.");
+    if(!hiddenChannelsWindow_)throw std::runtime_error("Cannot open hidden channel list.");fitToolWindow(hiddenChannelsWindow_,520,342);rememberUiTree(hiddenChannelsWindow_);
     updateHiddenChannels();ShowWindow(hiddenChannelsWindow_,screenshot_.empty()?SW_SHOWNORMAL:SW_SHOWNOACTIVATE);
 }
 }

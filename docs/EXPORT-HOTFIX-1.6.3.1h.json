@@ -1,0 +1,33 @@
+{
+  "version": "1.6.3.1h",
+  "date": "2026-11-21",
+  "tests": {
+    "stem_export": "PASS master uses decoder mix, audible/late/init-only/silent filtering, PCM16, cancellation, recorded loop sequence, 64 voices + master",
+    "centered_waveform": "PASS legacy centered integer trigger, original integer buckets, non-pinned middle, short buffers, distinct mode outputs; 1000 legacy 4096-sample/800-column scopes 4.4417ms (isolated CPU test, not display FPS)",
+    "modern_folder_dialog": "PASS actual modern native dialog, default source parent accepted, song-stem child, numeric collision, cancellation no child, master alongside channels",
+    "tool_layouts": "PASS remote/EQ/spectrum/hidden/export/about child bounds and control intersection checks; remote/EQ/export native captures visually inspected",
+    "remote_controls": "PASS two sessions transport/common/master gain, spacing override, 20band EQ and saved reset",
+    "loop_export_UI": "PASS synthetic recorded loop length, master, track length refresh and saved legacy toggle",
+    "modern_waveform_restore": "PASS default envelope/tracker/transition implementations restored from stable 1.6.3; 108 tracking sweeps and 24 motion cases"
+  },
+  "audio": "dummy; no physical listening claim",
+  "limits": [
+    "Physical multi-monitor/DPI switching and all Windows display scaling combinations were not exercised",
+    "No full all-format decoder regression rerun; format/backend code unchanged except WAV exporter",
+    "Corrscope-inspired central shape matching, independently written; not the full corrscope trigger engine",
+    "Export remains dry PCM16 without playback effects",
+    "Independent clean source rebuild was not repeated for this hotfix"
+  ],
+  "failed_candidates": [
+    "Initial parallel build stopped without useful diagnostics; serial builds succeeded",
+    "Initial tool layout retained 1px label/slider collision; corrected before final build",
+    "Initial capture contained duplicate text; WM_PRINTCLIENT background/child pass separated and captures rechecked",
+    "Legacy UI test still asserted stable 1.6.3 added control absent; updated to expect the existing control",
+    "Folder test timing initially inspected not-yet-created native dialog controls, corrected readiness checks",
+    "Native picker test initially assumed 50ms but default length rounds up to 1s; explicitly requested 50ms, final duration correct",
+    "Previous hotfix applied the same correlation path to both modes; user reported identical motion and legacy lag. Restored distinct legacy path and stable default tracker. Previous package preserved privately."
+  ],
+  "external_upload": false,
+  "original_music_modified": false,
+  "centered_modes": "Corrected: only legacy reference search moved from left to center; default motion restored. Both display real audio, without forcing center sample height."
+}

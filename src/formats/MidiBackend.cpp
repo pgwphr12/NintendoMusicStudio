@@ -2,6 +2,7 @@
 #include "MidiDevice.hpp"
 #include <windows.h>
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -20,6 +21,7 @@
 #endif
 namespace ngmv {
 namespace {
+std::atomic<bool> searchLocal{true};
 std::mutex fontMutex;std::filesystem::path selectedFont;
 using Font=std::unique_ptr<tsf,decltype(&tsf_close)>;
 #include "MidiBank.inl"
@@ -105,14 +107,14 @@ class MidiBackend final:public IMusicBackend {
         LoadedFont loaded;std::filesystem::path path;unsigned rejectedLocal=0;
         // Explicit one-off F8 bank choices remain explicit. Automatic file opens
         // prefer their own sibling bank, even with a saved global/VMS selection.
-        if(bank.empty())for(const auto&candidate:localMidiBankCandidates(file)){
+        if(bank.empty()&&midiLocalBankSearch())for(const auto&candidate:localMidiBankCandidates(file)){
             try{loaded=loadFont(candidate);path=candidate;localBank_=true;break;}
             catch(const std::bad_alloc&){throw;}
             catch(const std::runtime_error&){++rejectedLocal;}
         }
-        bool basicOnly=!localBank_&&bank.empty()&&!virtualMidiInstalled();
-        if(!localBank_)path=basicOnly?std::filesystem::path{}:bank.empty()?midiSoundFont():bank;
-        if(!localBank_&&rejectedLocal&&!basicOnly&&bank.empty())path=automaticMidiBank();
+        if(!localBank_)path=bank.empty()?midiSoundFont():bank;
+        if(!localBank_&&bank.empty()&&!path.empty()&&!std::filesystem::is_regular_file(path))path.clear();
+        bool basicOnly=!localBank_&&path.empty()&&!virtualMidiInstalled();
         bool system=path.empty();deviceMode_=!localBank_&&!basicOnly&&system&&midiDeviceOutput();
         // Hidden/dummy test sessions must never emit hardware MIDI notes.
         wchar_t dummy[32]{};if(GetEnvironmentVariableW(L"NGMV_TEST_SESSION",nullptr,0)&&GetEnvironmentVariableW(L"SDL_AUDIODRIVER",dummy,32)&&!wcscmp(dummy,L"dummy"))deviceMode_=false;
@@ -154,6 +156,8 @@ class MidiBackend final:public IMusicBackend {
     }
 };
 }
+void midiLocalBankSearch(bool enabled){searchLocal.store(enabled);}
+bool midiLocalBankSearch(){return searchLocal.load();}
 void midiSoundFont(const std::filesystem::path&p){std::lock_guard<std::mutex>lock(fontMutex);selectedFont=p;}
 std::filesystem::path midiSoundFont(){std::lock_guard<std::mutex>lock(fontMutex);return selectedFont;}
 std::filesystem::path windowsMidiBank(){

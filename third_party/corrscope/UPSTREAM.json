@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/corrscope/corrscope",
+  "commit": "6838a0d30057543b928565df29c57ea50eba9359",
+  "version": "0.11.1",
+  "license": "BSD-2-Clause",
+  "source_zip_sha256": "9c8ce8ad31ed8eff87b8b9341f4cdf3ae49639d349f6c1fe35ae6a33de3f3488",
+  "integration": "C++ translation of CorrelationTrigger default preset, get_period and LogFreqSpectrum; native renderer/live history adapter; Python source retained for reference and differential tests"
+}

@@ -52,18 +52,20 @@ StemExportResult exportStems(IMusicBackend& b,const std::filesystem::path& stage
     b.selectTrack(o.track);b.muteMask64(0);auto sourceChannels=b.channels();
     if(sourceChannels.empty()||sourceChannels.size()>64)throw std::runtime_error("Unsupported channel count");
     uint64_t usage=0;const bool usageKnown=!o.mix&&b.channelUsage(usage);
-    auto channels=o.mix?std::vector<ChannelInfo>{{"Mix"}}:sourceChannels;
+    auto channels=sourceChannels;
+    if(o.mix)channels.clear();
+    const size_t masterIndex=channels.size();channels.push_back({"Master"});
     std::vector<Output> files(channels.size());
-    for(size_t i=0;i<channels.size();++i){auto& f=files[i];f.path=stage/(std::to_wstring(i+1)+L"_"+safeName(channels[i].name)+L".wav");f.file.open(f.path,std::ios::binary|std::ios::trunc);if(!f.file)throw std::runtime_error("Cannot create WAV");header(f.file,uint32_t(o.frames*o.plays*4));}
+    for(size_t i=0;i<channels.size();++i){auto& f=files[i];f.path=stage/(i==masterIndex?std::wstring(L"master.wav"):std::to_wstring(i+1)+L"_"+safeName(channels[i].name)+L".wav");f.file.open(f.path,std::ios::binary|std::ios::trunc);if(!f.file)throw std::runtime_error("Cannot create WAV");header(f.file,uint32_t(o.frames*o.plays*4));}
     AudioBlock block;std::vector<char> encoded;uint64_t done=0,total=o.frames*o.plays;unsigned last=101;
     for(unsigned pass=0;pass<o.plays;++pass){if(pass)b.selectTrack(o.track);uint64_t left=o.frames;
       while(left){if(cancel.load())throw std::runtime_error("Export cancelled");size_t n=size_t(std::min<uint64_t>(left,4096));b.render(n,block);
         if(b.channels().size()!=sourceChannels.size()||block.voices.size()!=sourceChannels.size()||block.mix.size()!=n)throw std::runtime_error("Channel layout changed during export");
-        encoded.resize(n*4);for(size_t c=0;c<channels.size();++c){const auto& samples=o.mix?block.mix:block.voices[c];if(samples.size()!=n)throw std::runtime_error("Incomplete channel audio");auto& f=files[c];for(size_t i=0;i<n;++i){auto s=samples[i];uint16_t l=uint16_t(pcm(s.l)),r=uint16_t(pcm(s.r));f.audible|=(l!=0||r!=0);encoded[4*i]=char(l);encoded[4*i+1]=char(l>>8);encoded[4*i+2]=char(r);encoded[4*i+3]=char(r>>8);}f.file.write(encoded.data(),std::streamsize(encoded.size()));if(!f.file)throw std::runtime_error("WAV write failed");}
+        encoded.resize(n*4);for(size_t c=0;c<channels.size();++c){const auto& samples=c==masterIndex?block.mix:block.voices[c];if(samples.size()!=n)throw std::runtime_error("Incomplete channel audio");auto& f=files[c];for(size_t i=0;i<n;++i){auto s=samples[i];uint16_t l=uint16_t(pcm(s.l)),r=uint16_t(pcm(s.r));f.audible|=(l!=0||r!=0);encoded[4*i]=char(l);encoded[4*i+1]=char(l>>8);encoded[4*i+2]=char(r);encoded[4*i+3]=char(r>>8);}f.file.write(encoded.data(),std::streamsize(encoded.size()));if(!f.file)throw std::runtime_error("WAV write failed");}
         left-=n;done+=n;unsigned pct=unsigned(done*100/total);if(progress&&pct!=last){last=pct;progress(pct);}
       }
     }
-    StemExportResult result;for(size_t i=0;i<files.size();++i){auto&f=files[i];f.file.close();if(!f.file)throw std::runtime_error("WAV close failed");if(f.audible&&(!usageKnown||(usage&(uint64_t(1)<<i))))++result.written;else{std::filesystem::remove(f.path);++result.silent;}}
+    StemExportResult result;for(size_t i=0;i<files.size();++i){auto&f=files[i];f.file.close();if(!f.file)throw std::runtime_error("WAV close failed");if(i==masterIndex||(f.audible&&(!usageKnown||(usage&(uint64_t(1)<<i)))))++result.written;else{std::filesystem::remove(f.path);++result.silent;}}
     return result;
 }
 }

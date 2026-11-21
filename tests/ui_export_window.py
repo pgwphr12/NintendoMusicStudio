@@ -45,7 +45,7 @@ try:
  u.GetDlgItemTextW.argtypes=[W.HWND,C.c_int,W.LPWSTR,C.c_int]
  assert not list(target.iterdir()),'Export started before pressing start'
  send(u.GetDlgItem(dialog,2707),0xf5)
- result=wait(lambda:next((p for p in target.glob('fixture_channels*') if p.is_dir()),None));files=list(result.glob('*.wav'));assert files,'No WAV files published'
+ result=wait(lambda:next((p for p in target.glob('fixture*') if p.is_dir()),None));files=list(result.glob('*.wav'));assert files,'No WAV files published';assert (result/'master.wav').is_file(),'Master mix missing'
  for wav in files:
   with wave.open(str(wav),'rb') as f:assert f.getframerate()==48000 and f.getnchannels()==2 and f.getnframes()==4000,'Wrong VGM recorded-loop WAV length'
  assert not list(target.glob('.nms-export-*')),'Temporary export folder was retained'

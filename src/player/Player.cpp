@@ -49,6 +49,8 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
     if(backend_)backend_->devicePlayback(0,false,states(),master());
     backend_ = std::move(candidate);
     format_=format;
+    midiGain_=format==Format::Midi&&!backend_->hasDeviceOutput();
+    output_.master(std::min(masterPreference_.load(),masterLimit()));
     uint64_t decodedEnd = UINT64_MAX;
     const bool hasDecodedEnd = backend_->decodedEndFrame(decodedEnd);
     exactSourceEnd_=hasDecodedEnd || format==Format::AudioFile || format==Format::Midi;
@@ -66,7 +68,8 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
         std::lock_guard<std::mutex> lock(stateMutex_);
         channelStates_.assign(backend_->channels().size(), ChannelState{});
         if(initialStates.size()==channelStates_.size())channelStates_=initialStates;
-        if(commonChannelVolume_>=0)for(auto& state:channelStates_)state.volume=commonChannelVolume_;
+        if(commonChannelVolume_>=0)for(auto& state:channelStates_)state.volume=std::min(commonChannelVolume_,channelLimit());
+        for(auto& state:channelStates_)state.volume=std::clamp(state.volume,0.f,channelLimit());
         error_.clear();
     }
     track_ = 0;
@@ -101,7 +104,7 @@ void Player::restart(int track, int ms, bool play) {
             std::lock_guard<std::mutex> lock(stateMutex_);
             channelStates_.assign(backend_->channels().size(), ChannelState{});
             for(size_t i=0;i<channelStates_.size();i++) {
-                if(commonChannelVolume_>=0)channelStates_[i].volume=commonChannelVolume_;
+                if(commonChannelVolume_>=0)channelStates_[i].volume=std::min(commonChannelVolume_,channelLimit());
                 const auto& name=backend_->channels()[i].name;
                 if(i<previousChannels.size()&&i<previousStates.size()&&previousChannels[i].name==name)
                     channelStates_[i]=previousStates[i];
@@ -112,7 +115,7 @@ void Player::restart(int track, int ms, bool play) {
         { std::lock_guard<std::mutex> lock(stateMutex_);
           // Current-song stop/seek/replay preserves its mixed per-channel edits.
           // A different song still starts from the saved common gain.
-          if(track!=track_&&commonChannelVolume_>=0)for(auto& state:channelStates_)state.volume=commonChannelVolume_; }
+          if(track!=track_&&commonChannelVolume_>=0)for(auto& state:channelStates_)state.volume=std::min(commonChannelVolume_,channelLimit()); }
         configureVisibleChannels();
         gbaPsgUsed_ = -1;
         if (ms)
@@ -184,7 +187,7 @@ void Player::seek(int ms) {
 void Player::channel(size_t i, ChannelState state) {
     std::lock_guard<std::mutex> lock(stateMutex_);
     if (i < channelStates_.size()) {
-        state.volume = std::clamp(state.volume, 0.f, 2.f);
+        state.volume = std::clamp(state.volume, 0.f, channelLimit());
         channelStates_[i] = state;
     }
 }
@@ -195,8 +198,8 @@ std::vector<ChannelState> Player::states() const {
 void Player::channelVolumes(float volume) {
     if(!std::isfinite(volume))return;
     std::lock_guard<std::mutex> lock(stateMutex_);
-    commonChannelVolume_=std::clamp(volume,0.f,2.f);
-    for(auto&state:channelStates_)state.volume=commonChannelVolume_;
+    commonChannelVolume_=std::clamp(volume,0.f,5.f);
+    for(auto&state:channelStates_)state.volume=std::min(commonChannelVolume_,channelLimit());
 }
 std::string Player::error() const {
     std::lock_guard<std::mutex> lock(stateMutex_);

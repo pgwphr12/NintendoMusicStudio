@@ -6,6 +6,7 @@
 #include "ChannelLayout.hpp"
 #include "visualizer/SpectrumCurve.hpp"
 #include "visualizer/Envelope.hpp"
+#include "visualizer/Corrscope.hpp"
 #include "visualizer/SpectrogramHistory.hpp"
 #include "visualizer/WaveformTail.hpp"
 #include <filesystem>
@@ -57,6 +58,7 @@ class Window {
     };
     std::vector<WaveSegment> segments_;
     std::vector<WaveformTracker> waveformTrackers_;
+    std::vector<CorrscopeDisplayScale> corrscopeScales_;
     std::vector<WaveformTransition> waveformTransitions_;
     std::chrono::steady_clock::time_point waveformPaintTime_{};
     WaveformTail waveformTail_;
@@ -104,6 +106,9 @@ class Window {
     void toggleSpectrum();
     bool autoplay_ = true;
     bool legacyWaveformMotion_ = false;
+    bool corrscopeWaveform_ = false;
+    std::unique_ptr<CorrscopeWorker> corrscopeWorker_;
+    void changeLanguage(bool english);
     int windowSamples_ = 1024;
     int waveformZoomStep_ = 2;
     std::vector<int> channelWaveformZoomSteps_;

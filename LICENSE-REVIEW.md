@@ -1,3 +1,7 @@
+## 1.6.3.1h Corrscope addition
+
+The pinned official Corrscope 0.11.1 source has an explicit BSD-2-Clause grant compatible with this app's GPL distribution. A marked native translation and original reference source are supplied; BSD-2-Clause and SciPy-derived BSD-3-Clause notices are retained in the runtime documentation and embedded notices. No original music, Python runtime, NumPy runtime or upstream GUI is redistributed.
+
 ##1.5.12 distribution update
 
 GME LGPL2.1+ is statically linked into the GPL2+ application. Complete corresponding app/library source, marked patches and reproducible relinking build scripts are delivered in the same release source ZIP; component notices are retained in docs and embedded executable resources. No MIDI driver/system DLS/user sound bank is redistributed. This does not claim rights to bundled music (none included) or blanket legal certification.

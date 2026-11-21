@@ -28,6 +28,8 @@ class Player {
     std::atomic<bool> quit_{false};
     mutable std::mutex stateMutex_;
     std::vector<ChannelState> channelStates_;
+    std::atomic<bool> midiGain_{false};
+    std::atomic<float> masterPreference_{1.f};
     float commonChannelVolume_ = -1; // Unset preserves legacy per-channel defaults.
     std::string error_;
     std::atomic<bool> playing_{false};
@@ -103,9 +105,11 @@ class Player {
     void rate(int rate) {
         output_.changeRate(rate);
     }
-    void master(float v) {
-        output_.master(v);
-    }
+    float masterLimit()const{return midiGain_.load()?5.f:1.f;}
+    float channelLimit()const{return midiGain_.load()?5.f:2.f;}
+    float masterPreference()const{return masterPreference_.load();}
+    void master(float v) {if(std::isfinite(v)){masterPreference_=std::clamp(v,0.f,5.f);output_.master(std::min(masterPreference_.load(),masterLimit()));}}
+
     bool dmcUsed() const {
         return dmcUsed_.load();
     }
@@ -147,7 +151,7 @@ class Player {
     }
     void channel(size_t index, ChannelState state);
     void channelVolumes(float volume);
-    float commonChannelVolume() const { std::lock_guard<std::mutex> lock(stateMutex_); return commonChannelVolume_; }
+    float commonChannelVolume() const { std::lock_guard<std::mutex> lock(stateMutex_); return std::min(commonChannelVolume_,channelLimit()); }
     float pitch() const { return output_.pitch(); }
     void pitch(float value) { output_.pitch(value); }
     std::vector<ChannelState> states() const;

@@ -1,13 +1,25 @@
 #include "Envelope.hpp"
+
 #include <algorithm>
+
 #include <cmath>
+
 namespace ngmv {
+
 std::vector<EnvelopePoint> legacyEnvelope(const std::vector<float>& s,size_t columns,size_t window){
     std::vector<EnvelopePoint> out(columns);
     if(s.empty()||!columns||!window)return out;
-    window=std::min(window,s.size());size_t begin=s.size()-window;
-    size_t lo=begin>window/2?begin-window/2:0;
-    for(size_t i=begin;i>lo;--i)if(s[i-1]<=0&&s[i]>0){begin=i;break;}
+    window=std::min(window,s.size());const size_t newest=s.size()-window;
+    size_t begin=newest,half=window/2,center=newest+half;
+    // Retain the old inexpensive, integer rising-edge trigger and pixel buckets.
+    // Move the search from the left edge to the middle of the display. Keep a
+    // small central tolerance instead of forcing the exact center sample to 0.
+    const size_t freedom=std::max(size_t(1),window/32);
+    const size_t lo=std::max(half,center>half?center-half:0);
+    for(size_t i=center;i>lo;--i)if(s[i-1]<=0&&s[i]>0){
+        const size_t desired=i-half;
+        begin=std::min(newest,desired+std::min(freedom,newest-desired));break;
+    }
     for(size_t x=0;x<columns;++x){
         if(window<columns){double at=begin+double(x)*(window-1)/std::max(size_t(1),columns-1);size_t a=size_t(at),b=std::min(a+1,s.size()-1);float f=float(at-a),v=s[a]*(1-f)+s[b]*f;out[x]={v,v,v};continue;}
         size_t a=begin+x*window/columns,b=std::min(s.size(),begin+(x+1)*window/columns);b=std::min(std::max(a+1,b),s.size());

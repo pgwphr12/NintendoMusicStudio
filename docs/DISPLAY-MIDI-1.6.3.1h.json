@@ -1,0 +1,167 @@
+{
+  "version": "1.6.3.1h",
+  "date": "2026-11-21",
+  "user_corpus": {
+    "files": 15,
+    "scope": "First36seconds of track0, 48kHz/60fps headless; metrics only, no audio copied",
+    "original_SHA_size_mtime_unchanged": true,
+    "rows": [
+      {
+        "format": ".nsf",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 4,
+        "median_channel_height_before": 0.638927221,
+        "median_channel_height_after": 0.540302351
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 11,
+        "median_channel_height_before": 0.245087668,
+        "median_channel_height_after": 0.421478897
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 4,
+        "median_channel_height_before": 0.7277113795,
+        "median_channel_height_after": 0.551883459
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 16,
+        "median_channel_height_before": 0.3744436055,
+        "median_channel_height_after": 0.5844137375
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 16,
+        "median_channel_height_before": 0.36920619,
+        "median_channel_height_after": 0.5933678155
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 3,
+        "median_channel_height_before": 0.283007145,
+        "median_channel_height_after": 0.446645886
+      },
+      {
+        "format": ".nsf",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 4,
+        "median_channel_height_before": 0.39031463850000003,
+        "median_channel_height_after": 0.501291752
+      },
+      {
+        "format": ".nsf",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 8,
+        "median_channel_height_before": 0.4309112725,
+        "median_channel_height_after": 0.47094652049999997
+      },
+      {
+        "format": ".wav",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 2,
+        "median_channel_height_before": 0.672062933,
+        "median_channel_height_after": 0.534037828
+      },
+      {
+        "format": ".nsf",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 4,
+        "median_channel_height_before": 0.6308898035,
+        "median_channel_height_after": 0.5292262135
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 12,
+        "median_channel_height_before": 0.270503387,
+        "median_channel_height_after": 0.523652762
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 4,
+        "median_channel_height_before": 0.7814127209999999,
+        "median_channel_height_after": 0.5883672235
+      },
+      {
+        "format": ".nsf",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 5,
+        "median_channel_height_before": 0.418450415,
+        "median_channel_height_after": 0.499193549
+      },
+      {
+        "format": ".vgm",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 6,
+        "median_channel_height_before": 0.2787975665,
+        "median_channel_height_after": 0.5795708005
+      },
+      {
+        "format": ".nsf",
+        "seconds": 36,
+        "tested_track": 0,
+        "active_channels": 4,
+        "median_channel_height_before": 0.4774588945,
+        "median_channel_height_after": 0.5559930805
+      }
+    ],
+    "limits": "Percussion, note release, DC-heavy channels and silent regions retain natural differences; not whole-song or physical monitor tests"
+  },
+  "MIDI": {
+    "manual_no_VMS_and_optional_local_bank_native": "11 cases PASS",
+    "UI": {
+      "pass": true,
+      "audio": "dummy",
+      "sessions": [
+        {
+          "session": 0,
+          "pass": true,
+          "no_VMS_manual_bank_playback": true,
+          "menu_VMS_only_disabled": true,
+          "local_option_live_and_persistent": true,
+          "master_and_channels_500": true
+        },
+        {
+          "session": 1,
+          "pass": true,
+          "no_VMS_manual_bank_playback": true,
+          "menu_VMS_only_disabled": true,
+          "local_option_live_and_persistent": true,
+          "master_and_channels_500": true
+        }
+      ]
+    },
+    "local_bank_and_VMS_follow_regression": {
+      "pass": true,
+      "local_DLS_and_SF2_protected": true,
+      "unpaired_VMS_live_follow_restored": true,
+      "master_preserved": true,
+      "audio": "dummy",
+      "only_owned_files_changed": true
+    },
+    "gain": "500% master/common/individual internal MIDI; actual synthetic PCM5x PASS; other-format caps/preference return PASS",
+    "limits": "Dummy audio; no external-device5x or physical listening claim; high gain may clip"
+  }
+}

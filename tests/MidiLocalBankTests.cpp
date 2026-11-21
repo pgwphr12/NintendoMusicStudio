@@ -31,6 +31,9 @@ int wmain(int argc,wchar_t**argv){try{
  SetEnvironmentVariableW(L"NGMV_TEST_NO_VMS",L"1");expect(windowsMidiBank(),false);
  // A merely similar basename must not match.
  fs::remove(dls);fs::remove(sf2);auto unrelated=cases/L"\uac19\uc740 \uc774\ub984-extra.dls";copy(root/"own2.dls",unrelated);need(localMidiBankCandidates(file).empty(),"Prefix match bank selected");
+ // User-selected banks work without VMS and can override sibling search.
+ copy(root/"own.sf2",sf2);copy(root/"own2.dls",dls);midiSoundFont(root/"own.sf2");midiLocalBankSearch(false);expect(root/"own.sf2",false);
+ midiLocalBankSearch(true);expect(dls,true);midiLocalBankSearch(false);expect(root/"own.sf2",false);midiLocalBankSearch(true);
  // Explicit one-off font choice still overrides automatic local selection.
  copy(root/"own2.dls",dls);auto explicitBank=makeMidiBackend(bytes,file,root/"own.sf2");need(!explicitBank->usesLocalMidiBank()&&explicitBank->tracks()[0].game=="own.sf2","Explicit choice ignored");++checks;
  auto silent=makeMidiBackend(readMusicFile(root/"empty.mid"),root/"empty.mid",root/"own2.dls");silent->render(8192,block);need(silent->channels().empty()&&energy(block)==0,"Empty MIDI fabricated notes");++checks;

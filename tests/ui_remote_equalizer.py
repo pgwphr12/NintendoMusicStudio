@@ -125,10 +125,10 @@ for session in range(2):
             assert send(zoom,0x400)==7
             send(combo,0x14e,0);send(remote,0x111,(1<<16)|2119,combo)
             assert 'waveformZoomStep=8' in settings.read_text()
-            assert not u.GetDlgItem(remote,2122) and 'infinitePlayback=' not in settings.read_text()
+            assert u.GetDlgItem(remote,2122) and 'infinitePlayback=' not in settings.read_text()
         else:
             assert all(state(19,c)==65 for c in range(state(17))) and state(3)==30 and state(45)==256 and state(16)==1
-            assert not u.GetDlgItem(remote,2122) and 'infinitePlayback=' not in settings.read_text()
+            assert u.GetDlgItem(remote,2122) and 'infinitePlayback=' not in settings.read_text()
             combo=u.GetDlgItem(remote,2119);send(combo,0x14e,1);send(remote,0x111,(1<<16)|2119,combo)
             assert state(47,0)==7 and send(u.GetDlgItem(remote,2116),0x400)==7
             press(remote,2120);assert state(47,0)==8 and not u.IsWindowEnabled(u.GetDlgItem(remote,2120))

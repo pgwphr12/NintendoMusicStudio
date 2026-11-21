@@ -1,4 +1,6 @@
 #include "Window.hpp"
+#include "ToolLayout.hpp"
+#include "UiLanguage.hpp"
 #include "ChannelLayout.hpp"
 #include "formats/Midi.hpp"
 #include "formats/MidiDevice.hpp"
@@ -117,12 +119,17 @@ static void fill(HDC dc, RECT r, COLORREF color) {
     FillRect(dc, &r, drawing.brush(color));
 }
 static void text(HDC dc, const std::wstring &s, int x, int y, int w, int h, int size,
-                 COLORREF color, bool bold = false) {
+                 COLORREF color, bool bold = false,bool localize=true) {
     auto old = SelectObject(dc, drawing.font(size, bold));
     SetTextColor(dc, color);
     SetBkMode(dc, TRANSPARENT);
     RECT r{x, y, x + w, y + h};
-    DrawTextW(dc, s.c_str(), -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+    auto caption=localize?translateUi(s):s;
+    if(uiEnglish()&&localize&&!caption.empty()){
+        SIZE extent{};GetTextExtentPoint32W(dc,caption.c_str(),int(caption.size()),&extent);
+        if(extent.cx>w&&w>0)SelectObject(dc,drawing.font(std::max(8,int(double(size)*w/extent.cx)),bold));
+    }
+    DrawTextW(dc, caption.c_str(), -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
     SelectObject(dc, old);
 }
 static void line(HDC dc, int x1, int y1, int x2, int y2, COLORREF color, int width = 1) {
@@ -177,7 +184,7 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6.3\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.3.1h\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · BRSTM/BNS · ADX · VGM/VGZ\r\n"
                 L"Wii/GameCube: 검증된 BRSTM/BNS/ADX 스트림 파일만. 디스크 이미지/ROM 음악 추출은 미지원\r\n"
@@ -196,21 +203,23 @@ void Window::showAbout() {
                 12, 610, 260, h, reinterpret_cast<HMENU>(1), nullptr, nullptr);
             if(auto resource=FindResourceW(GetModuleHandleW(nullptr),MAKEINTRESOURCEW(901),RT_RCDATA)){
                 auto data=LoadResource(GetModuleHandleW(nullptr),resource);auto bytes=SizeofResource(GetModuleHandleW(nullptr),resource);auto value=LockResource(data);
-                if(value&&bytes){SendMessageW(body,EM_SETLIMITTEXT,0x7ffffffe,0);int n=GetWindowTextLengthW(body);std::wstring contents(n+1,0);GetWindowTextW(body,contents.data(),n+1);contents.resize(n);contents+=L"\r\n\r\nEmbedded component notices / licenses:\r\n";contents+=wide(std::string(static_cast<const char*>(value),bytes));SetWindowTextW(body,contents.c_str());}
+                if(value&&bytes){SendMessageW(body,EM_SETLIMITTEXT,0x7ffffffe,0);int n=GetWindowTextLengthW(body);std::wstring contents(n+1,0);GetWindowTextW(body,contents.data(),n+1);contents.resize(n);contents+=L"\r\n\r\nEmbedded component notices / licenses:\r\n";contents+=wide(std::string(static_cast<const char*>(value),bytes));setUiText(body,contents.c_str());}
             }
             SendMessageW(body, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
             HWND close =
                 CreateWindowW(L"BUTTON", L"닫기", WS_CHILD | WS_VISIBLE | WS_TABSTOP, 522, 285, 100,
                               32, h, reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
+            setUiText(close,L"닫기");
             SendMessageW(close, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
             return 0;
         }
         if (message == WM_SIZE) {
             int width = LOWORD(b), height = HIWORD(b);
-            MoveWindow(GetDlgItem(h, 1), 12, 12, std::max(40, width - 24),
-                       std::max(40, height - 68), TRUE);
-            MoveWindow(GetDlgItem(h, IDCANCEL), std::max(12, width - 112),
-                       std::max(52, height - 44), 100, 32, TRUE);
+            auto px=[&](int n){return MulDiv(n,toolDpi(h),96);};
+            MoveWindow(GetDlgItem(h, 1), px(12), px(12), std::max(px(40), width - px(24)),
+                       std::max(px(40), height - px(68)), TRUE);
+            MoveWindow(GetDlgItem(h, IDCANCEL), std::max(px(12), width - px(112)),
+                       std::max(px(52), height - px(44)), px(100), px(32), TRUE);
             return 0;
         }
         if (message == WM_CLOSE || (message == WM_COMMAND && LOWORD(a) == IDCANCEL)) {
@@ -233,6 +242,7 @@ void Window::showAbout() {
                         owner.left + 24, owner.top + 48, 660, 370, hwnd_, nullptr, instance, this);
     if (!aboutWindow_)
         throw std::runtime_error("Cannot open player information.");
+    fitToolWindow(aboutWindow_,634,330);rememberUiTree(aboutWindow_);
     ShowWindow(aboutWindow_, screenshot_.empty() ? SW_SHOWNORMAL : SW_SHOWNOACTIVATE);
     if (screenshot_.empty())
         SetFocus(GetDlgItem(aboutWindow_, IDCANCEL));
@@ -295,13 +305,13 @@ bool Window::open(const std::filesystem::path &p) {
             return false;
         player_.openPrepared(std::move(prepared), format);
         resetSpectrum();
-        waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
+        waveformTrackers_.clear();corrscopeScales_.clear();if(corrscopeWorker_)corrscopeWorker_->reset();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
         restoreChannels();
         file_ = p;
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         loadChannelWaveformZooms();
-        SetWindowTextW(hwnd_,
-                       (L"Nintendo Music Studio · 1.6.3 — " + file_.filename().wstring()).c_str());
+        setUiText(hwnd_,
+                       (L"Nintendo Music Studio · 1.6.3.1h — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening any supported music file, including a dropped stream, starts playback.
         player_.play();
@@ -330,12 +340,12 @@ void Window::selectFolder(size_t index, bool play) {
         return;
     player_.openPrepared(std::move(prepared), identify(readMusicFile(path),path));
     resetSpectrum();
-    waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
+    waveformTrackers_.clear();corrscopeScales_.clear();if(corrscopeWorker_)corrscopeWorker_->reset();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
     restoreChannels();
     playlist_.current = index;
     file_ = path;
     loadChannelWaveformZooms();
-    SetWindowTextW(hwnd_, (L"Nintendo Music Studio · 1.6.3 — " + file_.filename().wstring()).c_str());
+    setUiText(hwnd_, (L"Nintendo Music Studio · 1.6.3.1h — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -357,7 +367,7 @@ void Window::nextTrack(int direction, bool automatic) {
         int size = int(player_.tracks().size());
         player_.select((player_.track() + size + direction) % size);
         resetSpectrum();
-        waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
+        waveformTrackers_.clear();corrscopeScales_.clear();if(corrscopeWorker_)corrscopeWorker_->reset();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
         refreshHiddenChannels();
         loadChannelWaveformZooms();
     }
@@ -372,6 +382,8 @@ void Window::openDialog() {
         L"(*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*.usf;*.miniusf;*."
         L"bcstm;*.bcwav;*.brstm;*.bns;*.adx;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi;*.gba;*.nes)\0*.nsf;*.nsfe;*.spc;*.gbs;*.gsf;*.minigsf;*.2sf;*.mini2sf;*."
         L"usf;*.miniusf;*.bcstm;*.bcwav;*.brstm;*.bns;*.adx;*.vgm;*.vgz;*.mp3;*.wav;*.ogg;*.flac;*.mid;*.midi;*.gba;*.nes\0모든 파일\0*.*\0";
+    std::wstring localizedFilter;
+    if(uiEnglish()){const wchar_t* part=d.lpstrFilter;while(*part){std::wstring label(part);if(label.find(L"음악 파일 ")==0)label=L"Music files "+label.substr(6);if(label==L"모든 파일")label=L"All files";localizedFilter+=label;localizedFilter.push_back(0);part+=wcslen(part)+1;}localizedFilter.push_back(0);d.lpstrFilter=localizedFilter.c_str();}
     d.lpstrFile = path;
     d.nMaxFile = 32768;
     d.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
@@ -409,22 +421,24 @@ void Window::tracksMenu() {
         else{
             player_.select(chosen - 1000);
             resetSpectrum();
-            waveformTrackers_.clear();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
+            waveformTrackers_.clear();corrscopeScales_.clear();if(corrscopeWorker_)corrscopeWorker_->reset();waveformTransitions_.clear();waveformPaintTime_={};waveformTail_.clear();
             refreshHiddenChannels();
         }
     }
 }
 void Window::soundFontMenu() {
-    if(changing_||!virtualMidiAvailable_)return;
-    auto menu=CreatePopupMenu();auto old=midiSoundFont();bool oldDevice=midiDeviceOutput(),committed=false,imported=false;
-    AppendMenuW(menu,MF_STRING|(followVirtualMidi_&&!oldDevice&&!old.empty()?MF_CHECKED:0),5,L"VirtualMIDISynth 사용 중인 SF2 가져오기…");
+    if(changing_)return;
+    auto menu=CreatePopupMenu();auto old=midiSoundFont();bool oldDevice=midiDeviceOutput(),oldLocalSearch=midiLocalBankSearch(),committed=false,imported=false;
+    AppendMenuW(menu,MF_STRING|(!virtualMidiAvailable_?MF_GRAYED:0)|(followVirtualMidi_&&!oldDevice&&!old.empty()?MF_CHECKED:0),5,translateUi(L"VirtualMIDISynth 사용 중인 SF2 가져오기…").c_str());
     AppendMenuW(menu,MF_SEPARATOR,0,nullptr);
-    AppendMenuW(menu,MF_STRING|(!oldDevice&&old.empty()?MF_CHECKED:0),3,L"Windows 기본 음색 · 채널별 파형 / 효과");
-    AppendMenuW(menu,MF_STRING|(!old.empty()&&!followVirtualMidi_?MF_CHECKED:0),2,L"SF2 / DLS 파일 선택 · 채널별 파형 / 효과…");
-    AppendMenuW(menu,MF_STRING|(followVirtualMidi_?MF_CHECKED:0),6,L"VirtualMIDISynth 음색 변경 자동 반영");
+    AppendMenuW(menu,MF_STRING|(!oldDevice&&old.empty()?MF_CHECKED:0),3,translateUi(L"Windows 기본 음색 · 채널별 파형 / 효과").c_str());
+    AppendMenuW(menu,MF_STRING|(!old.empty()&&!followVirtualMidi_?MF_CHECKED:0),2,translateUi(L"SF2 / DLS 파일 선택 · 채널별 파형 / 효과…").c_str());
+    AppendMenuW(menu,MF_STRING|(!virtualMidiAvailable_?MF_GRAYED:0)|(followVirtualMidi_?MF_CHECKED:0),6,translateUi(L"VirtualMIDISynth 음색 변경 자동 반영").c_str());
     AppendMenuW(menu,MF_SEPARATOR,0,nullptr);
-    AppendMenuW(menu,MF_STRING|(oldDevice&&old.empty()?MF_CHECKED:0),4,L"외부 MIDI 직접 출력 · 파형 없음");
+    AppendMenuW(menu,MF_STRING|(oldDevice&&old.empty()?MF_CHECKED:0),4,translateUi(L"외부 MIDI 직접 출력 · 파형 없음").c_str());
+    AppendMenuW(menu,MF_STRING|(midiLocalBankSearch()?MF_CHECKED:0),7,translateUi(L"같은 폴더 음색 자동 탐색").c_str());
     POINT point;GetCursorPos(&point);auto choice=TrackPopupMenu(menu,TPM_RETURNCMD,point.x,point.y,0,hwnd_,nullptr);DestroyMenu(menu);if(!choice)return;
+    if(choice==7){midiLocalBankSearch(!oldLocalSearch);if(player_.loaded()&&!player_.tracks().empty()&&player_.tracks()[0].system=="MIDI"&&!open(file_))midiLocalBankSearch(oldLocalSearch);savePreferences();return;}
     if(choice==6){followVirtualMidi_=!followVirtualMidi_;virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();if(preferencesEnabled_)preferences_.values["followVirtualMidi"]=followVirtualMidi_?1:0;return;}
     std::filesystem::path selected;
     if(choice==5){
@@ -437,21 +451,21 @@ void Window::soundFontMenu() {
             selected=fonts[index];choice=2;imported=true;
         }catch(const std::exception&e){report(e);return;}
     }
-    if(choice==2&&!imported){wchar_t file[32768]{};OPENFILENAMEW d{};d.lStructSize=sizeof(d);d.hwndOwner=hwnd_;d.lpstrFilter=L"사운드폰트 / 음색 파일 (*.sf2;*.dls)\0*.sf2;*.dls\0\0";d.lpstrFile=file;d.nMaxFile=32768;d.Flags=OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;if(!GetOpenFileNameW(&d))return;selected=file;}
+    if(choice==2&&!imported){wchar_t file[32768]{};OPENFILENAMEW d{};d.lStructSize=sizeof(d);d.hwndOwner=hwnd_;d.lpstrFilter=uiEnglish()?L"Sound banks (*.sf2;*.dls)\0*.sf2;*.dls\0\0":L"사운드폰트 / 음색 파일 (*.sf2;*.dls)\0*.sf2;*.dls\0\0";d.lpstrFile=file;d.nMaxFile=32768;d.Flags=OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;if(!GetOpenFileNameW(&d))return;selected=file;}
     try{
-        if(choice!=4)validateMidiBank(selected);midiSoundFont(selected);midiSelectOutput(choice);
-        if(player_.loaded()&&!player_.tracks().empty()&&player_.tracks()[0].system=="MIDI"&&!open(file_)){midiSoundFont(old);midiDeviceOutput(oldDevice);return;}
+        if(choice!=4)validateMidiBank(selected);if(choice==2&&!imported)midiLocalBankSearch(false);midiSoundFont(selected);midiSelectOutput(choice);
+        if(player_.loaded()&&!player_.tracks().empty()&&player_.tracks()[0].system=="MIDI"&&!open(file_)){midiSoundFont(old);midiDeviceOutput(oldDevice);midiLocalBankSearch(oldLocalSearch);return;}
         committed=true;
-        followVirtualMidi_=imported||choice==3;
+        followVirtualMidi_=virtualMidiAvailable_&&(imported||choice==3);
         virtualMidiSeen_=imported;virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         if(preferencesEnabled_){
             preferences_.values["followVirtualMidi"]=followVirtualMidi_?1:0;
             preferences_.values["midiDeviceOutput"]=choice==4?1:0;
             preferences_.values["midiOutputRevision"]=15122;
-            saveMidiFontSelection(selected);
+            saveMidiFontSelection(selected);savePreferences();
         }
         message_=imported?L"VirtualMIDISynth SF2 가져옴: "+selected.filename().wstring():choice==4?L"Windows MIDI 장치 출력 · 내부 효과/파형 미적용":selected.empty()?L"Windows 기본 음색 · 채널별 파형":L"MIDI 음색: "+selected.filename().wstring();InvalidateRect(hwnd_,nullptr,FALSE);
-    }catch(const std::exception&e){if(!committed){midiSoundFont(old);midiDeviceOutput(oldDevice);}report(e);}
+    }catch(const std::exception&e){if(!committed){midiSoundFont(old);midiDeviceOutput(oldDevice);midiLocalBankSearch(oldLocalSearch);}report(e);}
 }
 void Window::saveMidiFontSelection(const std::filesystem::path&selected){
     if(!preferencesEnabled_)return;
@@ -590,7 +604,7 @@ void Window::paint(HDC dc, int width, int height) {
         player_.loaded() ? (info.title.empty() ? L"Track " + std::to_wstring(player_.track() + 1)
                                                : wide(info.title))
                          : (recording_ ? L"Open a music file" : L"음악 파일을 열어 주세요");
-    if(!recording_)text(dc, title, 42, 22, 860, 62, 46, RGB(235, 240, 249), true);
+    if(!recording_)text(dc, title, 42, 22, 860, 62, 46, RGB(235, 240, 249), true,!player_.loaded());
     if (!recording_){
         button(dc,spectrumMode_?L"스펙트럼 (F6)":L"파형 (F6)",1080,22,190,spectrumMode_);
         button(dc,spectrumStyle_==0?L"막대형 ▾ (F7)":spectrumStyle_==1?L"선형 ▾ (F7)":L"가로흐름 ▾ (F7)",1285,22,195,spectrumMode_);
@@ -605,7 +619,7 @@ void Window::paint(HDC dc, int width, int height) {
     if(!recording_)text(dc,
          game + L"  /  " + wide(info.system) +
              (info.author.empty() ? L"" : L"  /  " + wide(info.author)),
-         44, 89, 1600, 32, 22, RGB(150, 166, 189));
+         44, 89, 1600, 32, 22, RGB(150, 166, 189),false,false);
     if(!recording_)text(dc,
          time(player_.seconds()) + L" / " +
              (info.lengthMs > 0 ? time(info.lengthMs / 1000.) : L"--:--"),
@@ -630,7 +644,7 @@ void Window::paint(HDC dc, int width, int height) {
         text(dc, recording_ ? L"Volume" : L"전체 음량", 1550, 131, 140, 28, 18, RGB(154, 168, 190));
         volumeButton(dc, L"−", 1550, 163);
         line(dc, 1594, 178, 1798, 178, RGB(48, 59, 77), 5);
-        line(dc, 1594, 178, 1594 + int(204 * player_.master()), 178, RGB(80, 203, 180), 5);
+        line(dc, 1594, 178, 1594 + int(204 * player_.master()/player_.masterLimit()), 178, RGB(80, 203, 180), 5);
         volumeButton(dc, L"+", 1810, 163);
         text(dc, std::to_wstring(int(std::round(player_.master() * 100))) + L"%", 1850, 159, 65, 35,
              18, RGB(196, 208, 225));
@@ -647,7 +661,7 @@ void Window::paint(HDC dc, int width, int height) {
         button(dc, L"−", 642, 205, 70);
         button(dc, L"+", 722, 205, 70);
         button(dc, L"1.00", 802, 205, 80);
-        button(dc, player_.usesLocalMidiBank()?L"같은 폴더 음색":!virtualMidiAvailable_?L"Windows 기본":midiDeviceOutput()&&midiSoundFont().empty()?L"외부 MIDI (F8)":followVirtualMidi_&&virtualMidiSeen_?L"VMS 음색 자동 (F8)":midiSoundFont().empty()?L"Windows 기본 (F8)":L"MIDI SF2/DLS (F8)", 1435, 1028, 230,false,virtualMidiAvailable_);
+        button(dc, player_.usesLocalMidiBank()?L"같은 폴더 음색":midiDeviceOutput()&&midiSoundFont().empty()?L"외부 MIDI (F8)":followVirtualMidi_&&virtualMidiSeen_?L"VMS 음색 자동 (F8)":midiSoundFont().empty()?L"Windows 기본 (F8)":L"MIDI SF2/DLS (F8)", 1435, 1028, 230,false,true);
         button(dc, player_.reverb() ? L"반향 켜짐" : L"반향 꺼짐", 1240, 1028, 180,
                player_.reverb());
         button(dc, speedStep_ == 1 ? L"단위 0.01" : L"단위 0.10", 917, 205, 200);
@@ -681,7 +695,14 @@ void Window::paint(HDC dc, int width, int height) {
     if(player_.loaded()&&(tailSizeChanged||player_.playing()))waveformTail_.replace(player_.waveforms(historyFrames,waveMask));
     else waveformTail_.drain(waveElapsed,InternalRate);
     const auto&waves=waveformTail_.values();
-    waveformTrackers_.resize(waves.size());
+    std::vector<std::vector<EnvelopePoint>> corrLines;
+    if(corrscopeWaveform_){
+        if(!corrscopeWorker_)corrscopeWorker_=std::make_unique<CorrscopeWorker>();
+        std::vector<size_t> widths(waves.size());for(size_t c=0;c<widths.size();++c)widths[c]=size_t(waveformSamplesForChannel(c));
+        corrLines=corrscopeWorker_->result();
+        corrscopeWorker_->submit(waves,widths,waveMask,std::chrono::duration<double>(waveNow.time_since_epoch()).count());
+    }
+    waveformTrackers_.resize(waves.size());corrscopeScales_.resize(waves.size());
     waveformTransitions_.resize(waves.size());
     auto states = player_.states();
     const COLORREF colors[] = {RGB(247, 205, 87),  RGB(126, 222, 190), RGB(137, 180, 249),
@@ -691,7 +712,7 @@ void Window::paint(HDC dc, int width, int height) {
         text(dc,hiddenChannelCount()?(recording_?L"Channels hidden - restore in recording remote":L"채널이 숨겨져 있습니다. F12 리모컨의 숨긴 채널에서 복원하세요."):(recording_?L"No channels used in this song":L"이 곡에서 사용하는 채널이 없습니다."),54,300,1750,45,24,RGB(118,136,158));
 
     auto labelText=[&](const std::wstring&s,int x,int y,int w,int h,int size,COLORREF color,bool bold=false){
-        if(!recording_)text(dc,s,x,y,w,h,size,color,bold);
+        if(!recording_)text(dc,s,x,y,w,h,size,color,bold,false);
     };
     size_t count = visible.size();
     for (size_t i = 0; i < count; i++) {
@@ -750,7 +771,7 @@ void Window::paint(HDC dc, int width, int height) {
             line(dc, cell.sliderLeft(), sliderY, cell.sliderRight(), sliderY, RGB(47, 59, 78), 3);
             line(dc, cell.sliderLeft(), sliderY,
                  cell.sliderLeft() +
-                     int((cell.sliderRight() - cell.sliderLeft()) * states[c].volume / 2),
+                     int((cell.sliderRight() - cell.sliderLeft()) * states[c].volume / player_.channelLimit()),
                  sliderY, color, 3);
             volumeButton(dc, L"+", cell.plusX(), cell.volumeY(), cell.buttonSize());
         }
@@ -764,16 +785,23 @@ void Window::paint(HDC dc, int width, int height) {
         }
         EnvelopeScale scale;
         const size_t channelWindowSamples = size_t(waveformSamplesForChannel(c));
-        auto offset = legacyWaveformMotion_ ? -1. : waveformTrackers_[c].locate(waves[c], channelWindowSamples);
+        auto offset = legacyWaveformMotion_||corrscopeWaveform_ ? -1. : waveformTrackers_[c].locate(waves[c], channelWindowSamples);
         auto env = legacyWaveformMotion_ ? legacyEnvelope(waves[c], size_t(x1-x0), channelWindowSamples) : envelope(waves[c], size_t(x1 - x0), channelWindowSamples, &scale, offset);
+        if(corrscopeWaveform_){
+            std::vector<float> samples;if(c<corrLines.size()){samples.reserve(corrLines[c].size());for(auto point:corrLines[c])samples.push_back(point.center);}
+            env=envelope(samples,size_t(x1-x0),samples.size());
+        }
         // A sliding-window mean makes a steady bass note bob. Use the same
         // DC-relative midpoint for triggering and vertical centering.
         float mean = scale.center;
         float amplitude=scale.amplitude;
         if(legacyWaveformMotion_){mean=0;amplitude=0;for(float v:waves[c]){mean+=v;amplitude=std::max(amplitude,std::abs(v));}mean/=float(std::max(size_t(1),waves[c].size()));}
-        float gain = amplitude > .0001f ? std::min(64.f, .65f / amplitude) : 1;
+        // Only a slow uniform multiplier changes; original DC and sample shape stay intact.
+        float corrPeak=amplitude+std::abs(scale.center);
+        if(corrscopeWaveform_){mean=0;for(const auto &point:env)corrPeak=std::max(corrPeak,std::max(std::abs(point.minimum),std::abs(point.maximum)));}
+        float gain = corrscopeWaveform_?corrscopeScales_[c].update(amplitude,corrPeak,waveElapsed):amplitude > .0001f ? std::min(64.f, .65f / amplitude) : 1;
         for(auto&p:env){p.minimum=(p.minimum-mean)*gain;p.maximum=(p.maximum-mean)*gain;p.center=(p.center-mean)*gain;}
-        if(!legacyWaveformMotion_)waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
+        if(!legacyWaveformMotion_&&!corrscopeWaveform_)waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
         int previous = center;
         for (size_t x = 0; x < env.size(); x++) {
             auto point = env[x];
@@ -804,7 +832,7 @@ void Window::paint(HDC dc, int width, int height) {
         text(dc, L"모든 채널 음량", 42, 1034, 175, 40, 20, RGB(154, 168, 190));
         volumeButton(dc, L"−", 222, 1038);
         line(dc, 264, 1054, 468, 1054, RGB(48, 59, 77), 5);
-        line(dc, 264, 1054, 264 + int(102 * group), 1054, RGB(80, 203, 180), 5);
+        line(dc, 264, 1054, 264 + int(204 * group/player_.channelLimit()), 1054, RGB(80, 203, 180), 5);
         volumeButton(dc, L"+", 480, 1038);
         text(dc, mixed ? L"혼합" : std::to_wstring(int(std::lround(group * 100))) + L"%", 530, 1034,
              95, 40, 20, RGB(196, 208, 225));
@@ -825,9 +853,9 @@ void Window::mouseMove(int x, int y) {
     if (recording_)
         return;
     if (drag_ == 102)
-        setAllChannelVolume(std::clamp(2.f * (lx - 264) / 204.f, 0.f, 2.f));
+        setAllChannelVolume(std::clamp(player_.channelLimit() * (lx - 264) / 204.f, 0.f, player_.channelLimit()));
     else if (drag_ == 100)
-        player_.master(std::clamp((lx - 1594) / 204.f, 0.f, 1.f));
+        player_.master(std::clamp(player_.masterLimit() * (lx - 1594) / 204.f, 0.f, player_.masterLimit()));
     else if (drag_ == 101)
         player_.reverbAmount(std::clamp((lx - 1320) / 130.f, 0.f, 1.f));
     else {
@@ -838,9 +866,9 @@ void Window::mouseMove(int x, int y) {
             if (found == visible.end())
                 return;
             auto cell = channelCell(size_t(found - visible.begin()), visible.size(), recording_);
-            states[drag_].volume = std::clamp(2.f * (lx - cell.sliderLeft()) /
+            states[drag_].volume = std::clamp(player_.channelLimit() * (lx - cell.sliderLeft()) /
                                                   (cell.sliderRight() - cell.sliderLeft()),
-                                              0.f, 2.f);
+                                              0.f, player_.channelLimit());
             player_.channel(drag_, states[drag_]);
         }
     }
@@ -862,7 +890,7 @@ void Window::click(int x, int y) {
             if (lx < 1582)
                 player_.master((std::lround(player_.master() * 100) - 5) / 100.f);
             else if (lx >= 1810)
-                player_.master((std::lround(player_.master() * 100) + 5) / 100.f);
+                player_.master(std::min(player_.masterLimit(),(std::lround(player_.master() * 100) + 5) / 100.f));
             else if (lx >= 1594 && lx < 1798) {
                 drag_ = 100;
                 SetCapture(hwnd_);
@@ -975,11 +1003,11 @@ void Window::click(int x, int y) {
             if (!recording_ && ly >= cell.volumeY() && ly < cell.volumeY() + cell.buttonSize()) {
                 if (lx >= cell.labelX() && lx < cell.labelX() + cell.buttonSize()) {
                     states[i].volume =
-                        std::clamp((std::lround(states[i].volume * 100) - 5) / 100.f, 0.f, 2.f);
+                        std::clamp((std::lround(states[i].volume * 100) - 5) / 100.f, 0.f, player_.channelLimit());
                     player_.channel(i, states[i]);
                 } else if (lx >= cell.plusX() && lx < cell.plusX() + cell.buttonSize()) {
                     states[i].volume =
-                        std::clamp((std::lround(states[i].volume * 100) + 5) / 100.f, 0.f, 2.f);
+                        std::clamp((std::lround(states[i].volume * 100) + 5) / 100.f, 0.f, player_.channelLimit());
                     player_.channel(i, states[i]);
                 } else if (lx >= cell.sliderLeft() && lx < cell.sliderRight()) {
                     drag_ = int(i);
@@ -1005,7 +1033,7 @@ Window::~Window() {
     releaseBuffer();
 }
 void Window::setAllChannelVolume(float volume) {
-    const int percent=int(std::lround(std::clamp(volume,0.f,2.f)*100));
+    const int percent=int(std::lround(std::clamp(volume,0.f,player_.channelLimit())*100));
     preferences_.values["allChannelVolume"]=percent;
     player_.channelVolumes(percent/100.f);
     allVolumeDirty_=true;
@@ -1043,12 +1071,12 @@ void Window::restoreChannels() {
                 char oldName[40];std::snprintf(oldName,sizeof(oldName),"MIDI %02u%s",number,number==10?" DRUMS":"");
                 auto direct=desktop::Settings::channelKey(system,std::string(oldName)+" / MIDI OUT");
                 auto legacy=desktop::Settings::channelKey(system,oldName);
-                volume=preferences_.get(legacy+".volume",preferences_.get(direct+".volume",100,0,200),0,200);
+                volume=preferences_.get(legacy+".volume",preferences_.get(direct+".volume",100,0,int(player_.channelLimit()*100)),0,int(player_.channelLimit()*100));
                 mute=preferences_.get(legacy+".mute",preferences_.get(direct+".mute",0,0,1),0,1);
             }
         }
-        const int common=preferences_.get("allChannelVolume",-1,0,200);
-        state.volume = (common>=0?common:preferences_.get(key + ".volume", volume, 0, 200)) / 100.f;
+        const int common=preferences_.get("allChannelVolume",-1,0,int(player_.channelLimit()*100));
+        state.volume = (common>=0?common:preferences_.get(key + ".volume", volume, 0, int(player_.channelLimit()*100))) / 100.f;
         state.mute = preferences_.get(key + ".mute", mute, 0, 1) != 0;
         player_.channel(i, state);
     }
@@ -1061,7 +1089,8 @@ void Window::savePreferences() {
     v["eqEnabled"]=player_.equalizerEnabled();
     for(size_t band=0;band<20;band++)v["eqBand"+std::to_string(band)]=player_.equalizerGain(band);
     v["controlsRevision"] = 1415;
-    v["master"] = int(std::lround(player_.master() * 100));
+    v["midiLocalBankSearch"]=midiLocalBankSearch()?1:0;
+    v["master"] = int(std::lround(player_.masterPreference() * 100));
     v["speed"] = int(std::lround(player_.speed() * 100));
     v["pitch"] = int(std::lround(player_.pitch() * 100));
     v["speedStep"] = speedStep_;
@@ -1076,6 +1105,8 @@ void Window::savePreferences() {
     v["windowSamples"] = windowSamples_;
     v["waveformZoomStep"] = waveformZoomStep_;
     v["legacyWaveformMotion"] = legacyWaveformMotion_;
+    v["corrscopeWaveform"] = corrscopeWaveform_;
+    v["uiLanguage"] = uiEnglish()?1:0;
     v["waveformZoom"] = int(std::clamp(std::lround(std::log2(4096.0 / std::max(64, windowSamples_))), 0l, 6l));
     v["showAllChannels"] = player_.showAllChannels()?1:0;
     v["spectrumView"]=spectrumMode_;
@@ -1361,6 +1392,12 @@ LRESULT Window::event(UINT m, WPARAM a, LPARAM b) {
             case 45:return windowSamples_;
             case 46:return selectedWaveZoomChannel_;
             case 47:return b>=0&&size_t(b)<channelWaveformZoomSteps_.size()?waveformZoomStepForChannel(size_t(b)):-1;
+            case 49:return corrscopeWaveform_?2:legacyWaveformMotion_?1:0;
+            case 50:return uiEnglish()?1:0;
+            case 52:return LRESULT(player_.masterLimit()*100);
+            case 53:return LRESULT(player_.channelLimit()*100);
+            case 54:return midiLocalBankSearch();
+            case 51:return corrscopeWorker_?LRESULT(corrscopeWorker_->completed()):0;
             case 48:return exportWindow_&&IsWindow(exportWindow_)?GetDlgItemInt(exportWindow_,2703,nullptr,FALSE):-1;
             case 25: return virtualMidiReloads_;
             case 26: return !virtualMidiError_.empty();
@@ -1602,16 +1639,18 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                            GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
     if (preferencesEnabled_) {
         preferences_.load(desktop::Settings::path());
+        setUiLanguage(preferences_.get("uiLanguage",0,0,1)!=0);
         player_.showAllChannels(preferences_.get("showAllChannels",0,0,1)!=0);
         player_.equalizerEnabled(preferences_.get("eqEnabled",0,0,1)!=0);
         for(size_t band=0;band<20;band++)player_.equalizerGain(band,preferences_.get("eqBand"+std::to_string(band),0,-200,200));
-        const int common=preferences_.get("allChannelVolume",-1,0,200);
+        const int common=preferences_.get("allChannelVolume",-1,0,500);
         if(common>=0)player_.channelVolumes(common/100.f);
         midiDeviceOutput(preferences_.get("midiOutputRevision",0,0,99999)>=15122 && preferences_.get("midiDeviceOutput",0,0,1)!=0);
         { std::ifstream font(desktop::Settings::path().parent_path()/L"midi-soundfont.txt",std::ios::binary);
           std::string path;char data[32768]{};font.getline(data,32768);if(!font.fail())path=data;if(path.size()<32768 && path.find('\0')==std::string::npos)midiSoundFont(std::filesystem::u8path(path)); }
+        midiLocalBankSearch(preferences_.get("midiLocalBankSearch",1,0,1)!=0);
         followVirtualMidi_=preferences_.get("followVirtualMidi",midiSoundFont().empty()?1:0,0,1)!=0;
-        player_.master(preferences_.get("master", 100, 0, 100) / 100.f);
+        player_.master(preferences_.get("master", 100, 0, 500) / 100.f);
         player_.speed(preferences_.get("speed", 100, 50, 200) / 100.f);
         player_.pitch(preferences_.get("pitch", 100, 50, 200) / 100.f);
         const bool currentDefaults = preferences_.get("controlsRevision", 0, 0, 9999) >= 1415;
@@ -1624,6 +1663,8 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
         player_.repeat(preferences_.get("repeat", 0, 0, 1) != 0);
         autoplay_ = preferences_.get("autoplay", 1, 0, 1) != 0;
         legacyWaveformMotion_ = preferences_.get("legacyWaveformMotion", 0, 0, 1) != 0;
+        corrscopeWaveform_ = preferences_.get("corrscopeWaveform",0,0,1)!=0;
+        if(corrscopeWaveform_)legacyWaveformMotion_=false;
         preferences_.values.erase("infinitePlayback");
         recording_ = recording || preferences_.get("recording", 0, 0, 1) != 0;
         int zoomStep = preferences_.get("waveformZoomStep", -1, 0, 32);
@@ -1654,7 +1695,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     }
     loadVisualPreferences();
     virtualMidiAvailable_=virtualMidiInstalled();
-    if(!virtualMidiAvailable_){midiSoundFont({});midiDeviceOutput(false);followVirtualMidi_=false;}
+    if(!virtualMidiAvailable_){midiDeviceOutput(false);followVirtualMidi_=false;}
     WNDCLASSW wc{};
     wc.hInstance = instance;
     wc.lpszClassName = desktop::WindowClass;
@@ -1666,7 +1707,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3.1h", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

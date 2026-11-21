@@ -27,7 +27,9 @@ for f,targets in sorted(files.items()):
     try:rel=f.relative_to(src).as_posix()
     except ValueError:pass
     if rel:
-        if rel.startswith('src/'):
+        if rel=='src/visualizer/Corrscope.cpp':
+            license='BSD-2-Clause + GPL-2.0-or-later integration';evidence='Marked translation of pinned corrscope 0.11.1, full original source and retained licenses/Corrscope-BSD-2-Clause.txt'
+        elif rel.startswith('src/'):
             license='LGPL-2.1-or-later' if rel.endswith('/NsfInspect.cpp') else 'GPL-2.0-or-later'
             evidence='SPDX/header or project LICENSE + THIRD_PARTY_NOTICES.md'
         elif rel.startswith('third_party/licensed-chips/'):
