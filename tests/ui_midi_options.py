@@ -84,17 +84,20 @@ u.GetMenuItemRect.argtypes=[W.HWND,W.HMENU,W.UINT,ctypes.POINTER(W.RECT)]
 u.GetMenuItemCount.argtypes=[W.HMENU]
 u.GetMenuItemID.argtypes=[W.HMENU,ctypes.c_int]
 results=[]
-for session in range(2):
+for session in range(3):
+ if session==1:settings.write_text(settings.read_text().replace("uiLanguage=1","uiLanguage=0"))
+ elif session==2:settings.write_text(settings.read_text().replace("uiLanguage=0","uiLanguage=1"))
  env=dict(os.environ,SDL_AUDIODRIVER='dummy',NGMV_TEST_SESSION='midi-options-owned',NGMV_TEST_NO_VMS='1',NGMV_SETTINGS_TEST_FILE=str(settings),NGMV_TEST_SNAPSHOT_MS='25000')
  p=subprocess.Popen([str(exe),'--snapshot',str(paired),str(out/('session%d.bmp'%session)),'--size=1920x1080'],env=env,creationflags=subprocess.CREATE_NO_WINDOW)
  try:
   main=wait_for(lambda:windows(p.pid,'NintendoMusicStudioWindow'),'No MIDI window',10)[0];state=lambda x,y=0:send(main,0x8000+74,x,y)
   wait_for(lambda:state(1)and state(2)>250,'No manual MIDI playback',10)
-  assert not state(27)and not state(54)and not state(41)and state(52)==500 and state(53)==500
-  assert state(3)==500 and all(state(19,c)==500 for c in range(state(17)))
+  assert not state(27)and not state(54)and not state(41)and state(52)==100 and state(53)==200
+  assert state(3)==100 and all(state(19,c)==200 for c in range(state(17)))
+  assert state(50)==(0 if session==1 else 1),"Default English or saved language changed"
   u.PostMessageW(main,0x100,0x7b,0);remote=wait_for(lambda:windows(p.pid,'NintendoMusicStudioRemote'),'No remote')[0]
-  wait_for(lambda:send(u.GetDlgItem(remote,2112),0x402)==500,'Master slider maximum not updated')
-  assert send(u.GetDlgItem(remote,2110),0x402)==500 and send(u.GetDlgItem(remote,2110),0x400)==500
+  wait_for(lambda:send(u.GetDlgItem(remote,2112),0x402)==100,'Master slider maximum not updated')
+  assert send(u.GetDlgItem(remote,2110),0x402)==200 and send(u.GetDlgItem(remote,2110),0x400)==200
   u.PostMessageW(main,0x100,0x77,0)
   popup=wait_for(lambda:windows(p.pid,'#32768'),'Bank menu unavailable without VMS')[0];menu=send(popup,0x1e1)
   assert menu
@@ -113,7 +116,7 @@ for session in range(2):
   pt=((rect.left+rect.right)//2-origin.left)|(((rect.top+rect.bottom)//2-origin.top)<<16)
   u.PostMessageW(popup,0x200,0,pt);u.PostMessageW(popup,0x201,1,pt);u.PostMessageW(popup,0x202,0,pt)
   wait_for(lambda:not state(54)and not state(41),'Manual bank not restored',8)
-  results.append({'session':session,'pass':True,'no_VMS_manual_bank_playback':True,'menu_VMS_only_disabled':True,'local_option_live_and_persistent':True,'master_and_channels_500':True})
+  results.append({'session':session,'pass':True,'no_VMS_manual_bank_playback':True,'menu_VMS_only_disabled':True,'local_option_live_and_persistent':True,'legacy_gain_limits_restored':True,'default_English_saved_Korean_preserved':True})
   send(main,0x113,2);assert p.wait(timeout=10)==0
  finally:
   if p.poll()is None:p.terminate();p.wait(timeout=5)

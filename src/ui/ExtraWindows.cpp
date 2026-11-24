@@ -194,7 +194,7 @@ void Window::showRemote(){
    control(h,L"STATIC",L"선택 채널",0,2121,14,415,130,24);
    control(h,WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP|WS_VSCROLL,2119,158,410,224,220);
    control(h,L"BUTTON",L"개별 해제",WS_TABSTOP,2120,398,410,120,28);
-   control(h,L"BUTTON",L"구 파형 움직임 (중앙 기준)",WS_TABSTOP|BS_AUTOCHECKBOX,2122,14,450,496,26);
+   control(h,L"BUTTON",L"구 파형 움직임",WS_TABSTOP|BS_AUTOCHECKBOX,2122,14,450,496,26);
    control(h,L"BUTTON",L"코르스코프 파형",WS_TABSTOP|BS_AUTOCHECKBOX,2123,14,482,496,26);
    SetTimer(h,1,200,nullptr);return 0;
   }

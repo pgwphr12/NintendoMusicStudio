@@ -27,6 +27,16 @@ int main(){try{
   if(hz==60)eased=p[0].center;else need(std::abs(p[0].center-eased)<1e-5,"Refresh-dependent transition");
   p.assign(16,{.25f,.25f,.25f});t.apply(p,1./hz,false);need(p[0].center==.25f,"Paused display keeps animating");
  }
+ // The same display transition now also bridges asynchronous Corrscope results.
+ float reference=0;
+ for(int hz:{60,144,240}){
+  WaveformTransition transition;std::vector<EnvelopePoint>line(64,{0,0,0});transition.apply(line,0,true);
+  double left=1./30;
+  while(left>1e-10){double dt=std::min(left,1./hz);line.assign(64,{.2f,.8f,.5f});transition.apply(line,dt,true);left-=dt;}
+  need(line[0].center>0&&line[0].center<.5f,"Async result changed in one display jump");
+  need(std::abs(line[0].minimum/line[0].center-.4f)<1e-5&&std::abs(line[0].maximum/line[0].center-1.6f)<1e-5,"Transition changed stable target proportions");
+  if(hz==60)reference=line[0].center;else need(std::abs(reference-line[0].center)<1e-5,"Corrscope display easing tied to frame count");
+ }
  ChannelHistory history;history.reset(3,0);AudioBlock block;block.mix.resize(2048);block.voices.assign(3,std::vector<Stereo>(2048));
  for(size_t c=0;c<3;++c)for(size_t i=0;i<2048;++i)block.voices[c][i]={float(i*.001+c),float(i*.002-c)};history.append(block);
  for(double endpoint:{0.,.25,1500.375,2048.,3000.}){auto full=history.interpolatedSnapshot(endpoint,4096),selected=history.interpolatedSnapshot(endpoint,4096,5);

@@ -89,7 +89,7 @@ try:
   result=wait(lambda:next((x for x in [out/('fixture'+suffix)] if (x/'master.wav').is_file()),None))
   wait(lambda:len(list(result.glob('*.wav')))>=2)
   with wave.open(str(result/'master.wav'),'rb') as wav:assert wav.getframerate()==48000 and wav.getnframes()==2400
-  wait(lambda:'완료:' in text(u.GetDlgItem(export,2706)))
+  wait(lambda:any(word in text(u.GetDlgItem(export,2706)) for word in ('완료:','Finished:')))
  # A third selection is cancelled and must not create a result directory.
  u.PostMessageW(u.GetDlgItem(export,2707),0xf5,0,0);picker=wait(lambda:find(p.pid,'#32770'));u.PostMessageW(picker,0x10,0,0);wait(lambda:not find(p.pid,'#32770'));assert not (out/'fixture_2').exists()
  send(main,0x113,2);assert p.wait(timeout=10)==0

@@ -94,7 +94,7 @@ for session in range(2):
         if session==0:
             assert state(45)==1024
             label=u.GetDlgItem(remote,2118);text=ctypes.create_unicode_buffer(80);u.GetWindowTextW(label,text,80)
-            assert text.value=='파형 간격: 2×',text.value
+            assert text.value==('Waveform spacing: 2×' if state(50) else '파형 간격: 2×'),text.value
             press(remote,2102);assert not state(1)
             press(remote,2102);assert state(1)
             old=state(29);press(remote,2104);assert state(29)!=old
@@ -112,7 +112,7 @@ for session in range(2):
                     send(zoom,0x405,1,pos);send(remote,0x114,8,zoom)
                     if state(45)==samples:break
                 u.GetWindowTextW(label,text,80)
-                assert state(45)==samples and text.value=='파형 간격: '+caption,(pos,send(zoom,0x400),state(45),text.value)
+                assert state(45)==samples and text.value==('Waveform spacing: ' if state(50) else '파형 간격: ')+caption,(pos,send(zoom,0x400),state(45),text.value)
             combo=u.GetDlgItem(remote,2119);assert send(combo,0x146)==state(17)+1
             send(combo,0x14e,1);send(remote,0x111,(1<<16)|2119,combo)
             assert state(46)==0 and send(zoom,0x400)==16

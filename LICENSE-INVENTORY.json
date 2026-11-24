@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-21",
-  "version": "1.6.3.1h",
+  "date": "2026-11-24",
+  "version": "1.6.4",
   "scope": "Actual runtime transitive MSBuild compile inputs; file hashes and module/per-file notice mapping. Headers/source archive notices retained separately. Not a legal opinion.",
   "runtime_projects": 13,
   "compiled_translation_units": 992,
@@ -101,7 +101,7 @@
     },
     {
       "path": "@gme/gme/Gb_Oscs.cpp",
-      "SHA256": "7a1645716d8ca2bd7195d802e8beb638085c2c83bbef43a6a5ed62e2ed3e45aa",
+      "SHA256": "94cef494d18cbe9a0399c77264de2df780031ff309b198e0f392a5b9fc224f31",
       "targets": [
         "gme_static"
       ],
@@ -1937,7 +1937,7 @@
     },
     {
       "path": "src/player/Player.cpp",
-      "SHA256": "fd43428ec6269259183e781894bdff076687e0c9287f3e99ce55b629363614b9",
+      "SHA256": "7d977933c263f38411dcd9ee3349d7188983d461824ffb9a8c8dcb835ca134e0",
       "targets": [
         "viewer_core"
       ],
@@ -1946,7 +1946,7 @@
     },
     {
       "path": "src/ui/ExtraWindows.cpp",
-      "SHA256": "751e083cdd6692fb89ec083d5b47f3bc62900dbf262e244703c5a01fab1ed1d1",
+      "SHA256": "f1dc140c2f91c812d1155462a11fd44c4bd6315b70742181edf18abc6944614b",
       "targets": [
         "NintendoGameMusicViewer"
       ],
@@ -1973,7 +1973,7 @@
     },
     {
       "path": "src/ui/UiLanguage.cpp",
-      "SHA256": "d6b74b4d4c61d535caf6b9d3180b0d8047f8e16f9bec0c053786c7f07d719d01",
+      "SHA256": "fbd0c6fe24e220a176497b88a1b05454be71d728a72e858cff02ce52ff52312a",
       "targets": [
         "NintendoGameMusicViewer"
       ],
@@ -1982,7 +1982,7 @@
     },
     {
       "path": "src/ui/Window.cpp",
-      "SHA256": "27aeffda50b912f6833d7d6d38e786a5de3645b17e96284fc88a8eebd9bf89dc",
+      "SHA256": "7faa483c2865e1c69fa2a3272228923fb5a1f3e7e30c9aa0bb00ae6d5c089a4a",
       "targets": [
         "NintendoGameMusicViewer"
       ],

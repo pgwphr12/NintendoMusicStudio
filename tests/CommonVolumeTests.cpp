@@ -25,12 +25,9 @@ int main(){try{
  auto open=[&](int n,Format f){p.openPrepared(std::make_unique<Probe>(n,[&]{uniform(.4f);}),f);uniform(.4f);need(p.error().empty(),"Initial render failed");p.pause();};
  open(4,Format::Gbs);p.channel(0,{true,.9f});p.select(1);uniform(.4f);need(p.states()[0].mute,"Group priority changed mute");need(p.states().size()==8,"Growing layout");p.select(0);uniform(.4f);p.stop();uniform(.4f);
  open(12,Format::GbaRom);open(2,Format::AudioFile);open(16,Format::Midi);
- p.channelVolumes(NAN);uniform(.4f);p.channelVolumes(0);uniform(0);need(p.commonChannelVolume()==0,"Zero default not retained");p.channelVolumes(3);uniform(3);p.channelVolumes(8);uniform(5);p.master(5);need(p.master()==5&&p.channelLimit()==5,"Internal MIDI 500% unavailable");
- p.openPrepared(std::make_unique<Probe>(4),Format::Gbs);uniform(2);need(p.master()==1&&p.masterPreference()==5,"Non-MIDI cap/preference changed");
- p.openPrepared(std::make_unique<Probe>(4),Format::Midi);uniform(5);need(p.master()==5,"MIDI desired master not restored");p.channel(0,{false,9});need(p.states()[0].volume==5,"Individual MIDI cap");p.master(1);p.channelVolumes(-1);uniform(0);
- p.channelVolumes(.2f);p.openPrepared(std::make_unique<MixedProbe>(),Format::Midi);p.master(5);p.play();std::this_thread::sleep_for(std::chrono::milliseconds(180));p.pause();
- SpectrumAnalyzer::Samples amplified{};need(p.spectrumSamples(amplified)>4096,"No MIDI amplification output");
- for(size_t i=SpectrumAnalyzer::Frames-512;i<SpectrumAnalyzer::Frames;++i){need(std::abs(amplified[i*2]-.1f)<.0002f&&std::abs(amplified[i*2+1]-.2f)<.0002f,"MIDI master 5x not applied to actual PCM");}p.master(1);
+ p.channelVolumes(NAN);uniform(.4f);p.channelVolumes(0);uniform(0);need(p.commonChannelVolume()==0,"Zero default not retained");p.channelVolumes(3);uniform(2);p.channelVolumes(8);uniform(2);p.master(5);need(p.master()==1&&p.masterPreference()==1&&p.channelLimit()==2,"MIDI legacy gain caps not restored");
+ p.openPrepared(std::make_unique<Probe>(4),Format::Gbs);uniform(2);need(p.master()==1,"Non-MIDI cap changed");
+ p.openPrepared(std::make_unique<Probe>(4),Format::Midi);uniform(2);p.channel(0,{false,9});need(p.states()[0].volume==2,"Individual MIDI cap");p.channelVolumes(-1);uniform(0);
  p.channelVolumes(.4f);p.openPrepared(std::make_unique<MixedProbe>(),Format::Gsf);
  p.channel(0,{false,.25f});p.channel(1,{false,.75f});
  auto mixed=[&]{auto v=p.states();need(v.size()==2&&std::abs(v[0].volume-.25f)<.00001f&&std::abs(v[1].volume-.75f)<.00001f,"Same-song restart overwrote mixed gains");};
@@ -42,5 +39,5 @@ int main(){try{
  }
  p.channel(0,{true,.25f});p.stop();mixed();need(p.states()[0].mute,"Stop discarded mute");
  p.select(1);uniform(.4f);need(p.states()[0].mute,"New song discarded mute");
- std::cout<<"PASS mixed stop/play/seek3cycles with actual internal PCM gain retained; new-song common priority; common gain before first render/across4formats/track growth-shrink/rewind/priority over individual gains/mute preservation/format-specific500/200clamps/NaN ignored\n";return 0;
+ std::cout<<"PASS mixed stop/play/seek3cycles with actual internal PCM gain retained; new-song common priority; common gain before first render/across4formats/track growth-shrink/rewind/priority over individual gains/mute preservation/master100/channel200clamps/NaN ignored\n";return 0;
 }catch(const std::exception&e){std::cerr<<"FAIL "<<e.what()<<'\n';return 1;}}

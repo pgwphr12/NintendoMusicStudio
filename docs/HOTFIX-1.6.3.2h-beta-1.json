@@ -1,0 +1,80 @@
+{
+  "version": "1.6.3.2h-beta 1",
+  "date": "2026-11-24",
+  "scope": [
+    "Default English only when language key absent; explicit0 Korean/1 English preserved",
+    "Remove MIDI500% boost; master100/channel200 limits in core, settings and UI",
+    "Corrscope temporal display transition uses existing12ms elapsed-time easing on monitor-paced paints; no change to trigger/audio/legacy waveform"
+  ],
+  "native_tests": "CTest4/4 PASS: common gains, MIDI options, tracking/60-144-240Hz transition, Corrscope",
+  "MIDI_UI": {
+    "pass": true,
+    "audio": "dummy",
+    "sessions": [
+      {
+        "session": 0,
+        "pass": true,
+        "no_VMS_manual_bank_playback": true,
+        "menu_VMS_only_disabled": true,
+        "local_option_live_and_persistent": true,
+        "legacy_gain_limits_restored": true,
+        "default_English_saved_Korean_preserved": true
+      },
+      {
+        "session": 1,
+        "pass": true,
+        "no_VMS_manual_bank_playback": true,
+        "menu_VMS_only_disabled": true,
+        "local_option_live_and_persistent": true,
+        "legacy_gain_limits_restored": true,
+        "default_English_saved_Korean_preserved": true
+      },
+      {
+        "session": 2,
+        "pass": true,
+        "no_VMS_manual_bank_playback": true,
+        "menu_VMS_only_disabled": true,
+        "local_option_live_and_persistent": true,
+        "legacy_gain_limits_restored": true,
+        "default_English_saved_Korean_preserved": true
+      }
+    ]
+  },
+  "corrscope_UI": {
+    "pass": true,
+    "sessions": [
+      {
+        "session": 0,
+        "pass": true,
+        "corrscope_frames": 15
+      },
+      {
+        "session": 1,
+        "pass": true,
+        "corrscope_frames": 0
+      }
+    ],
+    "audio": "dummy",
+    "live_language_and_inputs_preserved": true,
+    "work_area_initial_and_reopen": true,
+    "placement": "corrscope below legacy; language in middle"
+  },
+  "export_UI": {
+    "pass": true,
+    "modern_picker": true,
+    "default_source_parent": true,
+    "song_named_folder": true,
+    "collision_preserves_existing": true,
+    "cancel_no_folder": true,
+    "master_alongside_stems": true,
+    "six_tools_no_control_overlaps": true,
+    "audio": "dummy"
+  },
+  "remote_EQ_UI": "PASS two owned sessions, English captions",
+  "failures_retained": "Old Korean-only assertion failures in remote/export tests corrected to localized expectations; no implementation bypass",
+  "limits": [
+    "Dummy/software checks; physical smoothness/listening/VRR/CPU ratio unmeasured",
+    "No CPU optimization claimed; original Corrscope analysis retained",
+    "Complete decoder regression and independent clean source build not rerun"
+  ]
+}

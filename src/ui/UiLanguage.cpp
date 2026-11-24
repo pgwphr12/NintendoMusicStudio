@@ -3,7 +3,7 @@
 #include <atomic>
 #include <commctrl.h>
 namespace ngmv { namespace {
-std::atomic<bool> english{false};
+std::atomic<bool> english{true};
 std::map<HWND,std::wstring> captions;
 bool editable(HWND h){wchar_t cls[32]{};GetClassNameW(h,cls,32);return _wcsicmp(cls,L"ComboBox")==0||(_wcsicmp(cls,L"EDIT")==0&&!(GetWindowLongPtrW(h,GWL_STYLE)&ES_READONLY));}
 LRESULT CALLBACK captionLife(HWND h,UINT m,WPARAM a,LPARAM b,UINT_PTR id,DWORD_PTR){if(m==WM_NCDESTROY){captions.erase(h);RemoveWindowSubclass(h,captionLife,id);}return DefSubclassProc(h,m,a,b);}
@@ -86,7 +86,7 @@ const Pair words[]={
 {L"숨긴 채널…",L"Hidden channels…"},
 {L"모든 채널 표시",L"Show all channels"},
 {L"개별 해제",L"Use shared value"},
-{L"구 파형 움직임 (중앙 기준)",L"Legacy waveform (center reference)"},
+{L"구 파형 움직임",L"Legacy waveform"},
 {L"코르스코프 파형",L"Corrscope waveform"},
 {L"언어",L"Language"},
 {L"Nintendo Music Studio · 리모컨",L"Nintendo Music Studio · Remote"},
@@ -139,8 +139,8 @@ const Pair suffixes[]={
 bool uiEnglish(){return english.load();}
 std::wstring translateUi(std::wstring_view source){
  if(!uiEnglish())return std::wstring(source);
- if(source.find(L"Nintendo Music Studio 1.6.3.1h\r\n\r\n")==0){
-  std::wstring about=L"Nintendo Music Studio 1.6.3.1h\r\n\r\nMusic playback, waveforms/spectra, channel volume/mute and folder playback.\r\n\r\nNSF/NSFE, SPC, GBS, GSF, 2SF, USF, BCSTM/BCWAV, BRSTM/BNS, ADX, VGM/VGZ.\r\nAudio: MP3, WAV, OGG (Vorbis), FLAC. MIDI: MID/MIDI, format 0/1, SF2/DLS or Windows MIDI output.\r\nWii/GameCube: supported stream files; disc/ROM music extraction is not supported.\r\nNES ROM: verified Super Mario Bros. NROM32 programs. GBA ROM: verified Super Mario Advance 1-4 revisions; not universal ROM support.\r\n\r\nF6 Waveform/Spectrum, F7 Spectrum style, F9 Recording view, F12 Remote, F8 MIDI bank.\r\nThe remote includes legacy waveform and Corrscope waveform options.\r\n\r\nProgram/component terms: LICENSE-REVIEW.md and licenses/. Music rights are separate from software licenses.\r\nThis modeless window does not block playback or channel controls.\r\n";
+ if(source.find(L"Nintendo Music Studio 1.6.4\r\n\r\n")==0){
+  std::wstring about=L"Nintendo Music Studio 1.6.4\r\n\r\nMusic playback, waveforms/spectra, channel volume/mute and folder playback.\r\n\r\nNSF/NSFE, SPC, GBS, GSF, 2SF, USF, BCSTM/BCWAV, BRSTM/BNS, ADX, VGM/VGZ.\r\nAudio: MP3, WAV, OGG (Vorbis), FLAC. MIDI: MID/MIDI, format 0/1, SF2/DLS or Windows MIDI output.\r\nWii/GameCube: supported stream files; disc/ROM music extraction is not supported.\r\nNES ROM: verified Super Mario Bros. NROM32 programs. GBA ROM: verified Super Mario Advance 1-4 revisions; not universal ROM support.\r\n\r\nF6 Waveform/Spectrum, F7 Spectrum style, F9 Recording view, F12 Remote, F8 MIDI bank.\r\nThe remote includes legacy waveform and Corrscope waveform options.\r\n\r\nProgram/component terms: LICENSE-REVIEW.md and licenses/. Music rights are separate from software licenses.\r\nThis modeless window does not block playback or channel controls.\r\n";
   auto licenses=source.find(L"Embedded component notices / licenses:");if(licenses!=std::wstring_view::npos)about+=source.substr(licenses);return about;
  }
  for(auto &item:words)if(source==item.first)return std::wstring(item.second);

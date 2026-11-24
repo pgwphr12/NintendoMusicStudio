@@ -1,3 +1,11 @@
+#1.6.4 — GBS NR32 PCM and presentation hotfixes
+
+The high-frequency wave shortcut used a fixed8-level midpoint, ignoring actual RAM. The actual-bank average patch makes the generated constant15 wave/NR32 modulation match the lower-frequency reference with relative RMS error0.000134 (before0.473752); zero-table modulation introduces no output difference from its unmodulated reference. All98 user GBS subsongs were rendered for3.072s, replayed and muted. Songs1..56 bit-identical; voices57..98 changed, no core warnings. Original SHA/size/mtime unchanged. No user music is bundled. A first candidate build still used the old fetched source; that run is not final evidence. CMake now SHA-checks and refreshes the PCM overlay on incremental builds. Shortened KO/EN legacy captions, default language preservation, restored gain limits and monitor-paced transitions are checked separately. Physical listening and monitor/VRR validation remain unperformed. See docs/GBS-PCM-1.6.4.json.
+
+# 1.6.3.2h-beta 1 — English default and gain rollback
+
+Default English applies only to absent language preferences; explicit Korean and English remain persisted. All formats restore master100% and channels200%; previous excessive settings are limited. Monitor-paced Corrscope transitions now use the existing12ms display-only easing; 60/144/240Hz equal-elapsed transition checks and unchanged original-trigger tests pass. Physical refresh/VRR and CPU ratio are not measured. Previous1.6.3.1h500% evidence below is historical and does not describe this candidate. Focused language, gain, bank and UI regressions are recorded in docs/HOTFIX-1.6.3.2h-beta-1.json. Software/dummy-audio checks only.
+
 # 1.6.3.1h — optional banks, internal MIDI500%, uniform display heights
 
 Latest evidence supersedes the older display-height records below. Native internal MIDI500%/actual synthetic PCM5x, format caps, return preferences and11 bank cases PASS. Two owned dummy-audio UI sessions prove no-VMS manual playback, VMS-only disabled menu actions, live local-search toggles and restart persistence. Existing local-bank/VMS-follow and Corrscope/language/taskbar UI checks PASS. The 15-file private corpus was tested for36s/track0 before and after, originals SHA/size/mtime unchanged; no whole-song or physical listening claim. See docs/DISPLAY-MIDI-1.6.3.1h.json.

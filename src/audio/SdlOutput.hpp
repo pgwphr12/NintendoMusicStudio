@@ -56,7 +56,7 @@ class SdlOutput {
         if(std::isfinite(value))speed_ = std::clamp(value, .5f, 2.f);
     }
     void master(float value) {
-        if(std::isfinite(value))master_ = std::clamp(value, 0.f, 5.f);
+        if(std::isfinite(value))master_ = std::clamp(value, 0.f, 1.f);
     }
 };
 } // namespace ngmv

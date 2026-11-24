@@ -4,7 +4,7 @@ import argparse,hashlib,json,os,shutil,subprocess,zipfile,re
 SRC=Path(__file__).resolve().parent.parent
 release=json.loads((SRC/'RELEASE.json').read_text(encoding='utf-8'))
 version=release['version'];test=release.get('channel')=='test'
-if test:assert re.fullmatch(r'\d+\.\d+\.\d+-beta [1-9]\d*',version),'Test display version must use X.Y.Z-beta N'
+if test:assert re.fullmatch(r'\d+\.\d+\.\d+(?:\.\d+h)?(?:-beta [1-9]\d*)?',version),'Test display version must be X.Y.Z with optional hotfix/beta suffix'
 PACKAGE='NintendoMusicStudio-'+version.replace(' ','-')
 parser=argparse.ArgumentParser(description='Package Nintendo Music Studio1.6.2 runtime and corresponding source.')
 parser.add_argument('--build',type=Path,default=SRC/'build')
@@ -17,7 +17,7 @@ shutil.copy2(EXE,runtime/'NintendoMusicStudio.exe')
 for n in ['README.md','README.en.md','LICENSE','THIRD_PARTY_NOTICES.md','SOURCE.md','VALIDATION.md','RELEASE.json','CHANGELOG.md','LICENSE-REVIEW.md','LICENSE-INVENTORY.json','RELEASE-NOTES-1.6.md','RELEASE-NOTES-1.6.1h.md','RELEASE-NOTES-1.6.2.md','RELEASE-NOTES-1.6.3-1-beta.md','RELEASE-NOTES-1.6.3-beta-2.md','RELEASE-NOTES-1.6.3-beta-10.md','RELEASE-NOTES-1.6.3-beta-9.md','RELEASE-NOTES-1.6.3-beta-8.md','RELEASE-NOTES-1.6.3-beta-7.md','RELEASE-NOTES-1.6.3-beta-6.md','RELEASE-NOTES-1.6.3-beta-5.md','RELEASE-NOTES-1.6.3-beta-4.md','RELEASE-NOTES-1.6.3-beta-3.md','RELEASE-NOTES-1.6.2-2.md','RELEASE-NOTES-1.6.2-3.md','RELEASE-NOTES-1.6.2-4.md','RELEASE-NOTES-1.6.2-5.md','RELEASE-NOTES-1.6.2-6.md','RELEASE-NOTES-1.6.2-7.md','RELEASE-NOTES-1.6.2-8.md','RELEASE-NOTES-1.6.2-9.md','RELEASE-NOTES-1.6.2-10.md','RELEASE-NOTES-1.6.2-11.md','RELEASE-NOTES-1.6.2-12.md']:
  shutil.copy2(SRC/n,runtime/n)
 shutil.copytree(SRC/'licenses',runtime/'licenses',dirs_exist_ok=True)
-for note in ['RELEASE-NOTES-1.6.3.md','RELEASE-NOTES-1.6.3.1h.md']:
+for note in ['RELEASE-NOTES-1.6.3.md','RELEASE-NOTES-1.6.3.1h.md','RELEASE-NOTES-1.6.3.2h-beta-1.md','RELEASE-NOTES-1.6.4.md']:
  if (SRC/note).exists():shutil.copy2(SRC/note,runtime/note)
 shutil.copy2(SRC/'docs/ROADMAP-BETA-9-WII.md',runtime/'ROADMAP-BETA-9-WII.md')
 validation=OUT/(PACKAGE+'-validation');validation.mkdir(exist_ok=True)
@@ -55,7 +55,7 @@ dirs={'src','tests','third_party','docs','licenses','samples','.github','tools'}
 files={'CMakeLists.txt','.clang-format','.gitignore','LICENSE','README.md','README.en.md','SOURCE.md','THIRD_PARTY_NOTICES.md','VALIDATION.md','RELEASE.json','CHANGELOG.md','LICENSE-REVIEW.md','LICENSE-INVENTORY.json','RELEASE-NOTES-1.6.md','RELEASE-NOTES-1.6.1h.md','RELEASE-NOTES-1.6.2.md','RELEASE-NOTES-1.6.3-1-beta.md','RELEASE-NOTES-1.6.3-beta-2.md','RELEASE-NOTES-1.6.3-beta-10.md','RELEASE-NOTES-1.6.3-beta-9.md','RELEASE-NOTES-1.6.3-beta-8.md','RELEASE-NOTES-1.6.3-beta-7.md','RELEASE-NOTES-1.6.3-beta-6.md','RELEASE-NOTES-1.6.3-beta-5.md','RELEASE-NOTES-1.6.3-beta-4.md','RELEASE-NOTES-1.6.3-beta-3.md','RELEASE-NOTES-1.6.2-2.md','RELEASE-NOTES-1.6.2-3.md','RELEASE-NOTES-1.6.2-4.md','RELEASE-NOTES-1.6.2-5.md','RELEASE-NOTES-1.6.2-6.md','RELEASE-NOTES-1.6.2-7.md','RELEASE-NOTES-1.6.2-8.md','RELEASE-NOTES-1.6.2-9.md','RELEASE-NOTES-1.6.2-10.md','RELEASE-NOTES-1.6.2-11.md','RELEASE-NOTES-1.6.2-12.md'}
 original_hashes={'3c5359904516ea87a22391aded6520057d3796c875f14fcafc2781f06d81071c','45557026edc32018b5125c4e62c3cb45af71f5fd99db8692c7175f44b01df9c1','cdb68939395b828d90fc58abcc57b2b98555f78fba20a6fb218f7a85292fb805','03bbf089a707366253f647c8ff6c29bfe7f7d5967058f72739826babadd4b9e2','b8cb756ab0c23bfc8827d43f82de03fe7c83e49334a17137c715217d3c3bd6a6'}
 files.add("RELEASE-NOTES-1.6.3-beta-8.md")
-files.update({'RELEASE-NOTES-1.6.3.md','RELEASE-NOTES-1.6.3.1h.md'})
+files.update({'RELEASE-NOTES-1.6.3.md','RELEASE-NOTES-1.6.3.1h.md','RELEASE-NOTES-1.6.3.2h-beta-1.md','RELEASE-NOTES-1.6.4.md'})
 results=[]
 for root,stem in [(runtime,NAME),(SRC,PACKAGE+'-Source')]:
  target=OUT/(stem+'.zip')

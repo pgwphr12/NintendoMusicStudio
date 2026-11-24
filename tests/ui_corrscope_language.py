@@ -75,9 +75,11 @@ for session in range(2):
   if session==0:
    assert state(49)==0 and state(50)==0
    assert text(u.GetDlgItem(remote,2123))=='코르스코프 파형'
+   assert text(u.GetDlgItem(remote,2122))=='구 파형 움직임'
    press(remote,2122);assert state(49)==1;press(remote,2123);assert state(49)==2 and send(u.GetDlgItem(remote,2122),0xf0)==0
    wait(lambda:state(51)>=3)
    language(1);capture(remote,'remote-english');assert text(u.GetDlgItem(remote,2123))=='Corrscope waveform'
+   assert text(u.GetDlgItem(remote,2122))=='Legacy waveform'
    assert text(u.GetDlgItem(remote,2103))=='Stop' and text(u.GetDlgItem(remote,2124))=='Language'
    r=W.RECT();u.GetClientRect(main,C.byref(r));scale=min(r.right/1920,r.bottom/1080);pos=int((r.right-1920*scale)/2+980*scale)|(int((r.bottom-1080*scale)/2+45*scale)<<16);send(main,0x201,1,pos);send(main,0x202,0,pos);export=wait(lambda:find(p.pid,'NintendoMusicStudioExport'))
    assert text(u.GetDlgItem(export,2707))=='Select folder and export'

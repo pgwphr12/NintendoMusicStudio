@@ -592,7 +592,19 @@ void Gb_Wave::run( blip_time_t time, blip_time_t end_time )
 		if ( dac_enabled() )
 		{
 			// Play inaudible frequencies as constant amplitude
-			amp = 8 << 4; // really depends on average of all samples in wave
+			// NMS: Preserve the actual wave DAC average above the audible
+			// oscillator range. NR32 PCM (e.g. Pikachu speech) modulates
+			// a constant wave; a hard-coded midpoint attenuates it and
+			// even invents a signal for an all-zero wave table.
+			int flags = regs [0] & agb_mask;
+			int count = (flags & 0x20) ? 32 : 16;
+			int bank = (flags & bank40_mask) && !(flags & 0x20) ? 16 : 0;
+			int total = 0;
+			for (int i = 0; i < count; ++i) {
+				int value = wave_ram [bank + i];
+				total += (value >> 4) + (value & 15);
+			}
+			amp = enabled ? total * 8 / count : 0;
 
 			// if delay is larger, constant amplitude won't start yet
 			if ( frequency() <= 0x7FB || delay > 15 * clk_mul )

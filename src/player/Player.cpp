@@ -49,7 +49,6 @@ void Player::openPrepared(std::unique_ptr<IMusicBackend> candidate,Format format
     if(backend_)backend_->devicePlayback(0,false,states(),master());
     backend_ = std::move(candidate);
     format_=format;
-    midiGain_=format==Format::Midi&&!backend_->hasDeviceOutput();
     output_.master(std::min(masterPreference_.load(),masterLimit()));
     uint64_t decodedEnd = UINT64_MAX;
     const bool hasDecodedEnd = backend_->decodedEndFrame(decodedEnd);
@@ -198,7 +197,7 @@ std::vector<ChannelState> Player::states() const {
 void Player::channelVolumes(float volume) {
     if(!std::isfinite(volume))return;
     std::lock_guard<std::mutex> lock(stateMutex_);
-    commonChannelVolume_=std::clamp(volume,0.f,5.f);
+    commonChannelVolume_=std::clamp(volume,0.f,2.f);
     for(auto&state:channelStates_)state.volume=std::min(commonChannelVolume_,channelLimit());
 }
 std::string Player::error() const {

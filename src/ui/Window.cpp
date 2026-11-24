@@ -184,7 +184,7 @@ void Window::showAbout() {
             auto font = GetStockObject(DEFAULT_GUI_FONT);
             HWND body = CreateWindowExW(
                 WS_EX_CLIENTEDGE, L"EDIT",
-                L"Nintendo Music Studio 1.6.3.1h\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
+                L"Nintendo Music Studio 1.6.4\r\n\r\n재생 · 파형/스펙트럼 · 채널 음량/음소거 · 폴더 "
                 L"재생\r\n\r\n"
                 L"NSF/NSFE · SPC · GBS · GSF · 2SF · USF · BCSTM/BCWAV · BRSTM/BNS · ADX · VGM/VGZ\r\n"
                 L"Wii/GameCube: 검증된 BRSTM/BNS/ADX 스트림 파일만. 디스크 이미지/ROM 음악 추출은 미지원\r\n"
@@ -311,7 +311,7 @@ bool Window::open(const std::filesystem::path &p) {
         virtualMidiLoaded_.clear();virtualMidiPending_.clear();virtualMidiFailed_.clear();virtualMidiError_.clear();
         loadChannelWaveformZooms();
         setUiText(hwnd_,
-                       (L"Nintendo Music Studio · 1.6.3.1h — " + file_.filename().wstring()).c_str());
+                       (L"Nintendo Music Studio · 1.6.4 — " + file_.filename().wstring()).c_str());
         playlist_ = std::move(playlist);
         // Opening any supported music file, including a dropped stream, starts playback.
         player_.play();
@@ -345,7 +345,7 @@ void Window::selectFolder(size_t index, bool play) {
     playlist_.current = index;
     file_ = path;
     loadChannelWaveformZooms();
-    setUiText(hwnd_, (L"Nintendo Music Studio · 1.6.3.1h — " + file_.filename().wstring()).c_str());
+    setUiText(hwnd_, (L"Nintendo Music Studio · 1.6.4 — " + file_.filename().wstring()).c_str());
 
     drag_ = -1;
     message_.clear();
@@ -801,7 +801,9 @@ void Window::paint(HDC dc, int width, int height) {
         if(corrscopeWaveform_){mean=0;for(const auto &point:env)corrPeak=std::max(corrPeak,std::max(std::abs(point.minimum),std::abs(point.maximum)));}
         float gain = corrscopeWaveform_?corrscopeScales_[c].update(amplitude,corrPeak,waveElapsed):amplitude > .0001f ? std::min(64.f, .65f / amplitude) : 1;
         for(auto&p:env){p.minimum=(p.minimum-mean)*gain;p.maximum=(p.maximum-mean)*gain;p.center=(p.center-mean)*gain;}
-        if(!legacyWaveformMotion_&&!corrscopeWaveform_)waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
+        // Ease fresh Corrscope results on each display-paced paint; keep the
+        // original trigger and audio intact, with no fixed 60Hz render cap.
+        if(!legacyWaveformMotion_)waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
         int previous = center;
         for (size_t x = 0; x < env.size(); x++) {
             auto point = env[x];
@@ -1075,8 +1077,8 @@ void Window::restoreChannels() {
                 mute=preferences_.get(legacy+".mute",preferences_.get(direct+".mute",0,0,1),0,1);
             }
         }
-        const int common=preferences_.get("allChannelVolume",-1,0,int(player_.channelLimit()*100));
-        state.volume = (common>=0?common:preferences_.get(key + ".volume", volume, 0, int(player_.channelLimit()*100))) / 100.f;
+        const int common=preferences_.get("allChannelVolume",-1,0,500);
+        state.volume = std::min(player_.channelLimit(),(common>=0?common:preferences_.get(key + ".volume", volume, 0, 500)) / 100.f);
         state.mute = preferences_.get(key + ".mute", mute, 0, 1) != 0;
         player_.channel(i, state);
     }
@@ -1639,7 +1641,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
                            GetEnvironmentVariableW(L"NGMV_SETTINGS_TEST_FILE", nullptr, 0) > 0);
     if (preferencesEnabled_) {
         preferences_.load(desktop::Settings::path());
-        setUiLanguage(preferences_.get("uiLanguage",0,0,1)!=0);
+        setUiLanguage(preferences_.get("uiLanguage",1,0,1)!=0);
         player_.showAllChannels(preferences_.get("showAllChannels",0,0,1)!=0);
         player_.equalizerEnabled(preferences_.get("eqEnabled",0,0,1)!=0);
         for(size_t band=0;band<20;band++)player_.equalizerGain(band,preferences_.get("eqBand"+std::to_string(band),0,-200,200));
@@ -1707,7 +1709,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
     RegisterClassW(&wc);
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.3.1h", WS_OVERLAPPEDWINDOW,
+    hwnd_ = CreateWindowW(wc.lpszClassName, L"Nintendo Music Studio · 1.6.4", WS_OVERLAPPEDWINDOW,
                           screenshot.empty() ? CW_USEDEFAULT : -20000,
                           screenshot.empty() ? CW_USEDEFAULT : -20000, r.right - r.left,
                           r.bottom - r.top, nullptr, nullptr, instance, this);

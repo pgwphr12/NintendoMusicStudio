@@ -1,0 +1,40 @@
+{
+  "version": "1.6.4",
+  "date": "2026-11-24",
+  "license": "Modified LGPL2.1+ Gb_Oscs.cpp; original notices/whole corresponding source retained",
+  "reference": [
+    "https://github.com/pret/pokeyellow/blob/master/home/pikachu_cries.asm",
+    "https://github.com/pret/pokeyellow/blob/master/engine/pikachu/pikachu_pcm.asm"
+  ],
+  "fix": "High-frequency wave fallback uses active wave-bank nibble average, not constant8; GBS CPU timing/AGB compatibility/native wave mode unchanged",
+  "own_PCM_test": {
+    "before_relative_RMS_error": 0.473752,
+    "after_relative_RMS_error": 0.000133868,
+    "zero_wave_modulation_error_energy": 0,
+    "result": "PASS"
+  },
+  "actual_GBS": {
+    "subsongs": 98,
+    "frames_each": 147456,
+    "seconds_each": 3.072,
+    "unchanged_music_tracks": [
+      1,
+      56
+    ],
+    "changed_voice_tracks": [
+      57,
+      98
+    ],
+    "core_warnings": 0,
+    "all_subsong_replay_and_mute": "PASS",
+    "original_SHA_size_mtime_unchanged": true,
+    "GB_CPU_AGB_APU_replay_seek_mute": "PASS own fixture and actual title track"
+  },
+  "build_integrity": "Overlay SHA matches actual fetched compilation source; CMake refresh supports incremental and clean builds",
+  "limits": [
+    "No physical listening, exact hardware recording comparison or complete other-game corpus",
+    "First unfreshed-source candidate results explicitly excluded",
+    "Whole-song/whole-file playback not claimed from bounded excerpts"
+  ],
+  "user_assets_in_packages": false
+}

@@ -19,7 +19,13 @@
     },
     "Gb_Oscs.cpp": {
       "original_sha256": "8ab988ca76abbdde2b0f9bfbd06a754fd3e4e09065da1a63ceb249f3ea3fcaa0",
-      "derived_from": "viogsf/vbam/apu/Gb_Oscs.cpp"
+      "derived_from": "viogsf/vbam/apu/Gb_Oscs.cpp",
+      "previous_overlay_sha256": "7a1645716d8ca2bd7195d802e8beb638085c2c83bbef43a6a5ed62e2ed3e45aa",
+      "local_change": "High-frequency wave DC uses actual active wave-bank nibble average, preserving NR32 PCM modulation; prior midpoint discarded sample contents",
+      "references": [
+        "https://github.com/pret/pokeyellow/blob/master/home/pikachu_cries.asm",
+        "https://github.com/pret/pokeyellow/blob/master/engine/pikachu/pikachu_pcm.asm"
+      ]
     },
     "Gbs_Emu.cpp": {
       "original_sha256": "21b03fd6220a7ffa68cd0dee832a4e8a218eb614dda01159d87c22bb41f4b9e4"
