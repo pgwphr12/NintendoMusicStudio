@@ -24,7 +24,7 @@
   "common_channel_gain": "All formats master0..100/common and individual0..200; previous excessive values capped",
   "recording_remote": "Independent F12 or normal-view remote button; F9 changes view only",
   "equalizer": "MesenCE4b8a196 Orfanidis Butterworth20parallel bands; +/-20dB integer/numeric edits; same label15kHz / actual13kHz center as upstream; canonical PCM16 stage exact reference tested at48kHz",
-  "latest_feature": "English default; MIDI500 removal; display-paced Corrscope transitions; wave DAC average/NR32 PCM fix; shorter legacy label",
+  "latest_feature": "GBS CPU instruction timing fixes PCM voice playback; Corrscope default/direct original shapes with cached FFT and bounded4-lane computation; explicit Standard waveform option; English default and MIDI500 removal retained",
   "future_test_version_format": "X.Y.Z-beta N",
   "previous_test": "1.6.3-beta 10"
 }

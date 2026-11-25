@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
+#include <thread>
+#include <chrono>
 using namespace ngmv;
 int main(int argc,char**argv){try{
  if(argc==2){std::ifstream file(argv[1],std::ios::binary);auto read=[&](auto& value){file.read(reinterpret_cast<char*>(&value),sizeof(value));if(!file)throw std::runtime_error("Truncated reference input");};uint32_t cases;read(cases);
@@ -24,6 +26,14 @@ int main(int argc,char**argv){try{
  if(quiet.update(.8f,.8f,1./60)*.8f>.950001f)throw std::runtime_error("Waveform clipped");
  CorrscopeDisplayScale at60,at144;float a=4,b=4;for(int i=0;i<600;++i)a=at60.update(.01f,.01f,1./60);for(int i=0;i<1440;++i)b=at144.update(.01f,.01f,1./144);if(std::abs(a-b)>.001f)throw std::runtime_error("Gain depends on refresh rate");
  std::vector<float> silence(6000);CorrscopeTrigger trigger;auto r=trigger.process(silence,0,3000);if(r.period!=0||r.sample!=3000)throw std::runtime_error("Silence trigger unstable");
+ std::vector<float> tone(6144);for(size_t i=0;i<tone.size();++i)tone[i]=float(.3*std::sin(i*.1));
+ {CorrscopeWorker one,many;one.submit({tone},{1024},1,0);many.submit(std::vector<std::vector<float>>(8,tone),std::vector<size_t>(8,1024),255,0);
+  for(int i=0;i<500&&(!one.completed()||!many.completed());++i)std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  auto a=one.result(),b=many.result();if(a.size()!=1||b.size()!=8)throw std::runtime_error("Parallel worker did not publish all lanes");
+  for(const auto&lane:b){if(lane.size()!=a[0].size())throw std::runtime_error("Parallel lane width changed");for(size_t i=0;i<lane.size();++i)if(lane[i].center!=a[0][i].center)throw std::runtime_error("Parallelization changed actual waveform points");}
+  many.submit(std::vector<std::vector<float>>(8,tone),std::vector<size_t>(8,1024),255,.01);many.reset();many.submit({silence},{1024},1,.02);
+  for(int i=0;i<500&&!many.completed();++i)std::this_thread::sleep_for(std::chrono::milliseconds(2));if(many.result().size()!=1)throw std::runtime_error("Reset published retired lane data");
+ }
  CorrscopeWorker worker;worker.reset();worker.submit({silence},{1024},1,0);worker.reset();
  std::cout<<"PASS common chip height, held note envelopes, NSF 4x reference, silence/DC/ratios, refresh rate and work-area placement\n";return 0;
 }catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -1,6 +1,6 @@
 {
   "license": "LGPL-2.1-or-later; original notices preserved",
-  "scope": "Only GBS APU upgraded from Gb_Snd_Emu0.1.5 to bundled0.2.0; GBS GB CPU/banking/timing retained; AGB mode with native wave extension off",
+  "scope": "GBS AGB-compatible APU with GB16-byte wave mode; actual wave average at high frequency; implemented SM83 instructions now use their real machine-cycle counts, including conditional/CB timing. Existing opcode semantics, banking and scheduled GBS play calls retained; no full GB machine emulation claim.",
   "references": [
     "https://github.com/gbdev/pandocs/blob/master/src/Audio_details.md"
   ],
@@ -32,6 +32,16 @@
     },
     "Gbs_Emu.h": {
       "original_sha256": "741f6686695d470dd89c7f62be4ca7ff338d3baef06f8e39cbb9f63986d10612"
+    },
+    "Gb_Cpu.cpp": {
+      "original_sha256": "050d09f7ce0953a123bebcaf47e142c447fd20ce22f79d20c6e1fb9b270f1e79",
+      "local_change": "SM83 instruction/conditional/CB duration accounting; no new opcode semantics",
+      "reference": "https://gbdev.io/gb-opcodes/optables/"
+    },
+    "Gb_Cpu.h": {
+      "original_sha256": "aefd01dba2375de3b10372a80f74680375ed8f3cc026121fdb8e743d23666293",
+      "local_change": "SM83 instruction/conditional/CB duration accounting; no new opcode semantics",
+      "reference": "https://gbdev.io/gb-opcodes/optables/"
     }
   }
 }

@@ -801,9 +801,9 @@ void Window::paint(HDC dc, int width, int height) {
         if(corrscopeWaveform_){mean=0;for(const auto &point:env)corrPeak=std::max(corrPeak,std::max(std::abs(point.minimum),std::abs(point.maximum)));}
         float gain = corrscopeWaveform_?corrscopeScales_[c].update(amplitude,corrPeak,waveElapsed):amplitude > .0001f ? std::min(64.f, .65f / amplitude) : 1;
         for(auto&p:env){p.minimum=(p.minimum-mean)*gain;p.maximum=(p.maximum-mean)*gain;p.center=(p.center-mean)*gain;}
-        // Ease fresh Corrscope results on each display-paced paint; keep the
-        // original trigger and audio intact, with no fixed 60Hz render cap.
-        if(!legacyWaveformMotion_)waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
+        // Corrscope displays the original result directly; no standard-mode
+        // temporal morphing. Both are painted by the monitor refresh pacer.
+        if(!legacyWaveformMotion_&&!corrscopeWaveform_)waveformTransitions_[c].apply(env,waveElapsed,player_.playing()||waveformTail_.active());
         int previous = center;
         for (size_t x = 0; x < env.size(); x++) {
             auto point = env[x];
@@ -1108,6 +1108,7 @@ void Window::savePreferences() {
     v["waveformZoomStep"] = waveformZoomStep_;
     v["legacyWaveformMotion"] = legacyWaveformMotion_;
     v["corrscopeWaveform"] = corrscopeWaveform_;
+    v["waveformModeRevision"] = 164;
     v["uiLanguage"] = uiEnglish()?1:0;
     v["waveformZoom"] = int(std::clamp(std::lround(std::log2(4096.0 / std::max(64, windowSamples_))), 0l, 6l));
     v["showAllChannels"] = player_.showAllChannels()?1:0;
@@ -1665,7 +1666,7 @@ int Window::run(HINSTANCE instance, const std::filesystem::path &initial,
         player_.repeat(preferences_.get("repeat", 0, 0, 1) != 0);
         autoplay_ = preferences_.get("autoplay", 1, 0, 1) != 0;
         legacyWaveformMotion_ = preferences_.get("legacyWaveformMotion", 0, 0, 1) != 0;
-        corrscopeWaveform_ = preferences_.get("corrscopeWaveform",0,0,1)!=0;
+        corrscopeWaveform_ = preferences_.get("waveformModeRevision",0,0,9999)<164?!legacyWaveformMotion_:preferences_.get("corrscopeWaveform",1,0,1)!=0;
         if(corrscopeWaveform_)legacyWaveformMotion_=false;
         preferences_.values.erase("infinitePlayback");
         recording_ = recording || preferences_.get("recording", 0, 0, 1) != 0;

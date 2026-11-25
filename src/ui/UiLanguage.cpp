@@ -87,6 +87,7 @@ const Pair words[]={
 {L"모든 채널 표시",L"Show all channels"},
 {L"개별 해제",L"Use shared value"},
 {L"구 파형 움직임",L"Legacy waveform"},
+{L"표준 파형",L"Standard waveform"},
 {L"코르스코프 파형",L"Corrscope waveform"},
 {L"언어",L"Language"},
 {L"Nintendo Music Studio · 리모컨",L"Nintendo Music Studio · Remote"},

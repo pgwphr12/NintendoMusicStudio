@@ -1,0 +1,72 @@
+{
+  "version": "1.6.4",
+  "morphing": false,
+  "default": "Corrscope; legacy explicit choice retained during migration; Standard choice persisted afterward",
+  "FFT": "Cached same-order twiddle/bit reversal, shared input FFT, one FFT for autocorrelation; no trigger decimation",
+  "parallelism": "Persistent up to4workers including coordinator; independent channel state; latest-only epoch queue",
+  "reference": "880/880 before-after trigger/period CSV lines identical",
+  "worker_point_identity": "Single versus8-lane output and reset epoch tests PASS; before-after8lane hash identical3runs",
+  "benchmark": {
+    "channels": 8,
+    "frames": 48,
+    "input": "own generated changing sine",
+    "runs": [
+      {
+        "before": {
+          "seconds": 0.405908,
+          "hash": "3821261626334580745"
+        },
+        "after": {
+          "seconds": 0.104309,
+          "hash": "3821261626334580745"
+        }
+      },
+      {
+        "before": {
+          "seconds": 0.40827,
+          "hash": "3821261626334580745"
+        },
+        "after": {
+          "seconds": 0.105966,
+          "hash": "3821261626334580745"
+        }
+      },
+      {
+        "before": {
+          "seconds": 0.405823,
+          "hash": "3821261626334580745"
+        },
+        "after": {
+          "seconds": 0.0996234,
+          "hash": "3821261626334580745"
+        }
+      }
+    ],
+    "limits": "Worker benchmark, not measured physical monitor FPS or whole application CPU"
+  },
+  "UI": {
+    "pass": true,
+    "sessions": [
+      {
+        "session": 0,
+        "pass": true,
+        "corrscope_frames": 10
+      },
+      {
+        "session": 1,
+        "pass": true,
+        "corrscope_frames": 0
+      },
+      {
+        "session": 2,
+        "pass": true,
+        "corrscope_frames": 0
+      }
+    ],
+    "audio": "dummy",
+    "live_language_and_inputs_preserved": true,
+    "work_area_initial_and_reopen": true,
+    "placement": "corrscope below legacy; language in middle"
+  },
+  "limits": "Software/dummy tests; physical monitor FPS/VRR and listening not measured. No promise of every file matching monitor refresh under arbitrary load."
+}

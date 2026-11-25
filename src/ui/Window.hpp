@@ -106,7 +106,7 @@ class Window {
     void toggleSpectrum();
     bool autoplay_ = true;
     bool legacyWaveformMotion_ = false;
-    bool corrscopeWaveform_ = false;
+    bool corrscopeWaveform_ = true;
     std::unique_ptr<CorrscopeWorker> corrscopeWorker_;
     void changeLanguage(bool english);
     int windowSamples_ = 1024;

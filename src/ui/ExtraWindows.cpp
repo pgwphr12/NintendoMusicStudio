@@ -125,6 +125,7 @@ void Window::updateRemote(){
  SendDlgItemMessageW(remoteWindow_,2115,BM_SETCHECK,player_.showAllChannels()?BST_CHECKED:BST_UNCHECKED,0);
  SendDlgItemMessageW(remoteWindow_,2122,BM_SETCHECK,legacyWaveformMotion_?BST_CHECKED:BST_UNCHECKED,0);
  SendDlgItemMessageW(remoteWindow_,2123,BM_SETCHECK,corrscopeWaveform_?BST_CHECKED:BST_UNCHECKED,0);
+ SendDlgItemMessageW(remoteWindow_,2126,BM_SETCHECK,!corrscopeWaveform_&&!legacyWaveformMotion_?BST_CHECKED:BST_UNCHECKED,0);
  setUiText(GetDlgItem(remoteWindow_,2114),(L"숨긴 채널 ("+std::to_wstring(hiddenChannelCount())+L")…").c_str());
  float common=player_.commonChannelVolume();auto states=player_.states();if(common<0)common=states.empty()?1:states[0].volume;
  SendDlgItemMessageW(remoteWindow_,2110,TBM_SETRANGE,TRUE,MAKELPARAM(0,int(player_.channelLimit()*100)));
@@ -196,6 +197,7 @@ void Window::showRemote(){
    control(h,L"BUTTON",L"개별 해제",WS_TABSTOP,2120,398,410,120,28);
    control(h,L"BUTTON",L"구 파형 움직임",WS_TABSTOP|BS_AUTOCHECKBOX,2122,14,450,496,26);
    control(h,L"BUTTON",L"코르스코프 파형",WS_TABSTOP|BS_AUTOCHECKBOX,2123,14,482,496,26);
+   control(h,L"BUTTON",L"표준 파형",WS_TABSTOP|BS_AUTOCHECKBOX,2126,14,514,496,26);
    SetTimer(h,1,200,nullptr);return 0;
   }
   if(!self)return DefWindowProcW(h,m,a,b);
@@ -207,6 +209,7 @@ void Window::showRemote(){
    case 2103:self->player_.stop();self->resetSpectrum();break;case 2104:self->nextTrack(1);break;case 2105:self->player_.repeat(!self->player_.repeat());self->savePreferences();break;
    case 2106:PostMessageW(self->hwnd_,WM_KEYDOWN,VK_F9,0);break;case 2107:self->showEqualizer();break;case 2108:self->toggleSpectrum();break;case 2109:self->showSpectrumChoices();break;case 2114:self->showHiddenChannels();break;case 2115:self->player_.showAllChannels(SendDlgItemMessageW(h,2115,BM_GETCHECK,0,0)==BST_CHECKED);self->savePreferences();break;
    case 2120:if(self->selectedWaveZoomChannel_>=0&&size_t(self->selectedWaveZoomChannel_)<self->channelWaveformZoomSteps_.size()){size_t i=size_t(self->selectedWaveZoomChannel_);self->channelWaveformZoomSteps_[i]=-1;if(self->preferencesEnabled_)self->preferences_.values.erase(self->waveformZoomSettingKey(i));self->savePreferences();}break;
+   case 2126:self->corrscopeWaveform_=false;self->legacyWaveformMotion_=false;if(self->corrscopeWorker_)self->corrscopeWorker_->reset();self->waveformTrackers_.clear();self->corrscopeScales_.clear();self->waveformTransitions_.clear();self->savePreferences();break;
    case 2123:self->corrscopeWaveform_=SendDlgItemMessageW(h,2123,BM_GETCHECK,0,0)==BST_CHECKED;if(self->corrscopeWaveform_)self->legacyWaveformMotion_=false;if(self->corrscopeWorker_)self->corrscopeWorker_->reset();self->waveformTrackers_.clear();self->corrscopeScales_.clear();self->waveformTransitions_.clear();self->savePreferences();break;
    case 2122:self->legacyWaveformMotion_=SendDlgItemMessageW(h,2122,BM_GETCHECK,0,0)==BST_CHECKED;if(self->legacyWaveformMotion_)self->corrscopeWaveform_=false;if(self->corrscopeWorker_)self->corrscopeWorker_->reset();self->waveformTrackers_.clear();self->corrscopeScales_.clear();self->waveformTransitions_.clear();self->savePreferences();break;
   }self->updateRemote();InvalidateRect(self->hwnd_,nullptr,FALSE);}catch(const std::exception&e){self->report(e);}return 0;}
@@ -218,7 +221,7 @@ void Window::showRemote(){
  };
  if(!RegisterClassW(&wc)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot create recording remote.");
  RECT r{};GetWindowRect(hwnd_,&r);remoteWindow_=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_CONTROLPARENT,wc.lpszClassName,L"Nintendo Music Studio · 리모컨",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,r.right-570,r.bottom-500,560,500,hwnd_,nullptr,wc.hInstance,this);
- if(!remoteWindow_)throw std::runtime_error("Cannot open recording remote.");fitToolWindow(remoteWindow_,540,530);rememberUiTree(remoteWindow_);SendDlgItemMessageW(remoteWindow_,2119,CB_SETDROPPEDWIDTH,MulDiv(440,toolDpi(remoteWindow_),96),0);updateRemote();ShowWindow(remoteWindow_,screenshot_.empty()?SW_SHOWNORMAL:SW_SHOWNOACTIVATE);
+ if(!remoteWindow_)throw std::runtime_error("Cannot open recording remote.");fitToolWindow(remoteWindow_,540,562);rememberUiTree(remoteWindow_);SendDlgItemMessageW(remoteWindow_,2119,CB_SETDROPPEDWIDTH,MulDiv(440,toolDpi(remoteWindow_),96),0);updateRemote();ShowWindow(remoteWindow_,screenshot_.empty()?SW_SHOWNORMAL:SW_SHOWNOACTIVATE);
 }
 void Window::showSpectrumChoices(){
  auto sync=[&]{CheckRadioButton(spectrumChoiceWindow_,2600,2602,spectrumStyle_==3?2602:2600+spectrumStyle_);};

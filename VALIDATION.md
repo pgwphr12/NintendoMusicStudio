@@ -1,3 +1,11 @@
+#1.6.4 CPU timing and original Corrscope frame revision
+
+The earlier wave-level patch was insufficient: user still reported noisy/unintelligible speech. Gb_Cpu.h explicitly assumed every opcode takes4clocks. This revision counts actual base, conditional and CB machine cycles for implemented opcodes. Three generated, independently cycle-counted NR32 GBS loops (inline, CALL/RET, CB register/memory) match1009.22/990.157/973.608Hz. Actual98subsong bounded/replay/mute tests and7real GBS title-track play/seek/replay/mute tests pass. Full CPU bus-level accuracy/other opcodes and listening are not claimed.
+
+Corrscope temporal morphing is REMOVED. All880 reference trigger/period lines and the generated8-lane worker output hash match the previous implementation. Eight-channel48job worker benchmark: approximately0.406s before versus0.100–0.106s after (3runs), original frame points unchanged. This is computational headroom, not physical monitor FPS or measured application CPU. Worker count bounded by min(4,hardware_concurrency), latest-only jobs, reset epoch retained. Default-mode migration and explicit Standard selection/restart are tested. See docs/GBS-PCM-1.6.4.json and docs/CORRSCOPE-FRAMES-1.6.4.json.
+
+## Historical amplitude-only revision below (superseded)
+
 #1.6.4 — GBS NR32 PCM and presentation hotfixes
 
 The high-frequency wave shortcut used a fixed8-level midpoint, ignoring actual RAM. The actual-bank average patch makes the generated constant15 wave/NR32 modulation match the lower-frequency reference with relative RMS error0.000134 (before0.473752); zero-table modulation introduces no output difference from its unmodulated reference. All98 user GBS subsongs were rendered for3.072s, replayed and muted. Songs1..56 bit-identical; voices57..98 changed, no core warnings. Original SHA/size/mtime unchanged. No user music is bundled. A first candidate build still used the old fetched source; that run is not final evidence. CMake now SHA-checks and refreshes the PCM overlay on incremental builds. Shortened KO/EN legacy captions, default language preservation, restored gain limits and monitor-paced transitions are checked separately. Physical listening and monitor/VRR validation remain unperformed. See docs/GBS-PCM-1.6.4.json.

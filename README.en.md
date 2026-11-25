@@ -1,11 +1,11 @@
 ## Nintendo Music Studio 1.6.4
 
-Game Boy high-frequency wave playback now uses the actual active wave-table average, fixing attenuation of NR32 PCM speech such as Pikachu voices. The legacy option is shortened to “Legacy waveform”; behavior is unchanged. See RELEASE-NOTES-1.6.4.md.
+GBS CPU timing now uses the implemented instructions’ actual machine-cycle durations instead of a fixed4cycles per opcode, correcting CPU-timed PCM voice playback. Game Boy high-frequency wave playback also uses the actual active wave-table average, fixing attenuation of NR32 PCM speech such as Pikachu voices. The legacy option is shortened to “Legacy waveform”; behavior is unchanged. See RELEASE-NOTES-1.6.4.md.
 
 - English is the default when no language preference exists. Saved Korean/English choices remain unchanged.
 - All formats use master0–100% and common/individual channels0–200%; the MIDI500% extension has been removed. Older excessive gain settings are capped.
 - Manual **SF2/DLS selection** works without VirtualMIDISynth and persists across restarts. Only VMS import/follow actions require VMS.
-- Corrscope results ease at each monitor-paced paint, independently of output sample rate; trigger/audio remain unchanged.
+- Corrscope is the default. The remote offers **Standard waveform** and **Legacy waveform** as alternatives. Frames are displayed directly, without morphing between traces; FFT reuse and a bounded channel worker pool improve result cadence at the monitor refresh rate.
 - The F8 menu has a persistent **Search same-folder sound banks** option, on by default (DLS then SF2). Turn it off to use your selected bank. Selecting a bank manually turns it off; it can be enabled again. Toggling reloads the current MIDI from the beginning.
 
 Corrscope display scaling reduces differences between songs, retaining the NSF 4x reference and applying a single gain to the trace. Held envelopes preserve note releases and silence; shape, timing, DC offset, audio and trigger inputs stay intact. The remote opens and reopens within the monitor work area, clear of the taskbar.

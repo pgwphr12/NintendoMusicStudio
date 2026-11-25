@@ -57,7 +57,7 @@ def check_work_area(h):
  assert r.left>=w.left and r.top>=w.top and r.right<=w.right and r.bottom<=w.bottom,('outside work area',r.left,r.top,r.right,r.bottom,w.left,w.top,w.right,w.bottom)
  return w
 sessions=[]
-for session in range(2):
+for session in range(3):
  env=dict(os.environ,SDL_AUDIODRIVER='dummy',NGMV_TEST_SESSION='corrlanguage'+str(session),NGMV_TEST_SNAPSHOT_MS='60000',NGMV_SETTINGS_TEST_FILE=str(settings))
  p=subprocess.Popen([str(exe),'--snapshot',str(audio),str(out/('main'+str(session)+'.bmp')),'--size=1920x1080'],env=env,creationflags=subprocess.CREATE_NO_WINDOW)
  try:
@@ -73,13 +73,18 @@ for session in range(2):
   assert rect(u.GetDlgItem(remote,2125)).top>=rect(u.GetDlgItem(remote,2115)).bottom
   assert rect(u.GetDlgItem(remote,2125)).bottom<=rect(u.GetDlgItem(remote,2116)).top
   if session==0:
-   assert state(49)==0 and state(50)==0
+   assert state(49)==2 and state(50)==0
    assert text(u.GetDlgItem(remote,2123))=='코르스코프 파형'
    assert text(u.GetDlgItem(remote,2122))=='구 파형 움직임'
+   assert text(u.GetDlgItem(remote,2126))=='표준 파형'
+   assert rect(u.GetDlgItem(remote,2126)).top>=rect(u.GetDlgItem(remote,2123)).bottom
    press(remote,2122);assert state(49)==1;press(remote,2123);assert state(49)==2 and send(u.GetDlgItem(remote,2122),0xf0)==0
    wait(lambda:state(51)>=3)
    language(1);capture(remote,'remote-english');assert text(u.GetDlgItem(remote,2123))=='Corrscope waveform'
    assert text(u.GetDlgItem(remote,2122))=='Legacy waveform'
+   assert text(u.GetDlgItem(remote,2126))=='Standard waveform'
+   press(remote,2126);assert state(49)==0 and send(u.GetDlgItem(remote,2126),0xf0)==1
+   press(remote,2123);assert state(49)==2
    assert text(u.GetDlgItem(remote,2103))=='Stop' and text(u.GetDlgItem(remote,2124))=='Language'
    r=W.RECT();u.GetClientRect(main,C.byref(r));scale=min(r.right/1920,r.bottom/1080);pos=int((r.right-1920*scale)/2+980*scale)|(int((r.bottom-1080*scale)/2+45*scale)<<16);send(main,0x201,1,pos);send(main,0x202,0,pos);export=wait(lambda:find(p.pid,'NintendoMusicStudioExport'))
    assert text(u.GetDlgItem(export,2707))=='Select folder and export'
@@ -89,11 +94,13 @@ for session in range(2):
    press(remote,2107);eq=wait(lambda:find(p.pid,'NintendoMusicStudioEqualizer'));assert text(u.GetDlgItem(eq,2200))=='Enable EQ';language(0);capture(remote,'remote-korean');assert text(u.GetDlgItem(eq,2200))=='EQ 사용';language(1);send(eq,0x10)
    press(remote,2103);assert not state(1);wait(lambda:not state(43));assert state(49)==2
    press(remote,2102);wait(lambda:state(1));assert 'corrscopeWaveform=1' in settings.read_text() and 'uiLanguage=1' in settings.read_text()
-  else:
+  elif session==1:
    assert state(49)==2 and state(50)==1,'Mode/language did not persist'
    wait(lambda:state(51)>=1)
    press(remote,2122);assert state(49)==1 and send(u.GetDlgItem(remote,2123),0xf0)==0
-   press(remote,2122);assert state(49)==0
+   press(remote,2126);assert state(49)==0
+  else:
+   assert state(49)==0 and state(50)==1 and send(u.GetDlgItem(remote,2126),0xf0)==1,'Standard waveform selection did not persist'
   sessions.append({'session':session,'pass':True,'corrscope_frames':state(51)})
   send(main,0x113,2);assert p.wait(timeout=10)==0
  finally:

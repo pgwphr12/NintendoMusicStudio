@@ -6,6 +6,8 @@
 #include <cmath>
 #include <complex>
 #include <condition_variable>
+#include <atomic>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <thread>
@@ -17,8 +19,16 @@ int rounded(double x){return int(std::nearbyint(x));}
 size_t power2(size_t n){size_t p=1;while(p<n)p*=2;return p;}
 void fft(std::vector<Complex>& a,bool inverse=false){
  const size_t n=a.size();
- for(size_t i=1,j=0;i<n;++i){size_t bit=n/2;for(;j&bit;bit/=2)j^=bit;j^=bit;if(i<j)std::swap(a[i],a[j]);}
- for(size_t size=2;size<=n;size*=2){const auto root=std::polar(1.,(inverse?2:-2)*Pi/size);for(size_t at=0;at<n;at+=size){Complex w=1;for(size_t j=0;j<size/2;++j){auto u=a[at+j],v=a[at+j+size/2]*w;a[at+j]=u+v;a[at+j+size/2]=u-v;w*=root;}}}
+ // Cache exactly the same bit-reversal order and iterative twiddle values.
+ // No decimation, trigger approximation or blending of waveform frames.
+ struct Plan{std::vector<size_t> reverse;std::vector<std::vector<Complex>> roots;};
+ thread_local std::map<size_t,Plan> plans;auto &plan=plans[n*2+inverse];
+ if(plan.reverse.empty()){
+  plan.reverse.resize(n);for(size_t i=1,j=0;i<n;++i){size_t bit=n/2;for(;j&bit;bit/=2)j^=bit;j^=bit;plan.reverse[i]=j;}
+  for(size_t size=2;size<=n;size*=2){auto root=std::polar(1.,(inverse?2:-2)*Pi/size);std::vector<Complex>w(size/2);Complex at=1;for(auto &v:w){v=at;at*=root;}plan.roots.push_back(std::move(w));}
+ }
+ for(size_t i=1;i<n;++i)if(i<plan.reverse[i])std::swap(a[i],a[plan.reverse[i]]);
+ size_t stage=0;for(size_t size=2;size<=n;size*=2,++stage){const auto &roots=plan.roots[stage];for(size_t at=0;at<n;at+=size)for(size_t j=0;j<size/2;++j){auto u=a[at+j],v=a[at+j+size/2]*roots[j];a[at+j]=u+v;a[at+j+size/2]=u-v;}}
  if(inverse)for(auto &v:a)v/=double(n);
 }
 size_t fastLength(size_t n){for(size_t k=n;;++k){size_t q=k;for(size_t p:{2u,3u,5u})while(q%p==0)q/=p;if(q==1)return k;}}
@@ -31,10 +41,13 @@ std::vector<Complex> fftSmooth(const std::vector<Complex>& a){
  auto &r=roots[n];if(r.empty()){r.resize(n);for(size_t k=0;k<n;++k)r[k]=std::polar(1.,-2*Pi*k/n);}
  std::vector<Complex> out(n);for(size_t k=0;k<n;++k)for(size_t j=0;j<radix;++j)out[k]+=sub[j][k%m]*r[(j*k)%n];return out;
 }
-std::vector<double> correlate(const std::vector<float>& data,const std::vector<float>& kernel,bool full=false){
+std::vector<double> correlate(const std::vector<float>& data,const std::vector<float>& kernel,bool full=false,const std::vector<Complex>* input=nullptr){
  const size_t n=power2(full?data.size()+kernel.size()-1:data.size());
- std::vector<Complex> x(n),y(n);for(size_t i=0;i<data.size();++i)x[i]=data[i];for(size_t i=0;i<kernel.size();++i)y[i]=kernel[i];
- fft(x);fft(y);for(size_t i=0;i<n;++i)x[i]*=std::conj(y[i]);fft(x,true);
+ std::vector<Complex> x(n);
+ if(input)x=*input;else{for(size_t i=0;i<data.size();++i)x[i]=data[i];fft(x);}
+ if(&data==&kernel){for(auto &v:x)v*=std::conj(v);}
+ else{std::vector<Complex> y(n);for(size_t i=0;i<kernel.size();++i)y[i]=kernel[i];fft(y);for(size_t i=0;i<n;++i)x[i]*=std::conj(y[i]);}
+ fft(x,true);
  std::vector<double> result(full?data.size():data.size()-kernel.size()+1);for(size_t i=0;i<result.size();++i)result[i]=x[i].real();return result;
 }
 template<class T> void normalize(std::vector<T>& data){double peak=.01;for(auto v:data)peak=std::max(peak,std::abs(double(v)));for(auto &v:data)v=T(v/peak);}
@@ -97,10 +110,11 @@ CorrscopeTrigger::Result CorrscopeTrigger::process(const std::vector<float>& sou
   if(framesSinceSpectrum_>=1&&std::any_of(data.begin(),data.end(),[](float v){return v!=0;})){rescaleBuffer(buffer_,data,rate_);framesSinceSpectrum_=0;}
   previousPeriod_=period;
  }
- auto quality=correlate(data,buffer_);bool enabled=true;size_t peak=size_t(std::max_element(quality.begin(),quality.end())-quality.begin());
+ std::vector<Complex> input(power2(data.size()));for(size_t i=0;i<data.size();++i)input[i]=data[i];fft(input);
+ auto quality=correlate(data,buffer_,false,&input);bool enabled=true;size_t peak=size_t(std::max_element(quality.begin(),quality.end())-quality.begin());
  std::vector<float> aligned(size_);for(size_t i=0;i<size_;++i)aligned[i]=data[peak+i]-mean;normalize(aligned);double self=0;for(size_t i=0;i<size_;++i)self+=data[peak+i]*aligned[i]*window_[i];
  if(quality[peak]/(self+.001)<.3){std::fill(quality.begin(),quality.end(),0);std::fill(buffer_.begin(),buffer_.end(),0);enabled=false;}
- auto kernel=slope_;if(enabled)for(size_t i=0;i<size_;++i)kernel[i]+=buffer_[i];auto corr=correlate(data,kernel);
+ auto kernel=slope_;if(enabled)for(size_t i=0;i<size_;++i)kernel[i]+=buffer_[i];auto corr=correlate(data,kernel,false,&input);
  float sum=0;auto peaks=quality;for(size_t i=0;i<peaks.size();++i){sum+=data[size_/2-1+i];peaks[i]-=sum;}
  const size_t middle=corr.size()/2;size_t left=0,right=corr.size();if(period){size_t radius=size_t(std::max(0,rounded(period*1.5)));left=middle>radius?middle-radius:0;right=std::min(middle+radius+1,corr.size());}
  double minimum=*std::min_element(corr.begin()+left,corr.begin()+right);
@@ -114,22 +128,35 @@ CorrscopeTrigger::Result CorrscopeTrigger::process(const std::vector<float>& sou
 struct CorrscopeWorker::State {
  struct Job {std::vector<std::vector<float>> samples;std::vector<size_t> windows;uint64_t mask=0,epoch=0;double seconds=0;};
  std::mutex mutex;std::condition_variable condition;bool stop=false,pending=false;uint64_t epoch=0,completed=0;Job job;
- std::vector<std::vector<EnvelopePoint>> ready;std::thread thread;
- State():thread([this]{run();}){}
- ~State(){{std::lock_guard<std::mutex> l(mutex);stop=true;}condition.notify_one();thread.join();}
+ std::vector<std::vector<EnvelopePoint>> ready;
+ // Persistent bounded channel workers; one trigger is owned by one job lane.
+ // This improves result cadence without interpolating or modifying its shape.
+ std::mutex poolMutex;std::condition_variable poolReady,poolDone;bool poolStop=false;unsigned generation=0,remaining=0;
+ std::atomic<size_t> nextLane{0};size_t laneCount=0;std::function<void(size_t)> laneWork;std::vector<std::thread> helpers;std::thread thread;
+ void lanes(){for(size_t i=nextLane.fetch_add(1);i<laneCount;i=nextLane.fetch_add(1))laneWork(i);}
+ State(){unsigned count=std::min(4u,std::max(1u,std::thread::hardware_concurrency()));
+  try{for(unsigned i=1;i<count;++i)helpers.emplace_back([this]{unsigned seen=0;for(;;){{std::unique_lock<std::mutex>l(poolMutex);poolReady.wait(l,[&]{return poolStop||generation!=seen;});if(poolStop)return;seen=generation;}lanes();{std::lock_guard<std::mutex>l(poolMutex);if(!--remaining)poolDone.notify_one();}}});thread=std::thread([this]{run();});}
+  catch(...){{std::lock_guard<std::mutex>l(poolMutex);poolStop=true;}poolReady.notify_all();for(auto&t:helpers)t.join();throw;}
+ }
+ ~State(){{std::lock_guard<std::mutex> l(mutex);stop=true;}condition.notify_one();thread.join();{std::lock_guard<std::mutex>l(poolMutex);poolStop=true;}poolReady.notify_all();for(auto&t:helpers)t.join();}
+ void parallel(size_t count,std::function<void(size_t)> work){
+  if(count<2||helpers.empty()){for(size_t i=0;i<count;++i)work(i);return;}
+  {std::lock_guard<std::mutex>l(poolMutex);nextLane=0;laneCount=count;laneWork=std::move(work);remaining=unsigned(helpers.size());++generation;}
+  poolReady.notify_all();lanes();std::unique_lock<std::mutex>l(poolMutex);poolDone.wait(l,[&]{return !remaining;});laneWork={};
+ }
  void run(){std::vector<CorrscopeTrigger> triggers;uint64_t current=~uint64_t(0);int64_t cursor=0;double previous=0;
   for(;;){Job j;{std::unique_lock<std::mutex> l(mutex);condition.wait(l,[&]{return stop||pending;});if(stop)return;j=std::move(job);pending=false;}
    if(current!=j.epoch){triggers.clear();current=j.epoch;cursor=0;previous=j.seconds;}
    cursor+=std::max(0,rounded(std::clamp(j.seconds-previous,0.,1.)*48000));previous=j.seconds;
    while(triggers.size()<j.samples.size())triggers.emplace_back();std::vector<std::vector<EnvelopePoint>> output(j.samples.size());
-   for(size_t c=0;c<j.samples.size()&&c<64;++c)if(j.mask&(uint64_t(1)<<c)){
-    const auto &s=j.samples[c];size_t w=c<j.windows.size()?std::min(j.windows[c],s.size()):0;if(!w)continue;
+   parallel(std::min(size_t(64),j.samples.size()),[&](size_t c){if(!(j.mask&(uint64_t(1)<<c)))return;
+    const auto &s=j.samples[c];size_t w=c<j.windows.size()?std::min(j.windows[c],s.size()):0;if(!w)return;
     int64_t pos=cursor+int64_t(s.size())-int64_t(std::max(w/2+480,size_t(1440)));
     auto result=triggers[c].process(s,cursor,pos);int64_t at=result.sample-cursor-int64_t(w/2);at=std::clamp(at,int64_t(0),int64_t(s.size()-w));
     // The trigger is upstream corrscope; the line is drawn by the host UI.
     const size_t columns=w;auto &line=output[c];line.resize(columns);
     for(size_t x=0;x<columns;++x){double p=double(at)+(columns>1?double(x)*(w-1)/(columns-1):0.);size_t a=size_t(p),b=std::min(a+1,s.size()-1);float value=s[a]+float(p-a)*(s[b]-s[a]);line[x]={value,value,value};}
-   }
+   });
    {std::lock_guard<std::mutex> l(mutex);if(current==epoch){ready=std::move(output);++completed;}}
   }
  }
